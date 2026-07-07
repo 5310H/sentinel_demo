@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sentinel User Management</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --alarm: #ff003c;
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 40px 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            animation: bg-pulse 10s infinite alternate;
+        }
+
+        @keyframes bg-pulse {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-container {
+            width: 100%; 
+            max-width: 600px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+        }
+        
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 25%; width: 50%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .sync-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--ready);
+            box-shadow: 0 0 10px var(--ready);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .panel-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin: 8px 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Settings Group */
+        .settings-group {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .settings-title {
+            font-size: 13px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin: 0 0 10px 15px;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.3s;
+        }
+        
+        .settings-row.vertical {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .settings-label-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        input[type="email"],
+        select {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-size: 16px;
+            font-weight: 500;
+            text-align: right;
+            outline: none;
+            width: 50%;
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .settings-row.vertical input {
+            text-align: left;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        select option {
+            background: #111;
+            color: var(--text-main);
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        input:disabled {
+            opacity: 0.5;
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary, .btn-danger, .btn-warning {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Device List Cards */
+        .user-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .user-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .user-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-meta {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 15px;
+        }
+        
+        .badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+        
+        .badge.warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--not);
+            border-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-small {
+            padding: 10px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-small.btn-del { 
+            color: var(--armed); 
+            border-color: rgba(255, 42, 85, 0.3); 
+            background: rgba(255, 42, 85, 0.05);
+        }
+        .btn-small.btn-del:hover { background: rgba(255, 42, 85, 0.15); }
+
+        .btn-small.btn-test { 
+            color: var(--not); 
+            border-color: rgba(255, 193, 7, 0.3); 
+            background: rgba(255, 193, 7, 0.05);
+        }
+        .btn-small.btn-test:hover { background: rgba(255, 193, 7, 0.15); }
+
+        .back-link {
+            display: inline-block;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 30px;
+            text-align: center;
+            width: 100%;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: var(--text-main);
+        }
+        
+        @media (max-width: 768px) {
+            .panel-container { padding: 20px; border-radius: 20px; }
+            .settings-row { flex-direction: column; align-items: flex-start; }
+            .settings-row input, .settings-row select { text-align: left; width: 100%; margin-top: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="panel-container">
+        <div class="header">
+            <h1 class="panel-title">Users <span class="sync-status"></span></h1>
+            <p class="panel-subtitle">Access & Authorization</p>
+        </div>
+
+        <!-- Create/Edit Form -->
+        <h2 class="settings-title" id="form-label">Create New User</h2>
+        <form onsubmit="handleSave(event)">
+            
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Username</div>
+                        <div class="settings-label-sub">Unique identifier</div>
+                    </div>
+                    <input type="text" id="name" placeholder="John" required>
+                </div>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Email Address</div>
+                        <div class="settings-label-sub">For notifications</div>
+                    </div>
+                    <input type="email" id="email" placeholder="john@example.com">
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Notify Level</div>
+                        <div class="settings-label-sub">Alert routing preference</div>
+                    </div>
+                    <select id="notify">
+                        <option value="1">Silent (App Only)</option>
+                        <option value="2">Email & App</option>
+                        <option value="3">Telegram</option>
+                        <option value="4">Professional (Noonlight)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">PIN Code</div>
+                        <div class="settings-label-sub">Standard login code</div>
+                    </div>
+                    <input type="password" id="pin" placeholder="••••">
+                </div>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Emergency PIN</div>
+                        <div class="settings-label-sub">Triggers Noonlight dispatch</div>
+                    </div>
+                    <input type="password" id="emergency-pin" placeholder="••••">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="save-btn">Execute Add</button>
+            <button type="button" class="btn-secondary" id="cancel-btn" style="display:none;" onclick="resetForm()">Cancel</button>
+        </form>
+
+        <!-- User List -->
+        <h2 class="settings-title" style="margin-top: 40px;">Registered Users</h2>
+        <div id="user-list">
+            <div style="text-align: center; color: var(--text-dim); padding: 20px;">Accessing database...</div>
+        </div>
+
+        <a href="index.html" class="back-link">← Return to Control Panel</a>
+    </div>
+
+    <script>
+        const TYPES = ["", "LOCAL", "EMAIL", "TELE", "PRO"];
+
+        function escapeHtml(text) {
+            if (!text) return text;
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                       .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/users?t=' + Date.now());
+                const users = await res.json();
+                const list = document.getElementById('user-list');
+                
+                list.innerHTML = users.map(u => `
+                    <div class="user-card">
+                        <div class="user-header">
+                            <div class="user-name">
+                                ${escapeHtml(u.name)} 
+                                <span class="badge">LVL ${u.notify}</span> 
+                                ${u.emergency_pin ? '<span class="badge warning">911 ENABLED</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="user-meta">${escapeHtml(u.email) || 'No Email Configured'}</div>
+                        
+                        <div class="action-row">
+                            <button class="btn-small" onclick="setEdit('${u.name}','${u.email}',${u.notify},'${u.emergency_pin || ''}')">Edit</button>
+                            <button class="btn-small btn-test" onclick="testNotify('${u.name}')">Test Alert</button>
+                            <button class="btn-small btn-del" onclick="deleteUser('${u.name}')">Revoke</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("DB Load Error");
+            }
+        }
+
+        function setEdit(name, email, notify, emergencyPin) {
+            document.getElementById('name').value = name;
+            document.getElementById('name').disabled = true;
+            document.getElementById('email').value = email;
+            document.getElementById('notify').value = notify;
+            document.getElementById('emergency-pin').value = emergencyPin || '';
+            document.getElementById('save-btn').innerText = "Update Record";
+            document.getElementById('form-label').innerText = "Edit User: " + name;
+            document.getElementById('cancel-btn').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('name').value = "";
+            document.getElementById('name').disabled = false;
+            document.getElementById('pin').value = "";
+            document.getElementById('emergency-pin').value = "";
+            document.getElementById('email').value = "";
+            document.getElementById('save-btn').innerText = "Execute Add";
+            document.getElementById('form-label').innerText = "Create New User";
+            document.getElementById('cancel-btn').style.display = "none";
+        }
+
+        async function handleSave(event) {
+            event.preventDefault(); // Prevent form from submitting normally
+            
+            const isUpdate = document.getElementById('save-btn').innerText.includes("Update");
+            const payload = {
+                name: document.getElementById('name').value,
+                pin: document.getElementById('pin').value,
+                emergency_pin: document.getElementById('emergency-pin').value,
+                email: document.getElementById('email').value,
+                notify: parseInt(document.getElementById('notify').value)
+            };
+
+            await fetch(isUpdate ? '/api/users/update' : '/api/users/add', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            resetForm();
+            loadUsers();
+        }
+
+        async function deleteUser(name) {
+            if(confirm("Confirm revocation of user: " + name + "?")) {
+                await fetch('/api/users/delete', { method: 'POST', body: JSON.stringify({name}) });
+                loadUsers();
+            }
+        }
+
+        async function testNotify(name) {
+            await fetch('/api/test_notify?name=' + name);
+            alert("Test alert signal dispatched for user: " + name);
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>

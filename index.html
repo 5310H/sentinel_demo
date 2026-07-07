@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sentinel Command Center</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --alarm: #ff003c;
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        /* Animated Background */
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            animation: bg-pulse 10s infinite alternate;
+        }
+
+        @keyframes bg-pulse {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+        
+        /* Entry Animation */
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Glassmorphism Container */
+        .dashboard { 
+            width: 100%; 
+            max-width: 1200px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: min-content;
+            gap: 24px;
+            perspective: 1000px;
+            animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .col-span-1 { grid-column: span 1; }
+        .col-span-2 { grid-column: span 2; }
+        .col-span-all { grid-column: 1 / -1; }
+
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; padding: 15px; border-radius: 16px; margin-top: 10px; }
+            .col-span-1, .col-span-2 { grid-column: 1 / -1 !important; }
+            .header-module { flex-direction: column; align-items: center; text-align: center; }
+            .header-module > div { margin-bottom: 15px; }
+            .header-module > div:last-child { margin-bottom: 0; }
+            .time-display { font-size: 52px; }
+            .weather-temp { font-size: 36px; }
+            .action-buttons { grid-template-columns: 1fr; }
+            .admin-links { grid-template-columns: repeat(2, 1fr); }
+            body { padding: 10px; align-items: flex-start; }
+            .keypad-container { padding: 20px; }
+        }
+
+        /* Header / Time */
+        .header-module {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            padding-bottom: 20px;
+            position: relative;
+        }
+        .header-module::after {
+            content: ''; position: absolute; bottom: -1px; left: 0; width: 30%; height: 1px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+        .brand {
+            font-size: 14px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tts-toggle {
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .tts-toggle:hover { opacity: 1; }
+        .time-display {
+            font-size: 72px;
+            font-weight: 300;
+            line-height: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            letter-spacing: -2px;
+        }
+        .date-display {
+            font-size: 14px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        /* Modules */
+        .module {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            animation: slideUpFade 0.8s backwards;
+            transform-style: preserve-3d;
+        }
+        .module:nth-child(2) { animation-delay: 0.1s; }
+        .module:nth-child(3) { animation-delay: 0.2s; }
+        .module:nth-child(4) { animation-delay: 0.3s; }
+        .module:nth-child(5) { animation-delay: 0.4s; }
+        .module:nth-child(6) { animation-delay: 0.5s; }
+        .module:nth-child(7) { animation-delay: 0.6s; }
+
+        .module::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+            transform: skewX(-20deg);
+            transition: 0.5s;
+        }
+        .module:hover {
+            transform: translateY(-5px) rotateX(2deg) rotateY(-2deg) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), 0 0 20px rgba(0, 240, 255, 0.15);
+            border-color: rgba(0, 240, 255, 0.2);
+        }
+        .module:hover::before { left: 150%; }
+
+        .module-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        /* Status Module */
+        .status-display {
+            font-size: min(8vw, 32px);
+            font-weight: 700;
+            text-align: center;
+            padding: 24px 0;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            transition: all 0.5s ease;
+            letter-spacing: 4px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        @keyframes pulseGlow {
+            0% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 0 10px currentColor; }
+            50% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 0 25px currentColor, 0 0 5px currentColor inset; }
+            100% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 0 10px currentColor; }
+        }
+        
+        .status-display.ready { color: var(--ready); animation: pulseGlow 2s infinite; text-shadow: 0 0 10px var(--ready); border: 1px solid rgba(0, 255, 163, 0.2); }
+        .status-display.not-ready { color: var(--not); animation: pulseGlow 2s infinite; text-shadow: 0 0 10px var(--not); border: 1px solid rgba(255, 184, 0, 0.2); }
+        .status-display.armed { color: var(--armed); animation: pulseGlow 1s infinite; text-shadow: 0 0 10px var(--armed); border: 1px solid rgba(255, 42, 42, 0.2); }
+
+        .btn-unlock {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent) 0%, #0077ff 100%);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(0, 229, 255, 0.3), inset 0 2px 5px rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-unlock::after {
+            content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out;
+            opacity: 0;
+        }
+        .btn-unlock:hover { 
+            transform: translateY(-4px) scale(1.02); 
+            box-shadow: 0 15px 35px rgba(0, 229, 255, 0.5), inset 0 2px 5px rgba(255,255,255,0.4); 
+            filter: brightness(1.1); 
+        }
+        .btn-unlock:active { transform: translateY(1px) scale(0.98); }
+        .btn-unlock:active::after {
+            width: 300px; height: 300px; opacity: 1; transition: 0s;
+        }
+
+        /* Weather Info */
+        .weather-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .weather-temp { font-size: 36px; font-weight: bold; }
+        .weather-desc { color: #aaa; text-transform: capitalize; }
+        .weather-icon { font-size: 48px; }
+
+        /* Sports Widget */
+        .sports-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .sport-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+        }
+        .sport-team { font-weight: bold; font-size: 14px; margin-bottom: 5px; }
+        .sport-score { font-size: 18px; font-weight: bold; font-variant-numeric: tabular-nums; line-height: 1.2; }
+        .sport-status { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.2; }
+        /* Health Indicators */
+        .indicators-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .indicator-card {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+        }
+        .indicator-card:hover { border-color: rgba(255,255,255,0.2); }
+        .ind-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .ind-value { font-size: 16px; font-weight: 700; margin-top: 4px; letter-spacing: 1px; }
+        .ind-value.alert { color: var(--alarm); text-shadow: 0 0 8px var(--alarm); }
+        .ind-value.warn { color: var(--not); text-shadow: 0 0 8px var(--not); }
+        .ind-value.ok { color: var(--ready); text-shadow: 0 0 8px var(--ready); }
+
+        /* Audit Log Module */
+        .audit-list {
+            list-style: none;
+            padding: 0; margin: 0;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .audit-item {
+            font-size: 13px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            transition: background 0.2s;
+        }
+        .audit-item:hover { background: rgba(255,255,255,0.02); padding-left: 5px; }
+        .audit-item:last-child { border-bottom: none; }
+        .audit-time { color: var(--text-dim); font-size: 11px; }
+
+        /* Zone Status Module */
+        .zone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        .zone-card {
+            background: linear-gradient(145deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            border-left: 4px solid var(--ready);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .zone-card:hover { transform: scale(1.05); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+        .zone-card.open { border-left-color: var(--alarm); box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2); }
+        .zone-name { font-size: 13px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: 1px;}
+        .zone-state { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: rgba(0, 255, 163, 0.15); color: var(--ready); box-shadow: 0 0 10px rgba(0, 255, 163, 0.2); align-self: flex-start; }
+        .zone-card.open .zone-state { background: rgba(255, 0, 0, 0.15); color: var(--alarm); box-shadow: 0 0 10px rgba(255, 0, 0, 0.3); }
+
+        /* Camera & Panic Modules */
+        .camera-feed {
+            width: 100%;
+            height: 380px;
+            background: #000;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+        }
+        .camera-feed:hover { transform: scale(1.02); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2); }
+        
+        .panic-slider-container {
+            width: 100%;
+            height: 60px;
+            background: rgba(220, 38, 38, 0.1);
+            border: 2px solid var(--alarm);
+            border-radius: 30px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .panic-slider-text {
+            color: var(--alarm);
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .panic-thumb {
+            width: 56px;
+            height: 56px;
+            background: var(--alarm);
+            border-radius: 50%;
+            position: absolute;
+            left: 2px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(220,38,38,0.5);
+            transition: transform 0.1s;
+        }
+        .panic-thumb::before {
+            content: '>';
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        /* Keypad Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.visible { display: flex; opacity: 1; }
+        
+        .keypad-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: var(--glass-shadow);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible .keypad-container { transform: translateY(0); }
+        
+        .pin-display {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            font-size: 32px;
+            letter-spacing: 12px;
+            color: var(--accent);
+            min-height: 70px;
+            margin-bottom: 20px;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .key {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px 0;
+            font-size: 24px;
+            font-weight: 300;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .key:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
+        .key:active { transform: scale(0.95); background: var(--accent); }
+        .key-c { color: var(--armed); font-weight: 600; }
+        .key-ok { color: var(--ready); font-weight: 600; }
+        
+        .close-modal {
+            position: absolute;
+            top: 20px; right: 20px;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        .close-modal:hover { opacity: 1; }
+
+        /* Dashboard Lock State: Hide secure modules */
+        body:not(.unlocked) .secure-module {
+            display: none !important;
+        }
+        body:not(.unlocked) .admin-menu-container {
+            display: none !important;
+        }
+
+        /* Action Buttons (shown when unlocked) */
+        .action-buttons {
+            display: none;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .action-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .action-btn:hover { opacity: 0.9; }
+        .btn-away { background: #dc2626; }
+        .btn-stay { background: #f59e0b; }
+        .btn-night { background: #4f46e5; }
+        .btn-disarm-action { background: #10b981; grid-column: 1 / -1; }
+        
+        .admin-menu-container {
+            display: none;
+            margin-top: 15px;
+        }
+        .admin-links {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .admin-links.open { display: grid; }
+        .admin-link {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        .admin-link:hover { color: white; background: rgba(255,255,255,0.1); }
+        
+        /* 2FA Input Classes reused */
+        .modal-input { width: 100%; background: #222; border: 2px solid #444; color: var(--accent); padding: 12px; margin: 10px 0; border-radius: 4px; font-size: 16px; text-align: center; letter-spacing: 4px; }
+        .modal-content input {
+            width: 100%; padding: 12px; margin: 15px 0; background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 24px;
+            text-align: center; letter-spacing: 5px; border-radius: 8px;
+        }
+        .modal-btn-row { display: flex; gap: 10px; }
+        .btn-cancel, .btn-confirm { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-cancel:hover { background: rgba(255,255,255,0.2); }
+        .btn-confirm { background: var(--accent); color: #fff; }
+        .btn-confirm:hover { filter: brightness(1.2); }
+
+        /* Camera Modal Specifics */
+        .camera-modal-content {
+            max-width: 90vw;
+            width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .camera-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .cam-container {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        .cam-name { font-weight: bold; margin-bottom: 5px; color: #ccc; }
+        .cam-img { width: 100%; border-radius: 4px; object-fit: cover; }
+        .modal-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+        .modal-btn-primary { background: var(--accent); color: black; }
+        .modal-btn-secondary { background: #555; color: white; }
+        
+        #totp-modal .modal-content {
+            background: var(--glass-bg);
+            border: 1px solid var(--accent);
+            padding: 30px;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+    </style>
+    <script src="mock_api.js"></script>
+</head>
+<body>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard">
+        
+        <!-- Header -->
+        <div class="header-module col-span-all">
+            <div>
+                <div class="brand">
+                    Sentinel Command Center
+                    <span class="tts-toggle" id="tts-toggle-btn" onclick="toggleTTS()" title="Toggle Voice Announcements">🔊</span>
+                </div>
+                <div class="date-display" id="live-date">---</div>
+                <div id="wan-badge" style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">CELLULAR BACKUP</div>
+            </div>
+            <div>
+                <div class="time-display" id="live-time">--:--</div>
+            </div>
+        </div>
+        
+        <!-- ROW 2 -->
+        <!-- System Status (1 column wide) -->
+        <div class="module col-span-1">
+            <div class="module-title">System Status</div>
+            <div class="status-display" id="status-display">SYSTEM LOCKED</div>
+            <button class="btn-unlock" onclick="openKeypad()" id="btn-unlock-text">UNLOCK SYSTEM</button>
+            
+            <div class="action-buttons" id="arm-buttons">
+                <button class="action-btn btn-away" onclick="doAction('/api/arm', {mode:'away'})">ARM AWAY</button>
+                <button class="action-btn btn-stay" onclick="doAction('/api/arm', {mode:'stay'})">ARM STAY</button>
+                <button class="action-btn btn-night" onclick="doAction('/api/arm', {mode:'night'})">ARM NIGHT</button>
+                <button class="action-btn" style="background:#8b5cf6;" onclick="doAction('/api/arm', {mode:'vacation'})">VACATION</button>
+            </div>
+            <div class="action-buttons" id="disarm-buttons" style="display:none;">
+                <button class="action-btn btn-disarm-action" onclick="doAction('/api/disarm', {})">DISARM SYSTEM</button>
+            </div>
+            
+            <div class="admin-menu-container" id="admin-menu">
+                <button class="action-btn" style="width:100%; background: #374151; color: white; border: 1px solid #4b5563;" onclick="document.getElementById('admin-links-grid').classList.toggle('open')">MAINTENANCE & SETTINGS ⚙️</button>
+                <div class="admin-links" id="admin-links-grid">
+                    <a href="users.html" class="admin-link">Users</a>
+                    <a href="devices.html" class="admin-link">Devices</a>
+                    <a href="cameras.html" class="admin-link">Cameras</a>
+                    <a href="cameras_live.html" class="admin-link">Live View</a>
+                    <a href="scheduler.html" class="admin-link">Schedule</a>
+                    <a href="audit.html" class="admin-link">Audit</a>
+                    <a href="health.html" class="admin-link">System Health</a>
+                    <a href="diagnostics.html" class="admin-link" style="color:var(--alarm)">Diagnostics</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Camera Snapshot (2 columns wide) -->
+        <div class="module secure-module col-span-2">
+            <div class="module-title">Main Camera (Click for all)</div>
+            <img id="camera-snapshot" class="camera-feed" src="/api/camera/0/snapshot" style="cursor: pointer;" onclick="openCameraModal()" alt="Camera Feed Offline" onerror="this.src='https://dummyimage.com/600x400/1a1c23/666666&text=CAMERA+OFFLINE'">
+        </div>
+        
+        <!-- ROW 3 -->
+        <!-- Sensors & Zones -->
+        <div class="module secure-module col-span-1">
+            <div class="module-title">Sensors & Zones</div>
+            <div class="zone-grid" id="zone-grid">
+                <div style="color:#666; font-size:12px;">Loading zones...</div>
+            </div>
+        </div>
+
+        <!-- Weather Module -->
+        <div class="module col-span-1">
+            <div class="module-title">Local Weather</div>
+            <div class="weather-info">
+                <div>
+                    <div class="weather-temp" id="weather-temp">--°</div>
+                    <div class="weather-desc" id="weather-desc">Loading...</div>
+                </div>
+                <div class="weather-icon" id="weather-icon">☁️</div>
+            </div>
+        </div>
+        
+        <!-- Local Sports -->
+        <div class="module col-span-1">
+            <div class="module-title">Local Sports</div>
+            <div class="sports-grid">
+                <div class="sport-card">
+                    <div class="sport-team" style="color: #ff8c00;">Browns</div>
+                    <div class="sport-score" id="score-nfl">--</div>
+                    <div class="sport-status" id="status-nfl">Loading...</div>
+                </div>
+                <div class="sport-card">
+                    <div class="sport-team" style="color: #ff4d4d;">Cavs</div>
+                    <div class="sport-score" id="score-nba">--</div>
+                    <div class="sport-status" id="status-nba">Loading...</div>
+                </div>
+                <div class="sport-card">
+                    <div class="sport-team" style="color: #4d94ff;">Guards</div>
+                    <div class="sport-score" id="score-mlb">--</div>
+                    <div class="sport-status" id="status-mlb">Loading...</div>
+                </div>
+                <div class="sport-card">
+                    <div class="sport-team" style="color: #ce0f3d;">OSU</div>
+                    <div class="sport-score" id="score-ncaa">--</div>
+                    <div class="sport-status" id="status-ncaa">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 4 -->
+        <!-- Environment & Health -->
+        <div class="module secure-module col-span-1">
+            <div class="module-title">System Health</div>
+            <div class="indicators-grid">
+                <div class="indicator-card">
+                    <span class="ind-label">Panel Temp</span>
+                    <span class="ind-value" id="temp-value">--°F</span>
+                </div>
+                <div class="indicator-card">
+                    <span class="ind-label">Power Source</span>
+                    <span class="ind-value ok" id="power-value">AC MAIN</span>
+                </div>
+                <div class="indicator-card">
+                    <span class="ind-label">Network</span>
+                    <span class="ind-value" id="net-value">WAIT</span>
+                </div>
+                <div class="indicator-card">
+                    <span class="ind-label">Tamper</span>
+                    <span class="ind-value ok" id="tamper-value">SECURE</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Audit Log Snippet -->
+        <div class="module secure-module col-span-1">
+            <div class="module-title">Recent Activity</div>
+            <ul class="audit-list" id="audit-list">
+                <li class="audit-item"><span style="color:#666">Loading events...</span></li>
+            </ul>
+        </div>
+
+        <!-- Panic Button -->
+        <div class="module secure-module col-span-1">
+            <div class="module-title" style="color: var(--alarm)">Emergency</div>
+            <p style="color: #888; font-size: 13px; margin: 0 0 10px 0;">Slide to trigger immediate panic alarm.</p>
+            <div class="panic-slider-container" id="panic-container">
+                <div class="panic-slider-text">SLIDE TO PANIC</div>
+                <div class="panic-thumb" id="panic-thumb"></div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Multi-Camera Modal -->
+    <div id="camera-modal" class="modal-overlay">
+        <div class="modal-content camera-modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: #fff;">Camera Feeds</h3>
+                <button class="btn-cancel" onclick="closeCameraModal()" style="width: auto; padding: 5px 15px;">Close</button>
+            </div>
+            <div id="camera-grid" class="camera-grid">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Keypad Modal -->
+    <div class="modal-overlay" id="keypad-modal">
+        <div class="keypad-container" style="position: relative;">
+            <div class="close-modal" onclick="closeKeypad()">✕</div>
+            <div id="keypad-title" style="text-align:center; color:white; margin-bottom:15px; font-weight:600; letter-spacing:2px; font-size: 18px;">ENTER PIN</div>
+            <div class="pin-display" id="pin-display"></div>
+            <div style="color: #ef4444; font-size: 12px; margin-bottom: 10px; text-align: center; min-height: 15px;" id="pin-error-msg"></div>
+            <div id="remember-device-container" style="display: none; align-items: center; justify-content: center; margin-bottom: 15px; color: rgba(255,255,255,0.7); font-size: 12px;">
+                <input type="checkbox" id="remember-device-cb" style="margin-right: 8px;">
+                <label for="remember-device-cb">Remember this device (30 days)</label>
+            </div>
+            <div class="keypad">
+                <div class="key" onclick="press(1)">1</div><div class="key" onclick="press(2)">2</div><div class="key" onclick="press(3)">3</div>
+                <div class="key" onclick="press(4)">4</div><div class="key" onclick="press(5)">5</div><div class="key" onclick="press(6)">6</div>
+                <div class="key" onclick="press(7)">7</div><div class="key" onclick="press(8)">8</div><div class="key" onclick="press(9)">9</div>
+                <div class="key key-c" onclick="clr()">C</div><div class="key" onclick="press(0)">0</div><div class="key key-ok" onclick="submit()">OK</div>
+            </div>
+            <button class="modal-btn modal-btn-secondary" onclick="closeKeypad()" style="margin-top: 15px;">CANCEL</button>
+        </div>
+    </div>
+    
+    <!-- 2FA Setup Modal (Reused Logic) -->
+    <div class="modal-overlay" id="totp-modal" style="z-index: 2000;">
+        <div class="modal-content" style="max-width: 400px; width: 90%;">
+            <div style="color: var(--accent); font-size: 16px; font-weight: bold; margin-bottom: 15px;">🔐 Two-Factor Authentication Required</div>
+            <div style="color: #aaa; font-size: 12px; margin-bottom: 15px;">
+                Before you can arm/disarm the system, you must set up 2-Factor Authentication.<br><br>
+                We've sent a setup code to your email.
+            </div>
+            <div style="font-size:12px">Enter the 2FA setup key from your email:</div>
+            <input type="text" class="modal-input" id="secret-input-box" maxlength="16" placeholder="ABCD1234EFGH5678">
+            <div style="font-size:12px; margin-top: 15px;">Then enter a 6-digit code from your authenticator app:</div>
+            <input type="text" class="modal-input" id="totp-input" maxlength="6" placeholder="000000" inputmode="numeric">
+            <button class="modal-btn modal-btn-primary" onclick="verify2FA()">Verify & Enable</button>
+            <button class="modal-btn modal-btn-secondary" onclick="sessionStorage.removeItem('sentinel_token'); location.reload()">Cancel & Logout</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPin = "";
+        let savedPin = "";
+        let keypadMode = "pin"; // 'pin' or 'totp'
+        let currentUser = "";
+        let totpSecret = "";
+        let isAuthenticated = sessionStorage.getItem('sentinel_token') === 'valid';
+
+        // --- TIME & DATE ---
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        setInterval(updateClock, 1000); updateClock();
+        
+        // --- WEATHER FETCH (Open-Meteo via Backend Config fallback to IP) ---
+        async function fetchWeather() {
+            try {
+                // Get configured location from backend
+                const statusResp = await fetch('/api/status');
+                const statusData = await statusResp.json();
+                
+                let lat = null, lon = null;
+                if(statusData.config) {
+                    lat = statusData.config.location_lat || statusData.config.lat;
+                    lon = statusData.config.location_lon || statusData.config.lon;
+                }
+                
+                // Fallback to IP API if backend doesn't have it (or fails)
+                if(!lat || !lon || (lat === 0 && lon === 0)) {
+                    const locResp = await fetch('https://ipapi.co/json/');
+                    const loc = await locResp.json();
+                    lat = loc.latitude;
+                    lon = loc.longitude;
+                }
+
+                if(lat && lon) {
+                    const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`);
+                    const w = await wResp.json();
+                    if(w && w.current_weather) {
+                        const curr = w.current_weather;
+                        document.getElementById('weather-temp').innerText = Math.round(curr.temperature) + '°F';
+                        
+                        let condition = "Unknown";
+                        let icon = '☁️';
+                        const code = curr.weathercode;
+                        if(code === 0) { condition = "Clear"; icon = '☀️'; }
+                        else if(code <= 3) { condition = "Cloudy"; icon = '⛅'; }
+                        else if(code <= 48) { condition = "Fog"; icon = '🌫️'; }
+                        else if(code <= 55) { condition = "Drizzle"; icon = '🌧️'; }
+                        else if(code <= 65) { condition = "Rain"; icon = '🌧️'; }
+                        else if(code <= 77) { condition = "Snow"; icon = '❄️'; }
+                        else if(code >= 95) { condition = "Storm"; icon = '⛈️'; }
+                        
+                        document.getElementById('weather-icon').innerText = icon;
+                        document.getElementById('weather-desc').innerText = condition;
+                    } else {
+                        document.getElementById('weather-temp').innerText = "N/A";
+                        document.getElementById('weather-desc').innerText = "API Error";
+                    }
+                } else {
+                    document.getElementById('weather-temp').innerText = "N/A";
+                    document.getElementById('weather-desc').innerText = "Loc Error";
+                }
+            } catch (e) {
+                console.log("Weather fetch failed", e);
+                document.getElementById('weather-temp').innerText = "Error";
+                document.getElementById('weather-desc').innerText = "Unavailable";
+            }
+        }
+        fetchWeather();
+        setInterval(fetchWeather, 15 * 60 * 1000); // 15 mins
+
+        // --- SPORTS FETCH ---
+        async function fetchSportsScores() {
+            const teams = [
+                { id: 'nfl', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/cle' },
+                { id: 'nba', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/cle' },
+                { id: 'mlb', url: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/cle' },
+                { id: 'ncaa', url: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/194' }
+            ];
+
+            for (const t of teams) {
+                try {
+                    const res = await fetch(t.url);
+                    const data = await res.json();
+                    let scoreTxt = "--";
+                    let statusTxt = "Off-Season";
+                    
+                    // Note: ESPN API structure often puts nextEvent at data.team.nextEvent
+                    let handled = false;
+                    if (data.team && data.team.nextEvent && data.team.nextEvent.length > 0) {
+                        const evt = data.team.nextEvent[0];
+                        const comp = evt.competitions[0];
+                        const statusState = comp.status.type.state; // 'pre', 'in', 'post'
+                        const isOldGame = (statusState === 'post' && (new Date() - new Date(evt.date)) > 2 * 24 * 60 * 60 * 1000);
+                        
+                        if (!isOldGame) {
+                            handled = true;
+                            if (statusState === 'in' || statusState === 'post') {
+                                const myCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() === 'cle' || c.team.abbreviation.toLowerCase() === 'osu');
+                                const otherCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
+                                
+                                if (myCompetitor && otherCompetitor) {
+                                    const myScore = myCompetitor.score?.displayValue ?? myCompetitor.score?.value ?? myCompetitor.score ?? 0;
+                                    const otherScore = otherCompetitor.score?.displayValue ?? otherCompetitor.score?.value ?? otherCompetitor.score ?? 0;
+                                    scoreTxt = `${myScore} - ${otherScore}`;
+                                    statusTxt = comp.status.type.shortDetail;
+                                }
+                            } else if (statusState === 'pre') {
+                                const otherCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
+                                if (otherCompetitor) {
+                                    scoreTxt = `vs ${otherCompetitor.team.abbreviation}`;
+                                }
+                                const d = new Date(evt.date);
+                                statusTxt = d.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            }
+                        }
+                    } 
+                    
+                    if (!handled && data.team && data.team.record) {
+                        let recArray = Array.isArray(data.team.record) ? data.team.record : data.team.record.items;
+                        if (recArray && recArray.length > 0) {
+                            const rec = recArray.find(r => r.type === 'total') || recArray[0];
+                            if (rec) {
+                                scoreTxt = rec.summary || rec.displayValue || "--";
+                                statusTxt = "Record";
+                            }
+                        }
+                    }
+
+                    document.getElementById('score-' + t.id).innerText = scoreTxt;
+                    document.getElementById('status-' + t.id).innerText = statusTxt;
+                } catch (e) {
+                    console.log(`Sports fetch failed for ${t.id}`, e);
+                    document.getElementById('score-' + t.id).innerText = "Err";
+                    document.getElementById('status-' + t.id).innerText = "Unavailable";
+                }
+            }
+        }
+        fetchSportsScores();
+        setInterval(fetchSportsScores, 5 * 60 * 1000); // 5 mins
+
+        // --- ACTIVITY LOG FETCH ---
+        async function fetchAuditLog() {
+            try {
+                const r = await fetch('/api/audit');
+                const logs = await r.json();
+                const list = document.getElementById('audit-list');
+                list.innerHTML = '';
+                
+                // Show up to 4 most recent events
+                const recent = logs.slice(0, 4);
+                if(recent.length === 0) {
+                    list.innerHTML = '<li class="audit-item"><span style="color:#666">No recent events</span></li>';
+                    return;
+                }
+                
+                recent.forEach(log => {
+                    const li = document.createElement('li');
+                    li.className = 'audit-item';
+                    
+                    const time = new Date(log.timestamp * 1000);
+                    const timeStr = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    let actionColor = '#9ca3af';
+                    if(log.action.includes('ARM')) actionColor = '#ef4444';
+                    else if(log.action.includes('DISARM')) actionColor = '#10b981';
+                    
+                    li.innerHTML = `<span style="color:${actionColor}">${log.action} (${log.user})</span> <span class="audit-time">${timeStr}</span>`;
+                    list.appendChild(li);
+                });
+            } catch(e) {
+                // If endpoint doesn't exist or not authed, just hide/fail silently
+            }
+        }
+        fetchAuditLog();
+        setInterval(fetchAuditLog, 10000);
+
+        // --- ZONES FETCH ---
+        async function fetchZones() {
+            try {
+                const r = await fetch('/api/zones');
+                const zones = await r.json();
+                const grid = document.getElementById('zone-grid');
+                grid.innerHTML = '';
+                
+                if(!zones || zones.length === 0) {
+                    grid.innerHTML = '<div style="color:#666; font-size:12px;">No zones configured</div>';
+                    return;
+                }
+                
+                zones.forEach(z => {
+                    const card = document.createElement('div');
+                    card.className = 'zone-card' + (z.open ? ' open' : '');
+                    
+                    const stateText = z.open ? 'OPEN' : 'CLOSED';
+                    card.innerHTML = `<span class="zone-name" title="${z.name}">${z.name}</span> <span class="zone-state">${stateText}</span>`;
+                    grid.appendChild(card);
+                });
+            } catch(e) {}
+        }
+        fetchZones();
+        setInterval(fetchZones, 3000);
+
+        // --- CAMERA LOGIC ---
+        function refreshCamera() {
+            const cam = document.getElementById('camera-snapshot');
+            const img = new Image();
+            img.onload = function() {
+                // If it's a 1x1 mock or broken image, show the premium offline placeholder
+                if (this.naturalWidth <= 1) {
+                    cam.src = 'https://dummyimage.com/600x400/1a1c23/00d4ff&text=CAMERA+OFFLINE';
+                } else {
+                    cam.src = this.src;
+                }
+            };
+            img.onerror = function() {
+                cam.src = 'https://dummyimage.com/600x400/1a1c23/00d4ff&text=CAMERA+OFFLINE';
+            };
+            // Append timestamp to bust cache
+            img.src = '/api/camera/0/snapshot?t=' + new Date().getTime();
+        }
+        setInterval(refreshCamera, 5000); // Refresh every 5s
+
+        // --- PANIC SLIDER LOGIC ---
+        const panicThumb = document.getElementById('panic-thumb');
+        const panicContainer = document.getElementById('panic-container');
+        let isDraggingPanic = false;
+        let startX = 0;
+
+        panicThumb.addEventListener('mousedown', (e) => {
+            isDraggingPanic = true;
+            startX = e.clientX - panicThumb.offsetLeft;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingPanic) return;
+            let newX = e.clientX - startX;
+            let maxX = panicContainer.offsetWidth - panicThumb.offsetWidth - 4;
+            
+            if (newX < 2) newX = 2;
+            if (newX > maxX) newX = maxX;
+            
+            panicThumb.style.left = newX + 'px';
+            
+            if (newX >= maxX * 0.95) {
+                // Trigger panic
+                isDraggingPanic = false;
+                panicThumb.style.left = maxX + 'px';
+                panicThumb.style.background = '#fff';
+                panicContainer.style.background = 'var(--alarm)';
+                document.querySelector('.panic-slider-text').style.color = '#fff';
+                document.querySelector('.panic-slider-text').innerText = 'PANIC TRIGGERED!';
+                
+                // Send panic request (requires auth/pin in real use, or an open endpoint)
+                fetch('/api/panic', { method: 'POST' }).catch(()=>{});
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDraggingPanic) return;
+            isDraggingPanic = false;
+            // Snap back if not fully triggered
+            if(document.querySelector('.panic-slider-text').innerText !== 'PANIC TRIGGERED!') {
+                panicThumb.style.transition = 'left 0.3s';
+                panicThumb.style.left = '2px';
+                setTimeout(() => panicThumb.style.transition = 'none', 300);
+            }
+        });
+
+        // Touch support for Panic Slider
+        panicThumb.addEventListener('touchstart', (e) => {
+            isDraggingPanic = true;
+            startX = e.touches[0].clientX - panicThumb.offsetLeft;
+        });
+        document.addEventListener('touchmove', (e) => {
+            if (!isDraggingPanic) return;
+            let newX = e.touches[0].clientX - startX;
+            let maxX = panicContainer.offsetWidth - panicThumb.offsetWidth - 4;
+            if (newX < 2) newX = 2;
+            if (newX > maxX) newX = maxX;
+            panicThumb.style.left = newX + 'px';
+            
+            if (newX >= maxX * 0.95) {
+                isDraggingPanic = false;
+                panicThumb.style.left = maxX + 'px';
+                panicThumb.style.background = '#fff';
+                panicContainer.style.background = 'var(--alarm)';
+                document.querySelector('.panic-slider-text').style.color = '#fff';
+                document.querySelector('.panic-slider-text').innerText = 'PANIC TRIGGERED!';
+                fetch('/api/panic', { method: 'POST' }).catch(()=>{});
+            }
+        });
+        document.addEventListener('touchend', () => {
+            if (!isDraggingPanic) return;
+            isDraggingPanic = false;
+            if(document.querySelector('.panic-slider-text').innerText !== 'PANIC TRIGGERED!') {
+                panicThumb.style.transition = 'left 0.3s';
+                panicThumb.style.left = '2px';
+                setTimeout(() => panicThumb.style.transition = 'none', 300);
+            }
+        });
+
+        function openKeypad() {
+            if(isAuthenticated) {
+                sessionStorage.removeItem('sentinel_token');
+                document.body.classList.remove('unlocked');
+                location.reload();
+            } else {
+                keypadMode = "pin";
+                document.getElementById('keypad-title').innerText = "ENTER PIN";
+                document.getElementById('keypad-title').style.color = "white";
+                document.getElementById('keypad-modal').classList.add('visible');
+            }
+        }
+        function closeKeypad() {
+            document.getElementById('keypad-modal').classList.remove('visible');
+            document.getElementById('remember-device-container').style.display = "none";
+            document.getElementById('remember-device-cb').checked = false;
+            clr();
+        }
+        
+        function press(n) { 
+            if(currentPin.length < 6) { 
+                currentPin += n; 
+                document.getElementById('pin-display').innerText = (keypadMode === 'pin') ? "*".repeat(currentPin.length) : currentPin; 
+            } 
+        }
+        function clr() { currentPin = ""; document.getElementById('pin-display').innerText = ""; }
+        
+        // Setup TOTP code logic copied from original
+        function generateSecret() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+            let secret = '';
+            for(let i = 0; i < 16; i++) { secret += chars[Math.floor(Math.random() * chars.length)]; }
+            return secret;
+        }
+        async function showTOTPSetup(username) {
+            try {
+                totpSecret = generateSecret();
+                currentUser = username;
+                try {
+                    await fetch('/api/users/send-totp-email', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ name: username, totp_secret: totpSecret })
+                    });
+                } catch(emailErr) { console.error('Failed email:', emailErr); }
+                document.getElementById('secret-input-box').value = '';
+                document.getElementById('totp-input').value = '';
+                closeKeypad();
+                document.getElementById('totp-modal').classList.add('visible');
+            } catch(e) { alert('Error initiating 2FA setup.'); }
+        }
+        
+        async function verify2FA() {
+            const enteredSecret = document.getElementById('secret-input-box').value.toUpperCase();
+            const totpCode = document.getElementById('totp-input').value;
+            if(!enteredSecret || totpCode.length !== 6) { alert('Invalid input'); return; }
+            if(enteredSecret !== totpSecret) { alert('Setup key mismatch'); return; }
+            try {
+                await fetch('/api/users/set-totp', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: currentUser, totp_secret: totpSecret })
+                });
+                const authResponse = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pin: currentPin, totp: totpCode, step: 'totp' })
+                });
+                const authData = await authResponse.json();
+                if(authData.authenticated) {
+                    document.getElementById('totp-modal').classList.remove('visible');
+                    alert('2FA Enabled Successfully!');
+                    grantAccess(authData);
+                } else { alert('Invalid TOTP code.'); }
+            } catch(e) { alert('Error setting up 2FA.'); }
+        }
+
+        async function submit() {
+            try {
+                document.getElementById('pin-error-msg').innerText = '';
+                
+                if (keypadMode === 'totp') {
+                    if (currentPin.length !== 6) {
+                        document.getElementById('pin-error-msg').innerText = 'INVALID LENGTH';
+                        clr();
+                        return;
+                    }
+                    const rememberDevice = document.getElementById('remember-device-cb').checked;
+                    const r2 = await fetch('/api/auth', { 
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            pin: savedPin, 
+                            totp: currentPin, 
+                            step: 'totp', 
+                            remember_device: rememberDevice ? "true" : "false"
+                        }) 
+                    });
+                    const d2 = await r2.json();
+                    if(d2.authenticated) {
+                        if (d2.device_token) {
+                            localStorage.setItem('sentinel_device_token', d2.device_token);
+                        }
+                        grantAccess(d2);
+                    } else { 
+                        document.getElementById('pin-error-msg').innerText = 'INVALID 2FA CODE';
+                        clr();
+                    }
+                    return;
+                }
+
+                // PIN Mode
+                const deviceToken = localStorage.getItem('sentinel_device_token') || "";
+                const r = await fetch('/api/auth', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({pin: currentPin, step: 'pin', device_token: deviceToken}) 
+                });
+                const d = await r.json();
+                
+                if(d.authenticated) {
+                    grantAccess(d);
+                } else if(d.error === '2fa_setup_required') {
+                    showTOTPSetup(d.name);
+                } else if(d.error === 'totp_required') {
+                    // Switch keypad to TOTP mode
+                    savedPin = currentPin;
+                    keypadMode = 'totp';
+                    document.getElementById('keypad-title').innerText = "ENTER 2FA CODE";
+                    document.getElementById('keypad-title').style.color = "var(--accent)";
+                    document.getElementById('remember-device-container').style.display = "flex";
+                    clr();
+                } else { 
+                    document.getElementById('pin-error-msg').innerText = 'INVALID PIN';
+                    clr(); 
+                }
+            } catch(e) { 
+                document.getElementById('pin-error-msg').innerText = 'ERROR - TRY AGAIN';
+                clr();
+            }
+        }
+        
+        function grantAccess(authData) {
+            document.body.classList.add('unlocked');
+            sessionStorage.setItem('sentinel_token', 'valid');
+            isAuthenticated = true;
+            currentUser = authData.name;
+            closeKeypad();
+            
+            document.getElementById('btn-unlock-text').innerText = "LOCK CONSOLE";
+            document.getElementById('btn-unlock-text').style.background = "#4b5563";
+            
+            if(authData.is_admin) {
+                document.getElementById('admin-menu').style.display = "grid";
+            }
+            check(); // immediate refresh
+            fetchAuditLog();
+        }
+
+        // Apply access rules on load if token exists
+        if(isAuthenticated) {
+            document.body.classList.add('unlocked');
+            document.getElementById('btn-unlock-text').innerText = "LOCK CONSOLE";
+            document.getElementById('btn-unlock-text').style.background = "#4b5563";
+            // Note: We don't know if they are admin just from the token on reload, 
+            // but the backend will reject admin endpoints anyway.
+            document.getElementById('admin-menu').style.display = "grid"; // Show links speculatively
+        }
+
+        // --- SYSTEM STATUS FETCH ---
+        function updateUI(cfg) {
+            const state = parseInt(cfg.state || 0);
+            const isReady = !!(cfg.ready);
+            const display = document.getElementById('status-display');
+            
+            display.innerText = (state === 0) ? (isReady ? "READY TO ARM" : "NOT READY") : "SYSTEM ARMED";
+            display.className = "status-display " + ((state === 0) ? (isReady ? "ready" : "not-ready") : "armed");
+            
+            if(isAuthenticated) {
+                document.getElementById('arm-buttons').style.display = (state === 0) ? "grid" : "none";
+                document.getElementById('disarm-buttons').style.display = (state !== 0) ? "grid" : "none";
+            } else {
+                document.getElementById('arm-buttons').style.display = "none";
+                document.getElementById('disarm-buttons').style.display = "none";
+            }
+            
+            const wanBadge = document.getElementById('wan-badge');
+            if (cfg.wan_monitor_enabled && cfg.cellular_backup) {
+                wanBadge.style.display = "block";
+            } else {
+                wanBadge.style.display = "none";
+            }
+            
+            // --- TEXT TO SPEECH ANNOUNCEMENTS ---
+            const ttsEnabled = localStorage.getItem('tts_enabled') !== 'false';
+            if (ttsEnabled && window.lastKnownState !== undefined && window.lastKnownState !== state) {
+                let msg = "";
+                if (state === 0) msg = "System Disarmed";
+                else if (state === 1) msg = "System Armed Away";
+                else if (state === 2) msg = "System Armed Stay";
+                else if (state === 3) msg = "System Armed Night";
+                else if (state === 4) msg = "Warning. Alarm Triggered.";
+                
+                if (msg && 'speechSynthesis' in window) {
+                    // Cancel any ongoing speech before talking
+                    window.speechSynthesis.cancel();
+                    let utterance = new SpeechSynthesisUtterance(msg);
+                    utterance.rate = 0.95; // Slightly slower for clarity
+                    utterance.pitch = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                }
+            }
+            window.lastKnownState = state;
+        }
+
+        function toggleTTS() {
+            const btn = document.getElementById('tts-toggle-btn');
+            const isEnabled = localStorage.getItem('tts_enabled') !== 'false';
+            if (isEnabled) {
+                localStorage.setItem('tts_enabled', 'false');
+                btn.innerText = '🔇';
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            } else {
+                localStorage.setItem('tts_enabled', 'true');
+                btn.innerText = '🔊';
+            }
+        }
+
+        // Initialize TTS button state on load
+        if (localStorage.getItem('tts_enabled') === 'false') {
+            document.getElementById('tts-toggle-btn').innerText = '🔇';
+        }
+
+        async function check() {
+            try {
+                const r = await fetch('/api/status');
+                const d = await r.json();
+                if(d.config) updateUI(d.config);
+                
+                const r2 = await fetch('/status');
+                const d2 = await r2.json();
+                
+                // Temp
+                if(d2.temperature_f !== undefined) {
+                    document.getElementById('temp-value').innerText = Math.round(d2.temperature_f) + '°F';
+                }
+                
+                // Power
+                const pwrVal = document.getElementById('power-value');
+                if(d2.on_backup_power) { pwrVal.innerText = 'BATTERY'; pwrVal.className = 'ind-value warn'; } 
+                else { pwrVal.innerText = 'AC MAIN'; pwrVal.className = 'ind-value ok'; }
+                
+                // Tamper
+                const tmpVal = document.getElementById('tamper-value');
+                if(d2.tamper_detected) { tmpVal.innerText = 'ALERT!'; tmpVal.className = 'ind-value alert'; } 
+                else { tmpVal.innerText = 'SECURE'; tmpVal.className = 'ind-value ok'; }
+                
+                // Network
+                const netVal = document.getElementById('net-value');
+                if(d2.network_state !== undefined) {
+                    if (d2.network_state === 3) { netVal.innerText = 'OFFLINE'; netVal.className = 'ind-value alert'; }
+                    else if (d2.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
+                    else if (d2.network_state === 1) { netVal.innerText = 'ONLINE'; netVal.className = 'ind-value ok'; }
+                    else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function doAction(url, body) {
+            if(!isAuthenticated && !currentPin) {
+                openKeypad();
+                return;
+            }
+            body.pin = currentPin || "auth_token"; // Mocking token usage for frontend logic
+            await fetch(url, { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body) 
+            });
+            setTimeout(() => { location.reload(); }, 500);
+        }
+
+        // --- CAMERA MODAL LOGIC ---
+        let cameraRefreshInterval = null;
+        
+        async function loadCameraSnapshots() {
+            try {
+                const res = await fetch('/api/cameras');
+                const cams = await res.json();
+                
+                const grid = document.getElementById('camera-grid');
+                if (grid.children.length === 0) {
+                    cams.forEach((c, idx) => {
+                        const div = document.createElement('div');
+                        div.className = 'cam-container';
+                        
+                        const name = document.createElement('div');
+                        name.className = 'cam-name';
+                        name.innerText = c.friendly_name || `Camera ${idx}`;
+                        
+                        const img = document.createElement('img');
+                        img.className = 'cam-img';
+                        img.id = `modal-cam-${idx}`;
+                        img.src = `/api/camera/${idx}/snapshot?t=${Date.now()}`;
+                        img.onerror = function() { this.src = 'https://dummyimage.com/600x400/1a1c23/666666&text=CAMERA+OFFLINE'; };
+                        
+                        div.appendChild(name);
+                        div.appendChild(img);
+                        grid.appendChild(div);
+                    });
+                } else {
+                    cams.forEach((c, idx) => {
+                        const img = document.getElementById(`modal-cam-${idx}`);
+                        if (img) {
+                            img.src = `/api/camera/${idx}/snapshot?t=${Date.now()}`;
+                        }
+                    });
+                }
+            } catch(e) {
+                console.error("Failed to fetch cameras:", e);
+                document.getElementById('camera-grid').innerHTML = '<div style="color:var(--alarm);">Error loading cameras.</div>';
+            }
+        }
+
+        function openCameraModal() {
+            document.getElementById('camera-modal').classList.add('visible');
+            document.getElementById('camera-grid').innerHTML = '';
+            loadCameraSnapshots();
+            cameraRefreshInterval = setInterval(loadCameraSnapshots, 2000);
+        }
+
+        function closeCameraModal() {
+            document.getElementById('camera-modal').classList.remove('visible');
+            if (cameraRefreshInterval) {
+                clearInterval(cameraRefreshInterval);
+                cameraRefreshInterval = null;
+            }
+        }
+
+        setInterval(check, 4000);
+        check();
+    </script>
+</body>
+</html>

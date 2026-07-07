@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sentinel Live Cameras</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --alarm: #ff003c;
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden;
+            padding: 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            animation: bg-pulse 10s infinite alternate;
+        }
+
+        @keyframes bg-pulse {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            width: 100%; 
+            height: 100%;
+            max-width: 1800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 20px;
+            padding: 15px 30px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .panel-title {
+            font-size: 24px;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .grid-controls {
+            display: flex;
+            gap: 5px;
+            background: rgba(0,0,0,0.3);
+            padding: 4px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .grid-controls button {
+            border: none;
+            background: transparent;
+            padding: 6px 12px;
+            color: var(--text-main);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .grid-controls button.active {
+            background: rgba(255,255,255,0.1);
+            color: var(--ready);
+        }
+
+        .camera-grid {
+            display: grid;
+            gap: 20px;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .grid-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+        .grid-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+        .grid-3x3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+        .grid-4x4 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); }
+
+        @media (max-width: 900px) {
+            .grid-2x2, .grid-3x3, .grid-4x4 {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                overflow-y: auto;
+            }
+            .container { height: auto; min-height: 100vh; overflow-y: auto; }
+            body { overflow-y: auto; }
+        }
+
+        .camera-feed {
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            height: 100%;
+            width: 100%;
+        }
+
+        .camera-feed:hover {
+            transform: scale(1.02);
+            border-color: rgba(255,255,255,0.2);
+            z-index: 10;
+        }
+
+        .camera-feed img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.3s;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+
+        .camera-name {
+            font-size: 16px;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--ready);
+            box-shadow: 0 0 10px var(--ready);
+        }
+
+        .status-dot.offline {
+            background: var(--not);
+            box-shadow: 0 0 10px var(--not);
+        }
+
+        /* Fullscreen Modal */
+        .fullscreen-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 300;
+            margin: 0;
+        }
+
+        .modal-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 0; /* Important for flex child */
+        }
+
+        .modal-content img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        
+        .modal-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        .modal-controls button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        
+        .modal-controls button:hover {
+            background: rgba(255,255,255,0.15);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1 class="panel-title">Live Cameras</h1>
+        <div class="controls">
+            <div class="grid-controls">
+                <button onclick="setGridSize(1)" id="grid-1" title="1 Camera">1×1</button>
+                <button onclick="setGridSize(2)" id="grid-2" class="active" title="4 Cameras">2×2</button>
+                <button onclick="setGridSize(3)" id="grid-3" title="9 Cameras">3×3</button>
+                <button onclick="setGridSize(4)" id="grid-4" title="16 Cameras">4×4</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="camera-grid" class="camera-grid grid-2x2">
+        <!-- Cameras loaded dynamically -->
+    </div>
+</div>
+
+<div id="fullscreen-modal" class="fullscreen-modal">
+    <div class="modal-header">
+        <h2 id="modal-camera-name" style="display:flex; align-items:center; gap:10px;"><div class="status-dot"></div>Camera</h2>
+        <button onclick="closeFullscreen()" style="border:none; background:transparent; font-size: 24px; color: var(--text-main); cursor: pointer;">✕</button>
+    </div>
+    <div class="modal-content">
+        <img id="fullscreen-image" src="" alt="Camera Feed">
+    </div>
+    <div class="modal-controls">
+        <button onclick="closeFullscreen()">↩️ Back</button>
+    </div>
+</div>
+
+<script>
+    let cameras = [];
+    let gridSize = 2;
+    let refreshInterval = null;
+    let fullscreenRefreshInterval = null;
+    let currentCamera = null;
+    let useMJPEG = false; // MJPEG mode disabled
+    let mjpegFallback = {};
+    const REFRESH_RATE_GRID = 1500;
+    const REFRESH_RATE_FULLSCREEN = 800;
+
+    async function loadCameras() {
+        try {
+            const token = sessionStorage.getItem('sentinel_token');
+            const res = await fetch('/api/camera', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error("Failed to load cameras");
+            
+            const data = await res.json();
+            cameras = data.cameras || [];
+            renderGrid();
+            startRefreshTimer();
+        } catch (e) {
+            console.error(e);
+            document.getElementById('camera-grid').innerHTML = 
+                `<div style="grid-column: 1/-1; text-align: center; color: var(--not); padding: 40px;">
+                    Failed to load cameras. Backend might be down.
+                </div>`;
+        }
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('camera-grid');
+        grid.innerHTML = '';
+        
+        let maxCams = gridSize * gridSize;
+        const displayCams = cameras.slice(0, maxCams);
+        
+        if (displayCams.length === 0) {
+            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 40px;">No cameras configured.</div>`;
+            return;
+        }
+
+        for (let index = 0; index < maxCams; index++) {
+            const cam = cameras[index];
+            const feed = document.createElement('div');
+            feed.className = 'camera-feed';
+
+            if (cam) {
+                const isOnline = cam.failures < 3 && cam.enabled;
+                const statusClass = isOnline ? '' : 'offline';
+                feed.onclick = () => openFullscreen(index);
+                
+                const imageSrc = `/api/camera/${index}/snapshot?t=${Date.now()}`;
+                    
+                const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%23666'%3EOffline%3C/text%3E%3C/svg%3E`;
+
+                feed.innerHTML = `
+                    <img id="grid-img-${index}" 
+                         src="${imageSrc}" 
+                         alt="${cam.friendly_name}"
+                         onerror="handleImageError(${index}, this, '${svgPlaceholder}')">
+                    <div class="camera-overlay">
+                        <div class="camera-name">
+                            <div class="status-dot ${statusClass}" id="grid-status-${index}"></div>
+                            ${cam.friendly_name}
+                        </div>
+                    </div>
+                `;
+            } else {
+                feed.style.background = 'rgba(255,255,255,0.02)';
+                feed.style.border = '1px dashed rgba(255,255,255,0.1)';
+                feed.innerHTML = `<div style="color: var(--text-dim); font-size: 14px;">Empty Slot</div>`;
+            }
+            grid.appendChild(feed);
+        }
+    }
+
+    function handleImageError(index, imgElement, placeholder) {
+        if (useMJPEG && !mjpegFallback[index]) {
+            mjpegFallback[index] = true;
+            imgElement.src = `/api/camera/${index}/snapshot?t=${Date.now()}`;
+        } else {
+            imgElement.src = placeholder;
+            document.getElementById(`grid-status-${index}`).className = 'status-dot offline';
+        }
+    }
+
+    function setGridSize(size) {
+        gridSize = size;
+        document.querySelectorAll('.grid-controls button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`grid-${size}`).classList.add('active');
+        
+        const grid = document.getElementById('camera-grid');
+        grid.className = `camera-grid grid-${size}x${size}`;
+        renderGrid();
+    }
+
+    function refreshAll() {
+        if (currentCamera !== null) return; 
+        
+        const maxCams = Math.min(cameras.length, gridSize * gridSize);
+        for (let i = 0; i < maxCams; i++) {
+            if (!useMJPEG || mjpegFallback[i]) {
+                const img = document.getElementById(`grid-img-${i}`);
+                if (img) img.src = `/api/camera/${i}/snapshot?t=${Date.now()}`;
+            }
+        }
+    }
+
+    function startRefreshTimer() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(() => {
+            if (currentCamera === null) refreshAll();
+        }, REFRESH_RATE_GRID);
+    }
+
+    function openFullscreen(index) {
+        if (index >= cameras.length) return;
+        currentCamera = index;
+        const cam = cameras[index];
+        const modal = document.getElementById('fullscreen-modal');
+        const img = document.getElementById('fullscreen-image');
+        const name = document.getElementById('modal-camera-name');
+        
+        modal.style.display = 'flex';
+        name.innerHTML = `<div class="status-dot"></div>${cam.friendly_name}`;
+        
+        img.src = useMJPEG && !mjpegFallback[index]
+            ? `/api/camera/${index}/stream`
+            : `/api/camera/${index}/snapshot?t=${Date.now()}`;
+            
+        img.onerror = () => { handleImageError(index, img, '') };
+        
+        if (fullscreenRefreshInterval) clearInterval(fullscreenRefreshInterval);
+        if (!useMJPEG || mjpegFallback[index]) {
+            fullscreenRefreshInterval = setInterval(() => {
+                img.src = `/api/camera/${index}/snapshot?t=${Date.now()}`;
+            }, REFRESH_RATE_FULLSCREEN);
+        }
+    }
+
+    function closeFullscreen() {
+        document.getElementById('fullscreen-modal').style.display = 'none';
+        document.getElementById('fullscreen-image').src = '';
+        currentCamera = null;
+        if (fullscreenRefreshInterval) {
+            clearInterval(fullscreenRefreshInterval);
+            fullscreenRefreshInterval = null;
+        }
+    }
+
+    function takeSnapshot() {
+        if (currentCamera === null) return;
+        const img = document.getElementById('fullscreen-image');
+        
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = `snapshot_${cameras[currentCamera].friendly_name}_${new Date().getTime()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    window.onload = loadCameras;
+</script>
+</body>
+</html>

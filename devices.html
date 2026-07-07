@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sentinel Device Management</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --alarm: #ff003c;
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 40px 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            animation: bg-pulse 10s infinite alternate;
+        }
+
+        @keyframes bg-pulse {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-container {
+            width: 100%; 
+            max-width: 700px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+        }
+        
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 25%; width: 50%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .panel-subtitle {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin: 8px 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Settings Group (Apple-style) */
+        .settings-group {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .settings-title {
+            font-size: 13px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin: 0 0 10px 15px;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.3s;
+        }
+        
+        .settings-row.vertical {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .settings-label-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        select {
+            background: transparent;
+            border: none;
+            color: var(--accent);
+            font-size: 16px;
+            font-weight: 500;
+            text-align: right;
+            outline: none;
+            width: 50%;
+            font-family: 'Outfit', sans-serif;
+        }
+        
+        .settings-row.vertical input {
+            text-align: left;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        input::placeholder {
+            color: rgba(255,255,255,0.2);
+        }
+
+        /* Toggle Switch (Apple-style) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        input:checked + .slider {
+            background-color: var(--ready);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary, .btn-danger {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-danger {
+            background: rgba(255, 42, 85, 0.1);
+            color: var(--armed);
+            border: 1px solid rgba(255, 42, 85, 0.3);
+            margin-top: 15px;
+        }
+        
+        .btn-danger:hover {
+            background: rgba(255, 42, 85, 0.2);
+        }
+
+        /* Device List Cards */
+        .device-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .device-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .device-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        
+        .badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--ready);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+        }
+        
+        .badge.disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .device-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .info-cell {
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .info-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 30px;
+            text-align: center;
+            width: 100%;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: var(--text-main);
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: 500;
+            animation: slideUpFade 0.3s forwards;
+        }
+
+        .message.success {
+            background: rgba(0, 240, 255, 0.1);
+            border: 1px solid var(--ready);
+            color: var(--ready);
+        }
+
+        .message.error {
+            background: rgba(255, 42, 85, 0.1);
+            border: 1px solid var(--armed);
+            color: var(--armed);
+        }
+        
+        @media (max-width: 768px) {
+            .panel-container { padding: 20px; border-radius: 20px; }
+            .settings-row { flex-direction: column; align-items: flex-start; }
+            .settings-row input { text-align: left; width: 100%; margin-top: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+            .switch { margin-top: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="panel-container">
+        <div class="header">
+            <h1 class="panel-title">ESPHome Devices</h1>
+            <p class="panel-subtitle">Smart Home Integration</p>
+        </div>
+
+        <div id="message-container"></div>
+
+        <!-- Add/Edit Device Form -->
+        <h2 class="settings-title" id="form-title">Add ESPHome Device</h2>
+        <form id="device-form" onsubmit="return saveDevice(event)">
+            
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Friendly Name</div>
+                        <div class="settings-label-sub">Display name for this device</div>
+                    </div>
+                    <input type="text" id="friendly_name" name="friendly_name" placeholder="Living Room" required>
+                </div>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Hostname / IP Address</div>
+                        <div class="settings-label-sub">Network address</div>
+                    </div>
+                    <input type="text" id="hostname" name="hostname" placeholder="192.168.1.100" inputmode="url" required>
+                </div>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">API Port</div>
+                        <div class="settings-label-sub">Native API port (default: 6053)</div>
+                    </div>
+                    <input type="number" id="port" name="port" placeholder="6053" value="6053" min="1" max="65535">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">API Password</div>
+                        <div class="settings-label-sub">Optional</div>
+                    </div>
+                    <input type="password" id="password" name="password" placeholder="••••••••">
+                </div>
+                
+                <div class="settings-row vertical">
+                    <div>
+                        <div class="settings-label">Encryption Key</div>
+                        <div class="settings-label-sub">32-byte base64 key for encrypted API</div>
+                    </div>
+                    <input type="text" id="encryption_key" name="encryption_key" placeholder="Base64 encoded key (optional)">
+                </div>
+            </div>
+            
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Virtual Zone Start</div>
+                        <div class="settings-label-sub">Sensor mapping (1-96)</div>
+                    </div>
+                    <input type="number" id="virtual_zone_start" name="virtual_zone_start" value="33" min="1" max="96">
+                </div>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Virtual Relay Start</div>
+                        <div class="settings-label-sub">Switch mapping (1-31)</div>
+                    </div>
+                    <input type="number" id="virtual_relay_start" name="virtual_relay_start" value="8" min="1" max="31">
+                </div>
+                
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Enable Device</div>
+                        <div class="settings-label-sub">Active status</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="enabled" name="enabled" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="submit-btn">Add Device</button>
+            <button type="button" class="btn-secondary" onclick="cancelEdit()" id="cancel-btn" style="display: none;">Cancel</button>
+        </form>
+
+        <!-- Device List -->
+        <h2 class="settings-title" style="margin-top: 40px;">Configured Devices</h2>
+        <div id="device-list">
+            <div style="text-align: center; color: var(--text-dim); padding: 20px;">
+                Loading devices...
+            </div>
+        </div>
+
+        <a href="index.html" class="back-link">← Return to Control Panel</a>
+    </div>
+
+    <script>
+        let editingDevice = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDevices();
+        });
+
+        function showMessage(text, isError = false) {
+            const container = document.getElementById('message-container');
+            container.innerHTML = `<div class="message ${isError ? 'error' : 'success'}">${text}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        async function loadDevices() {
+            try {
+                const response = await fetch('/api/esphome');
+                if (!response.ok) throw new Error('Failed to load devices');
+                const devices = await response.json();
+                displayDevices(devices);
+            } catch (error) {
+                document.getElementById('device-list').innerHTML =
+                    `<div style="text-align: center; color: var(--armed); padding: 20px;">Error: ${error.message}</div>`;
+            }
+        }
+
+        function displayDevices(devices) {
+            const listElement = document.getElementById('device-list');
+
+            if (devices.length === 0) {
+                listElement.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 20px;">No devices configured</div>';
+                return;
+            }
+
+            listElement.innerHTML = devices.map(device => `
+                <div class="device-card">
+                    <div class="device-header">
+                        <div class="device-name">${escapeHtml(device.friendly_name || device.hostname)}</div>
+                        <div class="badge ${device.enabled ? '' : 'disabled'}">
+                            ${device.enabled ? 'ACTIVE' : 'DISABLED'}
+                        </div>
+                    </div>
+                    
+                    <div class="device-info-grid">
+                        <div class="info-cell">
+                            <div class="info-label">Host</div>
+                            <div class="info-value">${escapeHtml(device.hostname)}:${device.port}</div>
+                        </div>
+                        <div class="info-cell">
+                            <div class="info-label">Zones & Relays</div>
+                            <div class="info-value">Z${device.virtual_zone_start} / R${device.virtual_relay_start}</div>
+                        </div>
+                        ${device.password ? `
+                        <div class="info-cell">
+                            <div class="info-label">Password</div>
+                            <div class="info-value">••••••••</div>
+                        </div>` : ''}
+                        ${device.encryption_key ? `
+                        <div class="info-cell">
+                            <div class="info-label">Encryption</div>
+                            <div class="info-value">Enabled</div>
+                        </div>` : ''}
+                    </div>
+                    
+                    <button type="button" class="btn-secondary" style="margin-bottom: 10px;" onclick='editDevice(${JSON.stringify(device)})'>Edit Configuration</button>
+                    <button type="button" class="btn-danger" style="margin: 0;" onclick="deleteDevice('${escapeHtml(device.hostname)}')">Delete Device</button>
+                </div>
+            `).join('');
+        }
+
+        async function saveDevice(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const data = {
+                hostname: formData.get('hostname'),
+                port: parseInt(formData.get('port')) || 6053,
+                friendly_name: formData.get('friendly_name'),
+                password: formData.get('password') || '',
+                encryption_key: formData.get('encryption_key') || '',
+                virtual_zone_start: parseInt(formData.get('virtual_zone_start')) || 33,
+                virtual_relay_start: parseInt(formData.get('virtual_relay_start')) || 8,
+                enabled: formData.get('enabled') === 'on'
+            };
+
+            const endpoint = editingDevice ? '/api/esphome/update' : '/api/esphome/add';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'ok') {
+                    showMessage(editingDevice ? 'Device updated successfully' : 'Device added successfully');
+                    cancelEdit();
+                    loadDevices();
+                } else {
+                    showMessage(result.message || 'Operation failed', true);
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, true);
+            }
+        }
+
+        function editDevice(device) {
+            editingDevice = device.hostname;
+
+            document.getElementById('form-title').textContent = 'Edit ESPHome Device';
+            document.getElementById('submit-btn').textContent = 'Save Changes';
+            document.getElementById('cancel-btn').style.display = 'block';
+
+            document.getElementById('hostname').value = device.hostname;
+            document.getElementById('hostname').readOnly = true;
+            document.getElementById('hostname').style.opacity = '0.5';
+            
+            document.getElementById('port').value = device.port;
+            document.getElementById('friendly_name').value = device.friendly_name || '';
+            document.getElementById('password').value = device.password || '';
+            document.getElementById('encryption_key').value = device.encryption_key || '';
+            document.getElementById('virtual_zone_start').value = device.virtual_zone_start;
+            document.getElementById('virtual_relay_start').value = device.virtual_relay_start;
+            document.getElementById('enabled').checked = device.enabled;
+
+            document.getElementById('device-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            editingDevice = null;
+
+            document.getElementById('form-title').textContent = 'Add ESPHome Device';
+            document.getElementById('submit-btn').textContent = 'Add Device';
+            document.getElementById('cancel-btn').style.display = 'none';
+            
+            document.getElementById('hostname').readOnly = false;
+            document.getElementById('hostname').style.opacity = '1';
+            
+            document.getElementById('device-form').reset();
+        }
+
+        async function deleteDevice(hostname) {
+            if (!confirm(`Delete device "${hostname}"?\n\nThis will remove all configuration for this device.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/esphome/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hostname })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'ok') {
+                    showMessage('Device deleted successfully');
+                    loadDevices();
+                } else {
+                    showMessage(result.message || 'Delete failed', true);
+                }
+            } catch (error) {
+                showMessage('Error: ' + error.message, true);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

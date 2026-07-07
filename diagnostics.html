@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel - Diagnostics & Testing</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <style>
+        :root { 
+            --bg: #050505; 
+            --accent: #ff4757;
+            --ready: #2ed573;
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #f0f0f0;
+            --text-dim: #8892b0;
+        }
+        
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            background: radial-gradient(circle at 50% 0%, #1a1a24 0%, var(--bg) 100%);
+            color: var(--text); 
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh;
+        }
+        
+        .dashboard {
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .header-module {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .header-module::after {
+            content: ''; position: absolute; bottom: -1px; left: 0; width: 30%; height: 1px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+        .brand {
+            font-size: 14px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 700;
+        }
+        .title-display {
+            font-size: 42px;
+            font-weight: 300;
+            line-height: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .back-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .module {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+        }
+
+        .module-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            transition: 0.2s;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.1); }
+        .btn-danger { background: rgba(255, 71, 87, 0.2); border-color: var(--accent); color: var(--accent); }
+        .btn-danger:hover { background: rgba(255, 71, 87, 0.4); }
+
+        .pin-box {
+            width: 100%;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .log-box {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        
+        <div class="header-module">
+            <div>
+                <div class="brand">Admin Area</div>
+                <div class="title-display">Diagnostics</div>
+                <a href="index.html" class="back-link">← Return to Dashboard</a>
+            </div>
+        </div>
+
+        <div class="module">
+            <div class="module-title">Admin Authentication Required</div>
+            <p style="font-size: 12px; color: var(--text-dim); margin-top: 0;">To trigger diagnostic endpoints, you must provide your Admin PIN.</p>
+            <input type="password" id="admin-pin" class="pin-box" placeholder="****" maxlength="8">
+        </div>
+        
+        <div class="module">
+            <div class="module-title">Firmware Update (OTA)</div>
+            <p style="font-size: 12px; color: var(--text-dim); margin-top: 0;">Upload a compiled .bin file to update the Sentinel firmware. The system will reboot automatically when complete.</p>
+            <input type="file" id="ota-file" accept=".bin" style="margin-bottom: 10px; width: 100%; color: var(--text);">
+            <button class="btn" style="background:#4d94ff;" onclick="uploadFirmware()">Start OTA Update</button>
+            <div id="ota-progress-container" style="display:none; margin-top:15px; width:100%; background:var(--glass-bg); border-radius:4px; height:20px; overflow:hidden;">
+                <div id="ota-progress-bar" style="width:0%; height:100%; background:var(--ready); transition:width 0.2s;"></div>
+            </div>
+        </div>
+        
+        <div class="module">
+            <div class="module-title">System Triggers</div>
+            <button class="btn btn-danger" onclick="triggerMockAlarm()">Trigger Test Alarm (Zone 1)</button>
+            <button class="btn" onclick="triggerMockEsphome()">Simulate ESPHome Motion (Zone 33)</button>
+        </div>
+
+        <div class="module">
+            <div class="module-title">Response Log</div>
+            <div class="log-box" id="log-box">Awaiting command...</div>
+        </div>
+
+    </div>
+
+    <script>
+        function logMsg(msg) {
+            const box = document.getElementById('log-box');
+            box.innerText += `\n[${new Date().toLocaleTimeString()}] ` + msg;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function uploadFirmware() {
+            const pin = document.getElementById('admin-pin').value;
+            if(!pin) { alert("Enter Admin PIN first!"); return; }
+            const fileInput = document.getElementById('ota-file');
+            if(!fileInput.files.length) { alert("Please select a .bin file!"); return; }
+            
+            const file = fileInput.files[0];
+            const total = file.size;
+            
+            document.getElementById('ota-progress-container').style.display = 'block';
+            const progressBar = document.getElementById('ota-progress-bar');
+            
+            logMsg(`Starting OTA Upload: ${file.name} (${total} bytes)...`);
+            
+            const chunkSize = 64 * 1024; // 64KB per chunk
+            let offset = 0;
+            
+            while(offset < total) {
+                const chunk = file.slice(offset, offset + chunkSize);
+                try {
+                    const r = await fetch(`/api/ota/upload?offset=${offset}&total=${total}`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + pin,
+                            'Content-Type': 'application/octet-stream'
+                        },
+                        body: chunk
+                    });
+                    
+                    if(!r.ok) {
+                        const errText = await r.text();
+                        logMsg(`OTA Error at offset ${offset}: ${errText}`);
+                        progressBar.style.background = 'var(--accent)';
+                        return;
+                    }
+                    
+                    const d = await r.json();
+                    if(d.status === 'error') {
+                        logMsg(`OTA Error: ${d.message}`);
+                        progressBar.style.background = 'var(--accent)';
+                        return;
+                    }
+                    
+                    offset += chunk.size;
+                    const pct = Math.round((offset / total) * 100);
+                    progressBar.style.width = pct + '%';
+                    
+                    if(offset >= total) {
+                        logMsg("OTA Complete! System is rebooting...");
+                        setTimeout(() => {
+                            window.location.replace("index.html");
+                        }, 5000);
+                    }
+                } catch(e) {
+                    logMsg(`Network error during OTA: ${e.message}`);
+                    progressBar.style.background = 'var(--accent)';
+                    return;
+                }
+            }
+        }
+
+        async function triggerMockAlarm() {
+            const pin = document.getElementById('admin-pin').value;
+            if(!pin) { alert("Enter Admin PIN first!"); return; }
+            
+            logMsg("Triggering Mock Alarm (/api/test/trigger_alarm)...");
+            try {
+                const r = await fetch('/api/test/trigger_alarm', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pin: pin, zone_id: 1 })
+                });
+                const d = await r.json();
+                logMsg("Response: " + JSON.stringify(d, null, 2));
+            } catch(e) { logMsg("Error: " + e.message); }
+        }
+
+        async function triggerMockEsphome() {
+            // Note: In real life, ESPHome doesn't require a PIN because it's local LAN hardware communication,
+            // but for this mock interface we still require the admin PIN to hit the mock API just to be safe.
+            const pin = document.getElementById('admin-pin').value;
+            if(!pin) { alert("Enter Admin PIN first!"); return; }
+            
+            logMsg("Simulating ESPHome Event (/api/test/esphome_trigger)...");
+            try {
+                const r = await fetch('/api/test/esphome_trigger', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pin: pin, entity_id: "mock_motion", state: "true" })
+                });
+                const d = await r.json();
+                logMsg("Response: " + JSON.stringify(d, null, 2));
+            } catch(e) { logMsg("Error: " + e.message); }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel - System Health</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <style>
+        :root { 
+            --bg: #050505; 
+            --accent: #00e5ff;
+            --ready: #00ffa3;
+            --armed: #ff2a2a;
+            --not: #ffb800;
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text: #f0f0f0;
+            --text-dim: #8892b0;
+        }
+        
+        * { box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', 'Segoe UI', sans-serif; 
+            background: radial-gradient(circle at 50% 0%, #1a1a24 0%, var(--bg) 100%);
+            color: var(--text); 
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh;
+        }
+        
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 900px) {
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Header */
+        .header-module {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .header-module::after {
+            content: ''; position: absolute; bottom: -1px; left: 0; width: 30%; height: 1px;
+            background: linear-gradient(90deg, var(--accent), transparent);
+        }
+        .brand {
+            font-size: 14px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        .title-display {
+            font-size: 42px;
+            font-weight: 300;
+            line-height: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            letter-spacing: -1px;
+        }
+        .back-link {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: color 0.3s;
+        }
+        .back-link:hover { color: var(--accent); }
+
+        /* Modules */
+        .module {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 24px;
+            position: relative;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .module-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* Vitals Grid */
+        .vitals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .vital-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .vital-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .vital-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .vital-value.ok { color: var(--ready); text-shadow: 0 0 10px rgba(0, 255, 163, 0.3); }
+        .vital-value.warn { color: var(--not); text-shadow: 0 0 10px rgba(255, 184, 0, 0.3); }
+        .vital-value.err { color: var(--armed); text-shadow: 0 0 10px rgba(255, 42, 42, 0.3); }
+
+        /* Analytics Chart */
+        .chart-container {
+            margin-top: 10px;
+        }
+        .bar-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .bar-label {
+            width: 120px;
+            font-size: 12px;
+            color: #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bar-track {
+            flex: 1;
+            height: 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #0077ff);
+            width: 0%; /* Set via JS */
+            border-radius: 6px;
+            transition: width 1s ease-out;
+        }
+        .bar-value {
+            width: 40px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--accent);
+            text-align: right;
+        }
+
+        /* Sensor List */
+        .sensor-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .sensor-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border-left: 3px solid var(--ready);
+        }
+        .sensor-item.low-batt {
+            border-left: 3px solid var(--armed);
+        }
+        .sensor-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .sensor-metrics {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        
+        <div class="header-module">
+            <div>
+                <div class="brand">Sentinel Command Center</div>
+                <div class="title-display">System Health</div>
+                <a href="index.html" class="back-link">← Return to Dashboard</a>
+            </div>
+        </div>
+        
+        <!-- System Vitals -->
+        <div class="module">
+            <div class="module-title">Live Vitals</div>
+            <div class="vitals-grid">
+                <div class="vital-card">
+                    <div class="vital-label">System Uptime</div>
+                    <div class="vital-value" id="val-uptime">--</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Core Temp</div>
+                    <div class="vital-value" id="val-temp">--</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Power Source</div>
+                    <div class="vital-value" id="val-power">--</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">WAN Connection</div>
+                    <div class="vital-value" id="val-net">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Analytics -->
+        <div class="module">
+            <div class="module-title">Zone Activity Analytics (Top Triggers)</div>
+            <div class="chart-container" id="analytics-chart">
+                <div style="text-align:center; color:var(--text-dim); font-size:12px; padding:20px;">Loading analytics data...</div>
+            </div>
+        </div>
+
+        <!-- Sensor Health -->
+        <div class="module" style="grid-column: 1 / -1;">
+            <div class="module-title">Wireless Sensor Health</div>
+            <div class="sensor-list" id="sensor-list">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function fetchHealthData() {
+            try {
+                // 1. Fetch Vitals
+                const rStat = await fetch('/status');
+                const dStat = await rStat.json();
+                
+                const rApi = await fetch('/api/status');
+                const dApi = await rApi.json();
+
+                // Populate Vitals
+                document.getElementById('val-uptime').innerText = dApi.config?.uptime || '--';
+                
+                const tempEl = document.getElementById('val-temp');
+                if (dStat.temperature_f !== undefined) {
+                    tempEl.innerText = Math.round(dStat.temperature_f) + '°F';
+                    tempEl.className = 'vital-value ' + (dStat.temperature_f > 150 ? 'warn' : 'ok');
+                }
+
+                const pwrEl = document.getElementById('val-power');
+                if (dStat.on_backup_power) {
+                    pwrEl.innerText = 'BATTERY';
+                    pwrEl.className = 'vital-value warn';
+                } else {
+                    pwrEl.innerText = 'AC MAIN';
+                    pwrEl.className = 'vital-value ok';
+                }
+
+                const netEl = document.getElementById('val-net');
+                if (dApi.config?.wan_monitor_enabled) {
+                    if (dApi.config?.cellular_backup) {
+                        netEl.innerText = 'CELLULAR';
+                        netEl.className = 'vital-value warn';
+                    } else {
+                        netEl.innerText = 'PRIMARY';
+                        netEl.className = 'vital-value ok';
+                    }
+                } else {
+                    netEl.innerText = 'OFFLINE';
+                    netEl.className = 'vital-value';
+                }
+
+                // 2. Fetch Analytics (Audit Log)
+                const rAudit = await fetch('/api/audit');
+                const dAudit = await rAudit.json();
+                
+                processAnalytics(dAudit);
+
+                // 3. Mock Sensor Data (Until backend Zigbee is fully wired)
+                renderMockSensors();
+
+            } catch(e) {
+                console.error("Error fetching health data:", e);
+            }
+        }
+
+        function processAnalytics(logs) {
+            const counts = {};
+            let maxCount = 0;
+
+            // Count occurrences of "Zone Tripped" events
+            logs.forEach(log => {
+                if (log.action.includes("Zone Tripped")) {
+                    const zoneName = log.details;
+                    counts[zoneName] = (counts[zoneName] || 0) + 1;
+                    if (counts[zoneName] > maxCount) maxCount = counts[zoneName];
+                }
+            });
+
+            // Sort by frequency
+            const sortedZones = Object.keys(counts).map(zone => ({
+                name: zone,
+                count: counts[zone]
+            })).sort((a, b) => b.count - a.count).slice(0, 5); // Top 5
+
+            const chartContainer = document.getElementById('analytics-chart');
+            
+            if (sortedZones.length === 0) {
+                chartContainer.innerHTML = '<div style="text-align:center; color:var(--text-dim); font-size:12px; padding:20px;">No zone triggers logged yet.</div>';
+                return;
+            }
+
+            chartContainer.innerHTML = '';
+            
+            sortedZones.forEach(item => {
+                const pct = (item.count / maxCount) * 100;
+                
+                const row = document.createElement('div');
+                row.className = 'bar-row';
+                
+                row.innerHTML = `
+                    <div class="bar-label" title="${item.name}">${item.name}</div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="bar-value">${item.count}</div>
+                `;
+                chartContainer.appendChild(row);
+
+                // Animate bar
+                setTimeout(() => {
+                    row.querySelector('.bar-fill').style.width = pct + '%';
+                }, 100);
+            });
+        }
+
+        function renderMockSensors() {
+            // These would normally come from /api/sensors if we had Zigbee/433MHz tracking fully built
+            const mockSensors = [
+                { name: 'Front Door Sensor', batt: 92, signal: -45 },
+                { name: 'Living Room Motion', batt: 88, signal: -55 },
+                { name: 'Kitchen Window', batt: 95, signal: -62 },
+                { name: 'Garage Door', batt: 15, signal: -82 }, // Low battery simulation
+                { name: 'Patio Motion', batt: 76, signal: -70 }
+            ];
+
+            const list = document.getElementById('sensor-list');
+            list.innerHTML = '';
+
+            mockSensors.forEach(s => {
+                const isLowBatt = s.batt < 20;
+                const isLowSig = s.signal < -80;
+                
+                let html = `
+                    <div class="sensor-item ${isLowBatt ? 'low-batt' : ''}">
+                        <div class="sensor-name">${s.name}</div>
+                        <div class="sensor-metrics">
+                            <div class="metric">
+                                📶 <span style="color: ${isLowSig ? 'var(--not)' : '#fff'}">${s.signal} dBm</span>
+                            </div>
+                            <div class="metric">
+                                🔋 <span style="color: ${isLowBatt ? 'var(--armed)' : '#fff'}">${s.batt}%</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // Initialize
+        fetchHealthData();
+        // Refresh vitals every 10 seconds
+        setInterval(fetchHealthData, 10000);
+
+    </script>
+</body>
+</html>

@@ -16,7 +16,10 @@
             master_pin: "1234",
             arm_delay_seconds: 30,
             entry_delay_seconds: 20,
-            noonlight_enabled: false
+            noonlight_enabled: false,
+            state: 0,
+            ready: true,
+            violation: "None"
         },
         state: 0, // 0=READY, 1=EXITING, 2=ARMED_AWAY, 3=ARMED_STAY, 4=ARMED_NIGHT, 5=ENTRY, 6=ALARMED
         ready: true,
@@ -65,11 +68,13 @@
 
         if (url.includes('/api/arm')) {
             mockState.state = 2; // Armed Away
+            mockState.config.state = 2;
             return jsonResponse({ status: "ok", mode: "away" });
         }
 
         if (url.includes('/api/disarm')) {
             mockState.state = 0; // Ready
+            mockState.config.state = 0;
             return jsonResponse({ status: "ok" });
         }
 

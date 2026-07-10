@@ -136,9 +136,9 @@
 
         if (url.includes('/api/zones')) {
             return jsonResponse([
-                { id: 0, name: "Front Door", type: "entry", state: 0, bypassed: false },
-                { id: 1, name: "Back Door", type: "entry", state: 0, bypassed: false },
-                { id: 2, name: "Living Room Motion", type: "motion", state: 0, bypassed: false }
+                { id: 0, name: "Front Door", type: "entry", open: false, bypassed: false },
+                { id: 1, name: "Back Door", type: "entry", open: false, bypassed: false },
+                { id: 2, name: "Living Room Motion", type: "motion", open: false, bypassed: false }
             ]);
         }
 

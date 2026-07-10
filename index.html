@@ -718,7 +718,6 @@
         }
 </style>
     <script src="mock_api.js"></script>
-    <script src="mock_api.js"></script>
 </head>
 <body>
 
@@ -1496,7 +1495,6 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 else if (state === 4) msg = "ALARM! ALARM! ALARM!";
                 
                 if (msg && 'speechSynthesis' in window) {
-                    // Cancel any ongoing speech before talking
                     window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(msg);
                     utterance.rate = 0.95; // Slightly slower for clarity
@@ -1556,7 +1554,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 if(d2.network_state !== undefined) {
                     if (d2.network_state === 3) { netVal.innerText = 'OFFLINE'; netVal.className = 'ind-value alert'; }
                     else if (d2.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
-                    else if (d2.network_state === 1) { netVal.innerText = 'ONLINE'; netVal.className = 'ind-value ok'; }
+                    else if (d2.network_state === 1) { netVal.innerText = 'PRIMARY'; netVal.className = 'ind-value ok'; }
                     else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
                 }
                 }
@@ -1587,7 +1585,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         const REFRESH_RATE_GRID = 3000; // Refresh grid every 3s
         const REFRESH_RATE_FULLSCREEN = 800;
         
-        const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%25%22 height=%22100%25%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2220%22 fill=%22%23666%22%3EOffline%3C/text%3E%3C/svg%3E`;
+        const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27100%25%27 height=%27100%25%27%3E%3Crect width=%27100%25%27 height=%27100%25%27 fill=%27%23111%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 font-family=%27sans-serif%27 font-size=%2720%27 fill=%27%23666%27%3EOffline%3C/text%3E%3C/svg%3E`;
 
         async function loadDashboardCameras() {
             try {
@@ -1770,7 +1768,5 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         check();
 
 </script>
-    <!-- Help Button -->
-    <button onclick="alert('Demo Instructions:\n\n1. Login PIN: 1234\n2. The system state is mocked locally in your browser.\n3. Explore all tabs (Cameras, Diagnostics, etc.) to see the interface.\n4. You can bypass zones or trigger alarms in Diagnostics to see the UI respond.')" style="position:fixed; bottom:20px; right:20px; z-index:9999; background:#00d4ff; color:black; border:none; border-radius:50%; width:50px; height:50px; font-weight:bold; font-size: 24px; cursor:pointer; box-shadow:0 4px 10px rgba(0,212,255,0.4);">?</button>
 </body>
 </html>

@@ -134,8 +134,44 @@
              ]);
         }
 
+        if (url.includes('/api/zones')) {
+            return jsonResponse([
+                { id: 0, name: "Front Door", type: "entry", state: 0, bypassed: false },
+                { id: 1, name: "Back Door", type: "entry", state: 0, bypassed: false },
+                { id: 2, name: "Living Room Motion", type: "motion", state: 0, bypassed: false }
+            ]);
+        }
+
+        if (url.includes('/api/relays')) {
+            return jsonResponse([
+                { id: 0, name: "Siren", state: 0 },
+                { id: 1, name: "Porch Light", state: 1 }
+            ]);
+        }
+
         // Default ok for unhandled mocked routes to prevent UI crashes
         console.warn(`[Mock API] Returning generic OK for: ${url}`);
         return jsonResponse({ status: "ok", message: "Generic Mock Response" });
     };
+
+    // Mock Image SRC setter to intercept camera feeds
+    const originalImgSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    if (originalImgSrc) {
+        Object.defineProperty(HTMLImageElement.prototype, 'src', {
+            set: function(val) {
+                if (typeof val === 'string' && val.includes('/api/camera/')) {
+                    let match = val.match(/\/api\/camera\/(\d+)\//);
+                    let idx = match ? match[1] : 1;
+                    // For the demo, provide a static placeholder image
+                    let timeParam = val.includes('?t=') ? `?t=${Date.now()}` : '';
+                    val = `https://picsum.photos/seed/cam${idx}/400/300${timeParam}`;
+                }
+                return originalImgSrc.set.call(this, val);
+            },
+            get: function() {
+                return originalImgSrc.get.call(this);
+            }
+        });
+    }
+
 })();

@@ -78,7 +78,9 @@
             margin-top: 5px;
             text-transform: uppercase;
         }
-        .nav-link:hover { color: white; }
+@media (hover: hover) {
+            .nav-link:hover { color: white; }
+}
 
         /* Cards */
         .card { 
@@ -137,10 +139,14 @@
             width: 100%;
             transition: all 0.2s;
         }
-        .btn:hover { background: #444; border-color: #666; }
+@media (hover: hover) {
+            .btn:hover { background: #444; border-color: #666; }
+}
         .btn-toggle.on { background: var(--success); color: black; border-color: var(--success); }
         .btn-trigger { background: #444; }
-        .btn-trigger:hover { background: var(--danger); }
+@media (hover: hover) {
+            .btn-trigger:hover { background: var(--danger); }
+}
 
         /* Console */
         .console-box {
@@ -165,9 +171,57 @@
         
         .input-dark { background: #222; border: 1px solid #444; color: white; padding: 6px; width: 100%; margin-bottom: 5px; font-family: inherit; }
         .input-dark:focus { border-color: var(--accent); outline: none; }
-    </style>
+    
+    /* Standardized FAB Back Button */
+    .fab-back {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(8, 12, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: var(--accent, #00e5ff);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+@media (hover: hover) {
+        .fab-back:hover {
+        background: rgba(8, 12, 18, 0.95);
+        transform: scale(1.08);
+        box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
+    }
+}
+    .fab-back:active {
+        transform: scale(0.92);
+    }
+    .fab-back svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.5;
+    }
+</style>
+    <script src="mock_api.js"></script>
 </head>
 <body>
+
+<!-- Standardized FAB Back Button -->
+<a href="index.html" class="fab-back" aria-label="Return to Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+</a>
+
     <div class="container">
         <div class="header">
             <p class="panel-title">SYSTEM TESTER</p>

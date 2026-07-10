@@ -134,7 +134,9 @@
             transition: all 0.2s;
         }
 
-        .grid-controls button:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+@media (hover: hover) {
+            .grid-controls button:hover { color: var(--text-main); background: rgba(255,255,255,0.05); }
+}
         .grid-controls button.active { background: rgba(0, 240, 255, 0.15); color: var(--accent); }
 
         /* Camera Grid */
@@ -160,11 +162,13 @@
             overflow: hidden;
         }
 
-        .camera-card:hover {
+@media (hover: hover) {
+            .camera-card:hover {
             border-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
+}
 
         .camera-card.offline { opacity: 0.6; border-color: rgba(255, 42, 85, 0.3); }
         .camera-card.disabled { opacity: 0.4; border-color: rgba(255, 255, 255, 0.1); }
@@ -203,7 +207,9 @@
             border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .camera-snapshot:hover { border-color: var(--glass-highlight); box-shadow: 0 0 15px var(--glass-highlight); }
+@media (hover: hover) {
+            .camera-snapshot:hover { border-color: var(--glass-highlight); box-shadow: 0 0 15px var(--glass-highlight); }
+}
 
         .camera-info {
             font-size: 12px;
@@ -234,11 +240,17 @@
             transition: all 0.2s;
         }
 
-        .btn:hover { background: rgba(0, 240, 255, 0.2); }
+@media (hover: hover) {
+            .btn:hover { background: rgba(0, 240, 255, 0.2); }
+}
         .btn-secondary { background: rgba(255, 255, 255, 0.05); color: var(--text-main); border-color: rgba(255, 255, 255, 0.1); }
-        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+@media (hover: hover) {
+            .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+}
         .btn-danger { background: rgba(255, 42, 85, 0.1); color: var(--armed); border-color: rgba(255, 42, 85, 0.3); }
-        .btn-danger:hover { background: rgba(255, 42, 85, 0.2); }
+@media (hover: hover) {
+            .btn-danger:hover { background: rgba(255, 42, 85, 0.2); }
+}
 
         .header-actions { display: flex; gap: 10px; }
 
@@ -325,7 +337,9 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .close-btn:hover { background: rgba(255,255,255,0.2); }
+@media (hover: hover) {
+            .close-btn:hover { background: rgba(255,255,255,0.2); }
+}
 
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
         .empty-state-icon { font-size: 48px; margin-bottom: 20px; opacity: 0.5; }
@@ -342,7 +356,9 @@
             font-weight: 500;
         }
 
-        .back-link:hover { color: var(--text-main); }
+@media (hover: hover) {
+            .back-link:hover { color: var(--text-main); }
+}
 
         @media (max-width: 768px) {
             .header { flex-direction: column; gap: 20px; }
@@ -350,9 +366,57 @@
             .header-actions { width: 100%; justify-content: center; flex-wrap: wrap; }
             .panel-container { padding: 20px; border-radius: 20px; }
         }
-    </style>
+    
+    /* Standardized FAB Back Button */
+    .fab-back {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(8, 12, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: var(--accent, #00e5ff);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+@media (hover: hover) {
+        .fab-back:hover {
+        background: rgba(8, 12, 18, 0.95);
+        transform: scale(1.08);
+        box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
+    }
+}
+    .fab-back:active {
+        transform: scale(0.92);
+    }
+    .fab-back svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.5;
+    }
+</style>
+    <script src="mock_api.js"></script>
 </head>
 <body>
+
+<!-- Standardized FAB Back Button -->
+<a href="index.html" class="fab-back" aria-label="Return to Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+</a>
+
     <div class="panel-container">
         <div class="header">
             <h1 class="panel-title">Camera Management</h1>

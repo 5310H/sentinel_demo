@@ -1,10 +1,10 @@
 // Sentinel Mock API Interceptor for GitHub Pages Demo
 
-(function() {
+(function () {
     console.log("Sentinel Mock API Interceptor Loaded");
 
     const originalFetch = window.fetch;
-    
+
     // Simulated Backend State
     let mockState = {
         config: {
@@ -12,9 +12,13 @@
             name: "GitHub Demo Site",
             email: "demo@example.com",
             location_lat: 41.4993,
-            location_lon: -81.6944
+            location_lon: -81.6944,
+            master_pin: "1234",
+            arm_delay_seconds: 30,
+            entry_delay_seconds: 20,
+            noonlight_enabled: false
         },
-        state: 0, // 0=READY, 1=ARMED_AWAY, etc.
+        state: 0, // 0=READY, 1=EXITING, 2=ARMED_AWAY, 3=ARMED_STAY, 4=ARMED_NIGHT, 5=ENTRY, 6=ALARMED
         ready: true,
         network: {
             ip: "123.45.67.89",
@@ -26,13 +30,13 @@
         firmware: "v5.3.5-demo"
     };
 
-    window.fetch = async function(resource, config) {
+    window.fetch = async function (resource, config) {
         let url = "";
         if (typeof resource === "string") url = resource;
         else if (resource instanceof Request) url = resource.url;
 
-        // Only intercept /api/ endpoints. Pass through weather/sports.
-        if (!url.includes('/api/')) {
+        // If not /api/ and not /status, let it pass through (for .json files, weather, etc)
+        if (!url.includes('/api/') && !url.includes('/status')) {
             return originalFetch.apply(this, arguments);
         }
 
@@ -46,27 +50,21 @@
             });
         };
 
-        if (url.includes('/api/status')) {
+        if (url.includes('/api/status') || url.endsWith('/status')) {
             return jsonResponse(mockState);
         }
 
         if (url.includes('/api/auth')) {
             let body = config ? JSON.parse(config.body) : {};
-            // Accept any PIN starting with 1234
             if (body.pin === "1234") {
-                return jsonResponse({
-                    status: "ok",
-                    token: "demo_token_12345",
-                    user: "Demo Admin",
-                    admin: true
-                });
+                return jsonResponse({ status: "ok", token: "demo_token_12345", user: "Demo Admin", admin: true });
             } else {
                 return jsonResponse({ status: "error", message: "Invalid PIN. Use 1234." }, 401);
             }
         }
 
         if (url.includes('/api/arm')) {
-            mockState.state = 1; // Armed
+            mockState.state = 2; // Armed Away
             return jsonResponse({ status: "ok", mode: "away" });
         }
 
@@ -74,16 +72,70 @@
             mockState.state = 0; // Ready
             return jsonResponse({ status: "ok" });
         }
+
+        if (url.includes('/api/cameras')) {
+            return jsonResponse({
+                cameras: [
+                    { id: 0, friendly_name: "Front Door", enabled: true, failures: 0, sd_recording_enabled: true },
+                    { id: 1, friendly_name: "Backyard", enabled: true, failures: 0, sd_recording_enabled: false }
+                ]
+            });
+        }
         
-        if (url.includes('/api/camera/list')) {
-            return jsonResponse([
-                { id: "cam1", name: "Front Door", status: "online" },
-                { id: "cam2", name: "Backyard", status: "online" }
-            ]);
+        if (url.includes('/api/camera/')) {
+             return jsonResponse({ status: "ok" });
         }
 
-        // Default 404 for unhandled mocked routes
-        console.warn(`[Mock API] Unhandled route: ${url}`);
-        return jsonResponse({ status: "error", message: "Mock API route not found" }, 404);
+        if (url.includes('/api/config/update')) {
+            return jsonResponse({ status: "ok" });
+        }
+
+        if (url.includes('/api/config')) {
+            return jsonResponse(mockState.config);
+        }
+
+        if (url.includes('/api/audit')) {
+            return jsonResponse({
+                events: [
+                    { id: 100, ts: Math.floor(Date.now() / 1000) - 300, type: 1, user: "Admin", desc: "System Disarmed" },
+                    { id: 99, ts: Math.floor(Date.now() / 1000) - 3600, type: 2, user: "System", desc: "System Armed (Away)" }
+                ],
+                total: 2
+            });
+        }
+
+        if (url.includes('/api/esphome/delete')) {
+            return jsonResponse({ status: "ok" });
+        }
+
+        if (url.includes('/api/esphome')) {
+            return jsonResponse({
+                devices: [
+                    { id: "front-door-cam", address: "192.168.1.50", status: "online" }
+                ]
+            });
+        }
+
+        if (url.includes('/api/logs')) {
+            return jsonResponse({ logs: "00:00:00 [INFO] System started\n00:00:01 [INFO] Network connected\n" });
+        }
+
+        if (url.includes('/api/test/') || url.includes('/api/diagnostics/run')) {
+            return jsonResponse({ status: "ok" });
+        }
+
+        if (url.includes('/api/trigger') || url.includes('/api/relay/toggle')) {
+            return jsonResponse({ status: "ok" });
+        }
+
+        if (url.includes('/api/users')) {
+             return jsonResponse([
+                 { id: 0, name: "Admin", email: "demo@example.com", role: "master" }
+             ]);
+        }
+
+        // Default ok for unhandled mocked routes to prevent UI crashes
+        console.warn(`[Mock API] Returning generic OK for: ${url}`);
+        return jsonResponse({ status: "ok", message: "Generic Mock Response" });
     };
 })();

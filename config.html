@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sentinel Configuration</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --alarm: #ff003c;
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 40px 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            animation: bg-pulse 10s infinite alternate;
+        }
+
+        @keyframes bg-pulse {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-container {
+            width: 100%; 
+            max-width: 600px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+        }
+        
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 25%; width: 50%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: var(--text-dim); }
+        input[type="text"], input[type="number"], input[type="password"], select {
+            width: 100%; padding: 12px;
+            background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
+            border-radius: 8px; color: #fff;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0,229,255,0.2);
+            outline: none;
+        }
+        input[type="checkbox"] { margin-right: 10px; transform: scale(1.2); }
+        .btn { 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            border: none; 
+            cursor: pointer; 
+            color: #000; 
+            font-weight: bold; 
+            background: var(--accent); 
+            transition: all 0.3s ease;
+        }
+@media (hover: hover) {
+            .btn:hover {
+            box-shadow: 0 0 15px var(--accent);
+            transform: translateY(-2px);
+        }
+}
+        .btn-cancel {
+            background: var(--text-dim);
+            color: #fff;
+            margin-left: 10px;
+        }
+@media (hover: hover) {
+            .btn-cancel:hover {
+            background: #506070;
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+}
+        .section-title {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.2em;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 5px;
+        }
+    
+    /* Standardized FAB Back Button */
+    .fab-back {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(8, 12, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: var(--accent, #00e5ff);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+@media (hover: hover) {
+        .fab-back:hover {
+        background: rgba(8, 12, 18, 0.95);
+        transform: scale(1.08);
+        box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
+    }
+}
+    .fab-back:active {
+        transform: scale(0.92);
+    }
+    .fab-back svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.5;
+    }
+</style>
+    <script src="mock_api.js"></script>
+</head>
+<body>
+
+<!-- Standardized FAB Back Button -->
+<a href="index.html" class="fab-back" aria-label="Return to Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+</a>
+
+    <div class="panel-container" id="config-panel">
+        <div class="header">
+            <h1 class="panel-title">System Configuration</h1>
+        </div>
+        <form id="config-form" onsubmit="saveConfig(event)">
+            <div id="dynamic-fields"></div>
+            <div style="margin-top: 30px; display: flex; justify-content: center;">
+                <button id="save-btn" type="submit" class="btn">Save Configuration</button>
+                <button type="button" class="btn btn-cancel" onclick="window.location.href='index.html'">Cancel</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        const configGroups = [
+            {
+                name: "System & Personal Info",
+                fields: [
+                    { id: "account_id", label: "Account ID", type: "text" },
+                    { id: "name", label: "Owner Name", type: "text" },
+                    { id: "email", label: "Email Address", type: "text" },
+                    { id: "phone", label: "Phone Number", type: "text" },
+                    { id: "pin", label: "Master PIN", type: "password" },
+                    { id: "instructions", label: "Emergency Instructions", type: "text" }
+                ]
+            },
+            {
+                name: "Location",
+                fields: [
+                    { id: "address1", label: "Address Line 1", type: "text" },
+                    { id: "address2", label: "Address Line 2", type: "text" },
+                    { id: "city", label: "City", type: "text" },
+                    { id: "state", label: "State", type: "text" },
+                    { id: "zip_code", label: "Zip Code", type: "text" },
+                    { id: "latitude", label: "Latitude", type: "float" },
+                    { id: "longitude", label: "Longitude", type: "float" },
+                    { id: "location_lat", label: "Location Lat (Geofence)", type: "float" },
+                    { id: "location_lon", label: "Location Lon (Geofence)", type: "float" },
+                    { id: "accuracy", label: "Accuracy", type: "number" }
+                ]
+            },
+            {
+                name: "System Delays",
+                fields: [
+                    { id: "entry_delay", label: "Entry Delay (sec)", type: "number" },
+                    { id: "exit_delay", label: "Exit Delay (sec)", type: "number" },
+                    { id: "cancel_delay", label: "Cancel Delay (sec)", type: "number" }
+                ]
+            },
+            {
+                name: "Monitoring",
+                fields: [
+                    { id: "monitor_service_id", label: "Service ID", type: "text" },
+                    { id: "monitor_service_key", label: "Service Key", type: "password" },
+                    { id: "monitoring_url", label: "Monitoring URL", type: "text" },
+                    { id: "notify", label: "Notify Level", type: "number" },
+                    { id: "is_monitor_fire", label: "Monitor Fire", type: "checkbox" },
+                    { id: "is_monitor_police", label: "Monitor Police", type: "checkbox" },
+                    { id: "is_monitor_medical", label: "Monitor Medical", type: "checkbox" },
+                    { id: "is_monitor_other", label: "Monitor Other", type: "checkbox" }
+                ]
+            },
+            {
+                name: "Integrations & APIs",
+                fields: [
+                    { id: "smtp_server", label: "SMTP Server", type: "text" },
+                    { id: "smtp_port", label: "SMTP Port", type: "number" },
+                    { id: "smtp_user", label: "SMTP User", type: "text" },
+                    { id: "smtp_pass", label: "SMTP Password", type: "password" },
+                    { id: "mqtt_server", label: "MQTT Server", type: "text" },
+                    { id: "mqtt_port", label: "MQTT Port", type: "number" },
+                    { id: "mqtt_user", label: "MQTT User", type: "text" },
+                    { id: "mqtt_pass", label: "MQTT Password", type: "password" },
+                    { id: "telegram_id", label: "Telegram ID", type: "text" },
+                    { id: "telegram_token", label: "Telegram Token", type: "password" },
+                    { id: "is_telegram_enabled", label: "Enable Telegram", type: "checkbox" },
+                    { id: "opnsense_ip", label: "OPNsense IP", type: "text" },
+                    { id: "opnsense_key", label: "OPNsense Key", type: "password" },
+                    { id: "opnsense_secret", label: "OPNsense Secret", type: "password" },
+                    { id: "nvrserver_url", label: "NVR Server URL", type: "text" },
+                    { id: "haintegration_url", label: "Home Assistant URL", type: "text" }
+                ]
+            },
+            {
+                name: "Watchdogs & Network",
+                fields: [
+                    { id: "watchdog_esphome_sec", label: "ESPHome Watchdog (sec)", type: "number" },
+                    { id: "watchdog_camera_fails", label: "Camera Fails Watchdog", type: "number" },
+                    { id: "watchdog_network_sec", label: "Network Watchdog (sec)", type: "number" },
+                    { id: "wan_monitor_enabled", label: "Enable WAN Monitor", type: "checkbox" }
+                ]
+            }
+        ];
+
+        let currentConfig = {};
+
+        async function loadConfig() {
+            try {
+                const token = sessionStorage.getItem('sentinel_token');
+                const res = await fetch('/api/config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    currentConfig = await res.json();
+                    renderFields();
+                } else {
+                    alert('Failed to load config');
+                }
+            } catch (e) {
+                alert('Error loading config');
+            }
+        }
+
+        function renderFields() {
+            const container = document.getElementById('dynamic-fields');
+            container.innerHTML = '';
+            
+            configGroups.forEach(group => {
+                const title = document.createElement('div');
+                title.className = 'section-title';
+                title.textContent = group.name;
+                container.appendChild(title);
+
+                group.fields.forEach(field => {
+                    const fieldGroup = document.createElement('div');
+                    fieldGroup.className = 'form-group';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = field.label;
+                    label.htmlFor = field.id;
+                    
+                    let input;
+                    if (field.type === 'checkbox') {
+                        input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.id = field.id;
+                        input.checked = currentConfig[field.id] === true;
+                        fieldGroup.appendChild(input);
+                        fieldGroup.appendChild(label);
+                        label.style.display = 'inline';
+                    } else {
+                        input = document.createElement('input');
+                        input.type = field.type === 'float' ? 'number' : field.type;
+                        if (field.type === 'float') {
+                            input.step = 'any';
+                        }
+                        input.id = field.id;
+                        if (currentConfig[field.id] !== undefined) {
+                            input.value = currentConfig[field.id];
+                        }
+                        fieldGroup.appendChild(label);
+                        fieldGroup.appendChild(input);
+                    }
+                    container.appendChild(fieldGroup);
+                });
+            });
+        }
+
+        async function saveConfig(e) {
+            e.preventDefault();
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const payload = {};
+            
+            configGroups.forEach(group => {
+                group.fields.forEach(field => {
+                    const el = document.getElementById(field.id);
+                    if (field.type === 'checkbox') {
+                        payload[field.id] = el.checked;
+                    } else if (field.type === 'number') {
+                        payload[field.id] = parseInt(el.value, 10);
+                    } else if (field.type === 'float') {
+                        payload[field.id] = parseFloat(el.value);
+                    } else {
+                        payload[field.id] = el.value;
+                    }
+                });
+            });
+
+            try {
+                const token = sessionStorage.getItem('sentinel_token');
+                const res = await fetch('/api/config/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('Configuration saved successfully');
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Failed to save config');
+                    btn.disabled = false;
+                    btn.textContent = 'Save Configuration';
+                }
+            } catch (e) {
+                alert('Error saving config');
+                btn.disabled = false;
+                btn.textContent = 'Save Configuration';
+            }
+        }
+
+        loadConfig();
+    </script>
+</body>
+</html>
+ 

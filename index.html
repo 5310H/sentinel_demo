@@ -6,9 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sentinel Command Center</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { 
+:root { 
             --bg-color: #030406;
             --glass-bg: rgba(8, 12, 18, 0.55);
             --glass-border: rgba(255, 255, 255, 0.06);
@@ -125,7 +128,9 @@
             opacity: 0.7;
             transition: opacity 0.3s;
         }
-        .tts-toggle:hover { opacity: 1; }
+@media (hover: hover) {
+            .tts-toggle:hover { opacity: 1; }
+}
         .time-display {
             font-size: 72px;
             font-weight: 300;
@@ -171,12 +176,16 @@
             transform: skewX(-20deg);
             transition: 0.5s;
         }
-        .module:hover {
+@media (hover: hover) {
+            .module:hover {
             transform: translateY(-5px) rotateX(2deg) rotateY(-2deg) scale(1.02);
             box-shadow: 0 15px 35px rgba(0,0,0,0.5), 0 0 20px rgba(0, 240, 255, 0.15);
             border-color: rgba(0, 240, 255, 0.2);
         }
-        .module:hover::before { left: 150%; }
+}
+@media (hover: hover) {
+            .module:hover::before { left: 150%; }
+}
 
         .module-title {
             font-size: 11px;
@@ -191,7 +200,7 @@
 
         /* Status Module */
         .status-display {
-            font-size: min(8vw, 32px);
+            font-size: min(8vw, 26px);
             font-weight: 700;
             text-align: center;
             padding: 24px 0;
@@ -199,12 +208,9 @@
             background: rgba(0,0,0,0.3);
             margin-bottom: 20px;
             transition: all 0.5s ease;
-            letter-spacing: 4px;
+            letter-spacing: 2px;
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
             position: relative;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         @keyframes pulseGlow {
@@ -242,11 +248,13 @@
             transition: width 0.4s ease-out, height 0.4s ease-out, opacity 0.4s ease-out;
             opacity: 0;
         }
-        .btn-unlock:hover { 
+@media (hover: hover) {
+            .btn-unlock:hover { 
             transform: translateY(-4px) scale(1.02); 
             box-shadow: 0 15px 35px rgba(0, 229, 255, 0.5), inset 0 2px 5px rgba(255,255,255,0.4); 
             filter: brightness(1.1); 
         }
+}
         .btn-unlock:active { transform: translateY(1px) scale(0.98); }
         .btn-unlock:active::after {
             width: 300px; height: 300px; opacity: 1; transition: 0s;
@@ -296,7 +304,9 @@
             box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
             transition: all 0.3s;
         }
-        .indicator-card:hover { border-color: rgba(255,255,255,0.2); }
+@media (hover: hover) {
+            .indicator-card:hover { border-color: rgba(255,255,255,0.2); }
+}
         .ind-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
         .ind-value { font-size: 16px; font-weight: 700; margin-top: 4px; letter-spacing: 1px; }
         .ind-value.alert { color: var(--alarm); text-shadow: 0 0 8px var(--alarm); }
@@ -318,7 +328,9 @@
             justify-content: space-between;
             transition: background 0.2s;
         }
-        .audit-item:hover { background: rgba(255,255,255,0.02); padding-left: 5px; }
+@media (hover: hover) {
+            .audit-item:hover { background: rgba(255,255,255,0.02); padding-left: 5px; }
+}
         .audit-item:last-child { border-bottom: none; }
         .audit-time { color: var(--text-dim); font-size: 11px; }
 
@@ -344,7 +356,9 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .zone-card:hover { transform: scale(1.05); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+@media (hover: hover) {
+            .zone-card:hover { transform: scale(1.05); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
+}
         .zone-card.open { border-left-color: var(--alarm); box-shadow: 0 4px 15px rgba(255, 0, 0, 0.2); }
         .zone-name { font-size: 13px; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; letter-spacing: 1px;}
         .zone-state { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: rgba(0, 255, 163, 0.15); color: var(--ready); box-shadow: 0 0 10px rgba(0, 255, 163, 0.2); align-self: flex-start; }
@@ -352,6 +366,7 @@
 
         /* Camera & Panic Modules */
         .camera-feed {
+            max-height: 350px;
             width: 100%;
             height: 380px;
             background: #000;
@@ -361,7 +376,9 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             transition: all 0.3s;
         }
-        .camera-feed:hover { transform: scale(1.02); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2); }
+@media (hover: hover) {
+            .camera-feed:hover { transform: scale(1.02); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2); }
+}
         
         .panic-slider-container {
             width: 100%;
@@ -447,24 +464,37 @@
         .keypad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 15px;
         }
         .key {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
             padding: 20px 0;
-            font-size: 24px;
-            font-weight: 300;
-            color: white;
+            font-size: 26px;
+            font-weight: 400;
+            color: #f8fafc;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
         }
-        .key:hover { background: rgba(255,255,255,0.1); transform: scale(1.05); }
-        .key:active { transform: scale(0.95); background: var(--accent); }
-        .key-c { color: var(--armed); font-weight: 600; }
-        .key-ok { color: var(--ready); font-weight: 600; }
+@media (hover: hover) {
+            .key:hover { 
+                background: linear-gradient(145deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+                border-color: rgba(255,255,255,0.2);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+            }
+            .key-c:hover { background: linear-gradient(145deg, rgba(239, 68, 68, 0.25), rgba(239, 68, 68, 0.05)); border-color: rgba(239, 68, 68, 0.3); color: white; }
+            .key-ok:hover { background: linear-gradient(145deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.05)); border-color: rgba(16, 185, 129, 0.3); color: white; }
+}
+        .key:active { transform: scale(0.95) translateY(0); box-shadow: 0 2px 5px rgba(0,0,0,0.2); background: rgba(255,255,255,0.2); }
+        .key-c:active { background: rgba(239, 68, 68, 0.4); }
+        .key-ok:active { background: rgba(16, 185, 129, 0.4); }
+        
+        .key-c { color: #fca5a5; font-weight: 600; background: linear-gradient(145deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.02)); border-color: rgba(239, 68, 68, 0.2); }
+        .key-ok { color: #6ee7b7; font-weight: 600; background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.02)); border-color: rgba(16, 185, 129, 0.2); }
         
         .close-modal {
             position: absolute;
@@ -474,7 +504,9 @@
             cursor: pointer;
             opacity: 0.5;
         }
-        .close-modal:hover { opacity: 1; }
+@media (hover: hover) {
+            .close-modal:hover { opacity: 1; }
+}
 
         /* Dashboard Lock State: Hide secure modules */
         body:not(.unlocked) .secure-module {
@@ -491,6 +523,14 @@
             gap: 10px;
             margin-top: 20px;
         }
+        
+        /* Bulletproof visibility for arming buttons */
+        body.unlocked #arm-buttons.force-show {
+            display: grid !important;
+        }
+        body.unlocked #disarm-buttons.force-show {
+            display: grid !important;
+        }
         .action-btn {
             padding: 15px;
             border: none;
@@ -501,7 +541,9 @@
             cursor: pointer;
             transition: opacity 0.2s;
         }
-        .action-btn:hover { opacity: 0.9; }
+@media (hover: hover) {
+            .action-btn:hover { opacity: 0.9; }
+}
         .btn-away { background: #dc2626; }
         .btn-stay { background: #f59e0b; }
         .btn-night { background: #4f46e5; }
@@ -528,7 +570,9 @@
             font-size: 11px;
             transition: all 0.2s;
         }
-        .admin-link:hover { color: white; background: rgba(255,255,255,0.1); }
+@media (hover: hover) {
+            .admin-link:hover { color: white; background: rgba(255,255,255,0.1); }
+}
         
         /* 2FA Input Classes reused */
         .modal-input { width: 100%; background: #222; border: 2px solid #444; color: var(--accent); padding: 12px; margin: 10px 0; border-radius: 4px; font-size: 16px; text-align: center; letter-spacing: 4px; }
@@ -540,34 +584,123 @@
         .modal-btn-row { display: flex; gap: 10px; }
         .btn-cancel, .btn-confirm { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .btn-cancel { background: rgba(255,255,255,0.1); color: #fff; }
-        .btn-cancel:hover { background: rgba(255,255,255,0.2); }
+@media (hover: hover) {
+            .btn-cancel:hover { background: rgba(255,255,255,0.2); }
+}
         .btn-confirm { background: var(--accent); color: #fff; }
-        .btn-confirm:hover { filter: brightness(1.2); }
+@media (hover: hover) {
+            .btn-confirm:hover { filter: brightness(1.2); }
+}
 
-        /* Camera Modal Specifics */
-        .camera-modal-content {
-            max-width: 90vw;
-            width: 1000px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
+        /* Camera Grid & Feed Styling */
         .camera-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 15px;
+            width: 100%;
         }
-        .cam-container {
+        .camera-feed {
             background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            padding: 8px;
-            text-align: center;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .cam-name { font-weight: bold; margin-bottom: 5px; color: #ccc; }
-        .cam-img { width: 100%; border-radius: 4px; object-fit: cover; }
-        .modal-btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        .modal-btn-primary { background: var(--accent); color: black; }
-        .modal-btn-secondary { background: #555; color: white; }
+@media (hover: hover) {
+            .camera-feed:hover {
+            transform: scale(1.02);
+            border-color: rgba(255,255,255,0.2);
+            z-index: 10;
+        }
+}
+        .camera-feed img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s;
+        }
+        .camera-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: none;
+        }
+        .camera-name {
+            font-size: 14px;
+            font-weight: 500;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fff;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--ready);
+            box-shadow: 0 0 10px var(--ready);
+        }
+        .status-dot.offline {
+            background: var(--not);
+            box-shadow: 0 0 10px var(--not);
+        }
+
+        /* Fullscreen Modal Specifics */
+        .fullscreen-modal {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .modal-header h2 { font-size: 24px; font-weight: 300; margin: 0; }
+        .modal-content-fs {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 0;
+        }
+        .modal-content-fs img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .modal-controls { display: flex; justify-content: center; gap: 15px; padding: 20px; }
+        .modal-controls button {
+            padding: 12px 24px; font-size: 16px; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1); color: var(--text-main);
+            border-radius: 12px; cursor: pointer;
+        }
+@media (hover: hover) {
+            .modal-controls button:hover { background: rgba(255,255,255,0.15); }
+}
         
         #totp-modal .modal-content {
             background: var(--glass-bg);
@@ -583,7 +716,8 @@
             50% { opacity: 0.6; }
             100% { opacity: 1; }
         }
-    </style>
+</style>
+    <script src="mock_api.js"></script>
     <script src="mock_api.js"></script>
 </head>
 <body>
@@ -611,6 +745,9 @@
         <div class="module col-span-1">
             <div class="module-title">System Status</div>
             <div class="status-display" id="status-display">SYSTEM LOCKED</div>
+            <div id="alarm-banner" style="display:none; background:red; color:white; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; text-align:center;">
+                ALARM: <span id="alarm-text"></span>
+            </div>
             <button class="btn-unlock" onclick="openKeypad()" id="btn-unlock-text">UNLOCK SYSTEM</button>
             
             <div class="action-buttons" id="arm-buttons">
@@ -627,10 +764,10 @@
                 <button class="action-btn" style="width:100%; background: #374151; color: white; border: 1px solid #4b5563;" onclick="document.getElementById('admin-links-grid').classList.toggle('open')">MAINTENANCE & SETTINGS ⚙️</button>
                 <div class="admin-links" id="admin-links-grid">
                     <a href="users.html" class="admin-link">Users</a>
+                    <a href="config.html" class="admin-link">Settings</a>
                     <a href="devices.html" class="admin-link">Devices</a>
                     <a href="cameras.html" class="admin-link">Cameras</a>
-                    <a href="cameras_live.html" class="admin-link">Live View</a>
-                    <a href="scheduler.html" class="admin-link">Schedule</a>
+                                        <a href="scheduler.html" class="admin-link">Schedule</a>
                     <a href="audit.html" class="admin-link">Audit</a>
                     <a href="health.html" class="admin-link">System Health</a>
                     <a href="diagnostics.html" class="admin-link" style="color:var(--alarm)">Diagnostics</a>
@@ -638,10 +775,12 @@
             </div>
         </div>
 
-        <!-- Live Camera Snapshot (2 columns wide) -->
+        <!-- Live Camera Grid (2 columns wide) -->
         <div class="module secure-module col-span-2">
-            <div class="module-title">Main Camera (Click for all)</div>
-            <img id="camera-snapshot" class="camera-feed" src="/api/camera/0/snapshot" style="cursor: pointer;" onclick="openCameraModal()" alt="Camera Feed Offline" onerror="this.src='https://dummyimage.com/600x400/1a1c23/666666&text=CAMERA+OFFLINE'">
+            <div class="module-title">Live Cameras</div>
+            <div id="dashboard-camera-grid" class="camera-grid">
+                <div style="color:#666; font-size:12px;">Loading cameras...</div>
+            </div>
         </div>
         
         <!-- ROW 3 -->
@@ -736,41 +875,44 @@
         
     </div>
 
-    <!-- Multi-Camera Modal -->
-    <div id="camera-modal" class="modal-overlay">
-        <div class="modal-content camera-modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0; color: #fff;">Camera Feeds</h3>
-                <button class="btn-cancel" onclick="closeCameraModal()" style="width: auto; padding: 5px 15px;">Close</button>
-            </div>
-            <div id="camera-grid" class="camera-grid">
-                <!-- Populated dynamically -->
-            </div>
+    <!-- Fullscreen Live Stream Modal -->
+    <div id="fullscreen-modal" class="fullscreen-modal">
+        <div class="modal-header">
+            <h2 id="modal-camera-name" style="display:flex; align-items:center; gap:10px;"><div class="status-dot"></div>Camera</h2>
+            <button onclick="closeFullscreen()" style="border:none; background:transparent; font-size: 24px; color: var(--text-main); cursor: pointer;">✕</button>
+        </div>
+        <div class="modal-content-fs">
+            <img id="fullscreen-image" src="" alt="Camera Feed">
+        </div>
+        <div class="modal-controls">
+            <button onclick="closeFullscreen()">↩️ Back</button>
         </div>
     </div>
 
     <!-- Keypad Modal -->
-    <div class="modal-overlay" id="keypad-modal">
-        <div class="keypad-container" style="position: relative;">
-            <div class="close-modal" onclick="closeKeypad()">✕</div>
-            <div id="keypad-title" style="text-align:center; color:white; margin-bottom:15px; font-weight:600; letter-spacing:2px; font-size: 18px;">ENTER PIN</div>
-            <div class="pin-display" id="pin-display"></div>
-            <div style="color: #ef4444; font-size: 12px; margin-bottom: 10px; text-align: center; min-height: 15px;" id="pin-error-msg"></div>
-            <div id="remember-device-container" style="display: none; align-items: center; justify-content: center; margin-bottom: 15px; color: rgba(255,255,255,0.7); font-size: 12px;">
-                <input type="checkbox" id="remember-device-cb" style="margin-right: 8px;">
-                <label for="remember-device-cb">Remember this device (30 days)</label>
+    <div id="dynamic-components">
+        <div class="modal-overlay" id="keypad-modal">
+            <div class="keypad-container" style="position: relative;">
+                <div class="close-modal" onclick="closeKeypad()">&#10005;</div>
+                <div id="keypad-title" style="text-align:center; color:white; margin-bottom:15px; font-weight:600; letter-spacing:2px; font-size: 18px;">ENTER PIN</div>
+                <div class="pin-display" id="pin-display"></div>
+                <div style="color: #ef4444; font-size: 12px; margin-bottom: 10px; text-align: center; min-height: 15px;" id="pin-error-msg"></div>
+                <div id="remember-device-container" style="display: none; align-items: center; justify-content: center; margin-bottom: 15px; color: rgba(255,255,255,0.7); font-size: 12px;">
+                    <input type="checkbox" id="remember-device-cb" style="margin-right: 8px;">
+                    <label for="remember-device-cb">Remember this device (30 days)</label>
+                </div>
+                <div class="keypad">
+                    <div class="key" onclick="press(1)">1</div><div class="key" onclick="press(2)">2</div><div class="key" onclick="press(3)">3</div>
+                    <div class="key" onclick="press(4)">4</div><div class="key" onclick="press(5)">5</div><div class="key" onclick="press(6)">6</div>
+                    <div class="key" onclick="press(7)">7</div><div class="key" onclick="press(8)">8</div><div class="key" onclick="press(9)">9</div>
+                    <div class="key key-c" onclick="clr()">C</div><div class="key" onclick="press(0)">0</div><div class="key key-ok" onclick="submit()">OK</div>
+                </div>
+                <button class="modal-btn modal-btn-secondary" onclick="closeKeypad()" style="margin-top: 15px;">CANCEL</button>
             </div>
-            <div class="keypad">
-                <div class="key" onclick="press(1)">1</div><div class="key" onclick="press(2)">2</div><div class="key" onclick="press(3)">3</div>
-                <div class="key" onclick="press(4)">4</div><div class="key" onclick="press(5)">5</div><div class="key" onclick="press(6)">6</div>
-                <div class="key" onclick="press(7)">7</div><div class="key" onclick="press(8)">8</div><div class="key" onclick="press(9)">9</div>
-                <div class="key key-c" onclick="clr()">C</div><div class="key" onclick="press(0)">0</div><div class="key key-ok" onclick="submit()">OK</div>
-            </div>
-            <button class="modal-btn modal-btn-secondary" onclick="closeKeypad()" style="margin-top: 15px;">CANCEL</button>
         </div>
     </div>
-    
-    <!-- 2FA Setup Modal (Reused Logic) -->
+
+      <!-- 2FA Setup Modal (Reused Logic) -->
     <div class="modal-overlay" id="totp-modal" style="z-index: 2000;">
         <div class="modal-content" style="max-width: 400px; width: 90%;">
             <div style="color: var(--accent); font-size: 16px; font-weight: bold; margin-bottom: 15px;">🔐 Two-Factor Authentication Required</div>
@@ -788,12 +930,14 @@
     </div>
 
     <script>
-        let currentPin = "";
+window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno); }); window.addEventListener('unhandledrejection', function(e) { alert('Promise Error: ' + e.reason); }); let currentPin = "";
         let savedPin = "";
         let keypadMode = "pin"; // 'pin' or 'totp'
         let currentUser = "";
         let totpSecret = "";
-        let isAuthenticated = sessionStorage.getItem('sentinel_token') === 'valid';
+        let storedToken = sessionStorage.getItem('sentinel_token');
+        let isAuthenticated = (storedToken !== null && storedToken !== '');
+        let isAdmin = sessionStorage.getItem('sentinel_is_admin') === 'true';
 
         // --- TIME & DATE ---
         function updateClock() {
@@ -818,10 +962,14 @@
                 
                 // Fallback to IP API if backend doesn't have it (or fails)
                 if(!lat || !lon || (lat === 0 && lon === 0)) {
-                    const locResp = await fetch('https://ipapi.co/json/');
-                    const loc = await locResp.json();
-                    lat = loc.latitude;
-                    lon = loc.longitude;
+                    try {
+                        const locResp = await fetch('https://get.geojs.io/v1/ip/geo.json');
+                        const loc = await locResp.json();
+                        lat = loc.latitude;
+                        lon = loc.longitude;
+                    } catch (e) {
+                        console.warn("Geolocation API failed", e);
+                    }
                 }
 
                 if(lat && lon) {
@@ -892,8 +1040,25 @@
                                 const otherCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
                                 
                                 if (myCompetitor && otherCompetitor) {
-                                    const myScore = myCompetitor.score?.displayValue ?? myCompetitor.score?.value ?? myCompetitor.score ?? 0;
-                                    const otherScore = otherCompetitor.score?.displayValue ?? otherCompetitor.score?.value ?? otherCompetitor.score ?? 0;
+                                    let myScore = myCompetitor.score?.displayValue ?? myCompetitor.score?.value ?? myCompetitor.score;
+                                    let otherScore = otherCompetitor.score?.displayValue ?? otherCompetitor.score?.value ?? otherCompetitor.score;
+                                    
+                                    if (myScore === undefined) {
+                                        const parts = t.url.split('/teams/');
+                                        if (parts.length > 1) {
+                                            try {
+                                                const sRes = await fetch(parts[0] + '/summary?event=' + evt.id);
+                                                const sData = await sRes.json();
+                                                const hComp = sData.header.competitions[0];
+                                                const sMyComp = hComp.competitors.find(c => c.team.abbreviation.toLowerCase() === 'cle' || c.team.abbreviation.toLowerCase() === 'osu');
+                                                const sOtherComp = hComp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
+                                                myScore = sMyComp?.score;
+                                                otherScore = sOtherComp?.score;
+                                            } catch(e) {}
+                                        }
+                                    }
+                                    myScore = myScore ?? 0;
+                                    otherScore = otherScore ?? 0;
                                     scoreTxt = `${myScore} - ${otherScore}`;
                                     statusTxt = comp.status.type.shortDetail;
                                 }
@@ -993,26 +1158,6 @@
         fetchZones();
         setInterval(fetchZones, 3000);
 
-        // --- CAMERA LOGIC ---
-        function refreshCamera() {
-            const cam = document.getElementById('camera-snapshot');
-            const img = new Image();
-            img.onload = function() {
-                // If it's a 1x1 mock or broken image, show the premium offline placeholder
-                if (this.naturalWidth <= 1) {
-                    cam.src = 'https://dummyimage.com/600x400/1a1c23/00d4ff&text=CAMERA+OFFLINE';
-                } else {
-                    cam.src = this.src;
-                }
-            };
-            img.onerror = function() {
-                cam.src = 'https://dummyimage.com/600x400/1a1c23/00d4ff&text=CAMERA+OFFLINE';
-            };
-            // Append timestamp to bust cache
-            img.src = '/api/camera/0/snapshot?t=' + new Date().getTime();
-        }
-        setInterval(refreshCamera, 5000); // Refresh every 5s
-
         // --- PANIC SLIDER LOGIC ---
         const panicThumb = document.getElementById('panic-thumb');
         const panicContainer = document.getElementById('panic-container');
@@ -1092,16 +1237,31 @@
             }
         });
 
-        function openKeypad() {
+        async function openKeypad() {
             if(isAuthenticated) {
                 sessionStorage.removeItem('sentinel_token');
+                sessionStorage.removeItem('sentinel_is_admin');
                 document.body.classList.remove('unlocked');
-                location.reload();
+                isAuthenticated = false;
+                isAdmin = false;
+                document.getElementById('btn-unlock-text').innerText = "UNLOCK SYSTEM";
+                document.getElementById('btn-unlock-text').style.background = "";
+                document.getElementById('admin-menu').style.display = "none";
+                updateUI({state: window.lastKnownState || 0, ready: window.lastKnownReady !== undefined ? window.lastKnownReady : true});
+                return;
             } else {
+                let keypadModal = document.getElementById('keypad-modal');
+                if (!keypadModal) {
+                    document.getElementById('btn-unlock-text').innerText = 'Err: Keypad Missing';
+                    return;
+                }
+                
+                document.getElementById('btn-unlock-text').innerText = 'UNLOCK SYSTEM'; 
                 keypadMode = "pin";
                 document.getElementById('keypad-title').innerText = "ENTER PIN";
                 document.getElementById('keypad-title').style.color = "white";
-                document.getElementById('keypad-modal').classList.add('visible');
+                document.getElementById('remember-device-container').style.display = "none";
+                keypadModal.classList.add('visible');
             }
         }
         function closeKeypad() {
@@ -1235,9 +1395,11 @@
         
         function grantAccess(authData) {
             document.body.classList.add('unlocked');
-            sessionStorage.setItem('sentinel_token', 'valid');
+            sessionStorage.setItem('sentinel_token', currentPin || "auth_token");
+            sessionStorage.setItem('sentinel_is_admin', authData.is_admin ? "true" : "false");
             isAuthenticated = true;
-            currentUser = authData.name;
+            isAdmin = authData.is_admin;
+            currentUser = authData.user || authData.name;
             closeKeypad();
             
             document.getElementById('btn-unlock-text').innerText = "LOCK CONSOLE";
@@ -1245,8 +1407,17 @@
             
             if(authData.is_admin) {
                 document.getElementById('admin-menu').style.display = "grid";
+            } else {
+                document.getElementById('admin-menu').style.display = "none";
             }
-            check(); // immediate refresh
+            
+            // Immediate UI update without waiting for fetch
+            updateUI({
+                state: authData.state !== undefined ? authData.state : (window.lastKnownState || 0),
+                ready: window.lastKnownReady !== undefined ? window.lastKnownReady : true
+            });
+            
+            check(); // immediate refresh for full status
             fetchAuditLog();
         }
 
@@ -1255,9 +1426,12 @@
             document.body.classList.add('unlocked');
             document.getElementById('btn-unlock-text').innerText = "LOCK CONSOLE";
             document.getElementById('btn-unlock-text').style.background = "#4b5563";
-            // Note: We don't know if they are admin just from the token on reload, 
-            // but the backend will reject admin endpoints anyway.
-            document.getElementById('admin-menu').style.display = "grid"; // Show links speculatively
+            
+            if(isAdmin) {
+                document.getElementById('admin-menu').style.display = "grid";
+            } else {
+                document.getElementById('admin-menu').style.display = "none";
+            }
         }
 
         // --- SYSTEM STATUS FETCH ---
@@ -1266,22 +1440,49 @@
             const isReady = !!(cfg.ready);
             const display = document.getElementById('status-display');
             
-            display.innerText = (state === 0) ? (isReady ? "READY TO ARM" : "NOT READY") : "SYSTEM ARMED";
-            display.className = "status-display " + ((state === 0) ? (isReady ? "ready" : "not-ready") : "armed");
+            display.innerText = (state === 0) ? (isReady ? "READY TO ARM" : "NOT READY") : 
+                                (state === 1) ? "ARMING (EXIT NOW)" : 
+                                (state === 3) ? "ENTRY DELAY" : 
+                                (state === 4) ? "SYSTEM ALARM" : "SYSTEM ARMED";
+            display.className = "status-display " + ((state === 0) ? (isReady ? "ready" : "not-ready") : 
+                                                    (state === 4) ? "alarm" : "armed");
             
-            if(isAuthenticated) {
-                document.getElementById('arm-buttons').style.display = (state === 0) ? "grid" : "none";
-                document.getElementById('disarm-buttons').style.display = (state !== 0) ? "grid" : "none";
+            const alarmBanner = document.getElementById('alarm-banner');
+            if (alarmBanner) {
+                if (state === 4) {
+                    alarmBanner.style.display = "block";
+                    document.getElementById('alarm-text').innerText = (cfg.violation && cfg.violation !== "None") ? cfg.violation : "Unknown";
+                } else {
+                    alarmBanner.style.display = "none";
+                }
+            }
+            
+            if (isAuthenticated) {
+                if (state === 0) {
+                    document.getElementById('arm-buttons').style.display = 'grid';
+                    document.getElementById('arm-buttons').classList.add('force-show');
+                    document.getElementById('disarm-buttons').style.display = 'none';
+                    document.getElementById('disarm-buttons').classList.remove('force-show');
+                } else {
+                    document.getElementById('arm-buttons').style.display = 'none';
+                    document.getElementById('arm-buttons').classList.remove('force-show');
+                    document.getElementById('disarm-buttons').style.display = 'grid';
+                    document.getElementById('disarm-buttons').classList.add('force-show');
+                }
             } else {
-                document.getElementById('arm-buttons').style.display = "none";
-                document.getElementById('disarm-buttons').style.display = "none";
+                document.getElementById('arm-buttons').style.display = 'none';
+                document.getElementById('disarm-buttons').style.display = 'none';
+                document.getElementById('arm-buttons').classList.remove('force-show');
+                document.getElementById('disarm-buttons').classList.remove('force-show');
             }
             
             const wanBadge = document.getElementById('wan-badge');
-            if (cfg.wan_monitor_enabled && cfg.cellular_backup) {
-                wanBadge.style.display = "block";
-            } else {
-                wanBadge.style.display = "none";
+            if (wanBadge) {
+                if (cfg.wan_monitor_enabled && cfg.cellular_backup) {
+                    wanBadge.style.display = "block";
+                } else {
+                    wanBadge.style.display = "none";
+                }
             }
             
             // --- TEXT TO SPEECH ANNOUNCEMENTS ---
@@ -1289,21 +1490,22 @@
             if (ttsEnabled && window.lastKnownState !== undefined && window.lastKnownState !== state) {
                 let msg = "";
                 if (state === 0) msg = "System Disarmed";
-                else if (state === 1) msg = "System Armed Away";
-                else if (state === 2) msg = "System Armed Stay";
-                else if (state === 3) msg = "System Armed Night";
-                else if (state === 4) msg = "Warning. Alarm Triggered.";
+                else if (state === 1) msg = "System Arming. Please exit.";
+                else if (state === 2) msg = "System Armed";
+                else if (state === 3) msg = "Entry Delay. Please enter PIN.";
+                else if (state === 4) msg = "ALARM! ALARM! ALARM!";
                 
                 if (msg && 'speechSynthesis' in window) {
                     // Cancel any ongoing speech before talking
                     window.speechSynthesis.cancel();
-                    let utterance = new SpeechSynthesisUtterance(msg);
+                    const utterance = new SpeechSynthesisUtterance(msg);
                     utterance.rate = 0.95; // Slightly slower for clarity
                     utterance.pitch = 1.0;
                     window.speechSynthesis.speak(utterance);
                 }
             }
             window.lastKnownState = state;
+            window.lastKnownReady = isReady;
         }
 
         function toggleTTS() {
@@ -1331,6 +1533,7 @@
                 if(d.config) updateUI(d.config);
                 
                 const r2 = await fetch('/status');
+                if(r2.ok) {
                 const d2 = await r2.json();
                 
                 // Temp
@@ -1356,15 +1559,17 @@
                     else if (d2.network_state === 1) { netVal.innerText = 'ONLINE'; netVal.className = 'ind-value ok'; }
                     else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
                 }
+                }
             } catch(e) { console.error(e); }
         }
 
         async function doAction(url, body) {
-            if(!isAuthenticated && !currentPin) {
+            let pinToSend = currentPin || sessionStorage.getItem('sentinel_token') || "auth_token";
+            if(!isAuthenticated && !pinToSend) {
                 openKeypad();
                 return;
             }
-            body.pin = currentPin || "auth_token"; // Mocking token usage for frontend logic
+            body.pin = pinToSend;
             await fetch(url, { 
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'},
@@ -1373,65 +1578,197 @@
             setTimeout(() => { location.reload(); }, 500);
         }
 
-        // --- CAMERA MODAL LOGIC ---
-        let cameraRefreshInterval = null;
         
-        async function loadCameraSnapshots() {
+        // --- DASHBOARD CAMERA GRID LOGIC ---
+        let dashboardCameras = [];
+        let dashboardGridRefreshInterval = null;
+        let fullscreenRefreshInterval = null;
+        let currentFullscreenCamera = null;
+        const REFRESH_RATE_GRID = 3000; // Refresh grid every 3s
+        const REFRESH_RATE_FULLSCREEN = 800;
+        
+        const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%23666'%3EOffline%3C/text%3E%3C/svg%3E`;
+
+        async function loadDashboardCameras() {
             try {
                 const res = await fetch('/api/cameras');
-                const cams = await res.json();
+                if (!res.ok) throw new Error("Failed to load cameras");
+                const data = await res.json();
+                // Depending on the backend schema:
+                // if it's an array directly: dashboardCameras = data;
+                // if it's an object with cameras array: dashboardCameras = data.cameras;
+                dashboardCameras = Array.isArray(data) ? data : (data.cameras || []);
+                renderDashboardCameraGrid();
+                startDashboardCameraRefresh();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('dashboard-camera-grid').innerHTML = '<div style="color:var(--alarm);">Error loading cameras.</div>';
+            }
+        }
+
+        function renderDashboardCameraGrid() {
+            const grid = document.getElementById('dashboard-camera-grid');
+            grid.innerHTML = '';
+            
+            if (dashboardCameras.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 40px;">No cameras configured.</div>`;
+                return;
+            }
+
+            dashboardCameras.forEach((cam, index) => {
+                const feed = document.createElement('div');
+                feed.className = 'camera-feed';
+                  feed.onclick = () => openCameraModal(index);
+                  feed.style.cursor = 'pointer';
                 
-                const grid = document.getElementById('camera-grid');
-                if (grid.children.length === 0) {
-                    cams.forEach((c, idx) => {
-                        const div = document.createElement('div');
-                        div.className = 'cam-container';
-                        
-                        const name = document.createElement('div');
-                        name.className = 'cam-name';
-                        name.innerText = c.friendly_name || `Camera ${idx}`;
-                        
-                        const img = document.createElement('img');
-                        img.className = 'cam-img';
-                        img.id = `modal-cam-${idx}`;
-                        img.src = `/api/camera/${idx}/snapshot?t=${Date.now()}`;
-                        img.onerror = function() { this.src = 'https://dummyimage.com/600x400/1a1c23/666666&text=CAMERA+OFFLINE'; };
-                        
-                        div.appendChild(name);
-                        div.appendChild(img);
-                        grid.appendChild(div);
-                    });
-                } else {
-                    cams.forEach((c, idx) => {
-                        const img = document.getElementById(`modal-cam-${idx}`);
-                        if (img) {
-                            img.src = `/api/camera/${idx}/snapshot?t=${Date.now()}`;
-                        }
-                    });
+                const isOnline = cam.failures < 3 && cam.enabled !== false;
+                const statusClass = isOnline ? '' : 'offline';
+                feed.onclick = () => openFullscreen(index);
+                
+                const imageSrc = `/api/camera/${index}/snapshot?t=${Date.now()}`;
+
+                feed.innerHTML = `
+                    <img id="dash-cam-img-${index}" 
+                         src="${imageSrc}" 
+                         alt="${cam.friendly_name || 'Camera '+index}"
+                         onload="if(this.naturalWidth <= 1) { this.src='https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80'; }"
+                         onerror="this.onerror=null; this.src='${svgPlaceholder}'; document.getElementById('dash-cam-status-${index}').className='status-dot offline';">
+                    <div class="camera-overlay">
+                        <div class="camera-name">
+                            <div class="status-dot ${statusClass}" id="dash-cam-status-${index}"></div>
+                            ${cam.friendly_name || 'Camera ' + index}
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(feed);
+            });
+        }
+
+        function refreshDashboardCameras() {
+            if (currentFullscreenCamera !== null) {
+                dashboardGridRefreshInterval = setTimeout(refreshDashboardCameras, REFRESH_RATE_GRID);
+                return; 
+            }
+            
+            const totalCams = dashboardCameras.length;
+            if (totalCams === 0) {
+                dashboardGridRefreshInterval = setTimeout(refreshDashboardCameras, REFRESH_RATE_GRID);
+                return;
+            }
+            
+            let loadedCount = 0;
+            const checkDone = () => {
+                loadedCount++;
+                if (loadedCount >= totalCams) {
+                    dashboardGridRefreshInterval = setTimeout(refreshDashboardCameras, REFRESH_RATE_GRID);
                 }
-            } catch(e) {
-                console.error("Failed to fetch cameras:", e);
-                document.getElementById('camera-grid').innerHTML = '<div style="color:var(--alarm);">Error loading cameras.</div>';
-            }
+            };
+            
+            dashboardCameras.forEach((cam, i) => {
+                const img = document.getElementById(`dash-cam-img-${i}`);
+                if (img) {
+                    const temp = new Image();
+                    temp.onload = function() {
+                        if (this.naturalWidth <= 1) {
+                            if(img.src !== svgPlaceholder) img.src = svgPlaceholder;
+                            const dot = document.getElementById(`dash-cam-status-${i}`);
+                            if(dot && dot.className !== 'status-dot offline') dot.className = 'status-dot offline';
+                        } else {
+                            img.src = this.src;
+                            const dot = document.getElementById(`dash-cam-status-${i}`);
+                            if(dot && dot.className !== 'status-dot') dot.className = 'status-dot';
+                        }
+                        checkDone();
+                    };
+                    temp.onerror = function() {
+                        if(img.src !== svgPlaceholder) img.src = svgPlaceholder;
+                        const dot = document.getElementById(`dash-cam-status-${i}`);
+                        if(dot && dot.className !== 'status-dot offline') dot.className = 'status-dot offline';
+                        checkDone();
+                    };
+                    temp.src = `/api/camera/${i}/snapshot?t=${Date.now()}`;
+                } else {
+                    checkDone();
+                }
+            });
         }
 
-        function openCameraModal() {
-            document.getElementById('camera-modal').classList.add('visible');
-            document.getElementById('camera-grid').innerHTML = '';
-            loadCameraSnapshots();
-            cameraRefreshInterval = setInterval(loadCameraSnapshots, 2000);
+        function startDashboardCameraRefresh() {
+            if (dashboardGridRefreshInterval) clearTimeout(dashboardGridRefreshInterval);
+            dashboardGridRefreshInterval = setTimeout(refreshDashboardCameras, REFRESH_RATE_GRID);
         }
 
-        function closeCameraModal() {
-            document.getElementById('camera-modal').classList.remove('visible');
-            if (cameraRefreshInterval) {
-                clearInterval(cameraRefreshInterval);
-                cameraRefreshInterval = null;
+        function openFullscreen(index) {
+            if (index >= dashboardCameras.length) return;
+            currentFullscreenCamera = index;
+            const cam = dashboardCameras[index];
+            const modal = document.getElementById('fullscreen-modal');
+            const img = document.getElementById('fullscreen-image');
+            const name = document.getElementById('modal-camera-name');
+            
+            modal.style.display = 'flex';
+            name.innerHTML = `<div class="status-dot"></div>${cam.friendly_name || 'Camera ' + index}`;
+            
+            // Try MJPEG stream first, if it breaks fallback to snapshot polling
+            img.src = `/api/camera/${index}/stream`;
+            
+            img.onerror = () => {
+                img.onerror = null; // Prevent infinite loop if fallback fails
+                // If stream fails, fallback to snapshot polling loop
+                if (fullscreenRefreshInterval) clearInterval(fullscreenRefreshInterval);
+                
+                const fetchFrame = () => {
+                    if (currentFullscreenCamera !== index) return;
+                    const temp = new Image();
+                    temp.onload = function() {
+                        if (this.naturalWidth <= 1) {
+                            img.src = svgPlaceholder;
+                            // Optionally update the modal title to show offline
+                            const nameEl = document.getElementById('modal-camera-name');
+                            if (nameEl && !nameEl.innerHTML.includes('offline')) {
+                                nameEl.innerHTML = `<div class="status-dot offline"></div>${dashboardCameras[index].friendly_name} (Offline)`;
+                            }
+                        } else {
+                            img.src = this.src;
+                            const nameEl = document.getElementById('modal-camera-name');
+                            if (nameEl && nameEl.innerHTML.includes('offline')) {
+                                nameEl.innerHTML = `<div class="status-dot"></div>${dashboardCameras[index].friendly_name}`;
+                            }
+                        }
+                        if (currentFullscreenCamera === index) {
+                            fullscreenRefreshInterval = setTimeout(fetchFrame, REFRESH_RATE_FULLSCREEN);
+                        }
+                    };
+                    temp.onerror = () => { 
+                        img.src = svgPlaceholder; 
+                        if (currentFullscreenCamera === index) {
+                            fullscreenRefreshInterval = setTimeout(fetchFrame, REFRESH_RATE_FULLSCREEN);
+                        }
+                    };
+                    temp.src = `/api/camera/${index}/snapshot?t=${Date.now()}`;
+                };
+                
+                fetchFrame();
+            };
+        }
+
+        function closeFullscreen() {
+            document.getElementById('fullscreen-modal').style.display = 'none';
+            document.getElementById('fullscreen-image').src = '';
+            currentFullscreenCamera = null;
+            if (fullscreenRefreshInterval) {
+                clearTimeout(fullscreenRefreshInterval);
+                fullscreenRefreshInterval = null;
             }
         }
+        
+        // Start camera load
+        setTimeout(loadDashboardCameras, 1000);
 
         setInterval(check, 4000);
+
         check();
-    </script>
+
+</script>
 </body>
 </html>

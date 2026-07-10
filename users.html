@@ -231,10 +231,12 @@
             border: 1px solid rgba(0, 229, 255, 0.3);
         }
 
-        .btn-primary:hover {
+@media (hover: hover) {
+            .btn-primary:hover {
             background: rgba(0, 229, 255, 0.2);
             box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
         }
+}
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.05);
@@ -242,9 +244,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .btn-secondary:hover {
+@media (hover: hover) {
+            .btn-secondary:hover {
             background: rgba(255, 255, 255, 0.1);
         }
+}
         
         /* Device List Cards */
         .user-card {
@@ -258,11 +262,13 @@
             overflow: hidden;
         }
         
-        .user-card:hover {
+@media (hover: hover) {
+            .user-card:hover {
             border-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
+}
         
         .user-header {
             display: flex;
@@ -324,23 +330,29 @@
             transition: all 0.2s;
         }
 
-        .btn-small:hover {
+@media (hover: hover) {
+            .btn-small:hover {
             background: rgba(255, 255, 255, 0.1);
         }
+}
 
         .btn-small.btn-del { 
             color: var(--armed); 
             border-color: rgba(255, 42, 85, 0.3); 
             background: rgba(255, 42, 85, 0.05);
         }
-        .btn-small.btn-del:hover { background: rgba(255, 42, 85, 0.15); }
+@media (hover: hover) {
+            .btn-small.btn-del:hover { background: rgba(255, 42, 85, 0.15); }
+}
 
         .btn-small.btn-test { 
             color: var(--not); 
             border-color: rgba(255, 193, 7, 0.3); 
             background: rgba(255, 193, 7, 0.05);
         }
-        .btn-small.btn-test:hover { background: rgba(255, 193, 7, 0.15); }
+@media (hover: hover) {
+            .btn-small.btn-test:hover { background: rgba(255, 193, 7, 0.15); }
+}
 
         .back-link {
             display: inline-block;
@@ -354,18 +366,68 @@
             font-weight: 500;
         }
 
-        .back-link:hover {
+@media (hover: hover) {
+            .back-link:hover {
             color: var(--text-main);
         }
+}
         
         @media (max-width: 768px) {
             .panel-container { padding: 20px; border-radius: 20px; }
             .settings-row { flex-direction: column; align-items: flex-start; }
             .settings-row input, .settings-row select { text-align: left; width: 100%; margin-top: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
         }
-    </style>
+    
+    /* Standardized FAB Back Button */
+    .fab-back {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(8, 12, 18, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: var(--accent, #00e5ff);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 9999;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+@media (hover: hover) {
+        .fab-back:hover {
+        background: rgba(8, 12, 18, 0.95);
+        transform: scale(1.08);
+        box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
+    }
+}
+    .fab-back:active {
+        transform: scale(0.92);
+    }
+    .fab-back svg {
+        width: 24px;
+        height: 24px;
+        stroke-width: 2.5;
+    }
+</style>
+    <script src="mock_api.js"></script>
 </head>
 <body>
+
+<!-- Standardized FAB Back Button -->
+<a href="index.html" class="fab-back" aria-label="Return to Dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+</a>
+
     <div class="panel-container">
         <div class="header">
             <h1 class="panel-title">Users <span class="sync-status"></span></h1>

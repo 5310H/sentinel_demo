@@ -61,8 +61,10 @@
             let body = (config && config.body) ? JSON.parse(config.body) : {};
             if (body.pin === "1234") {
                 return jsonResponse({ status: "ok", token: "demo_token_12345", user: "Demo Admin", admin: true, authenticated: true, is_admin: true, name: "Demo Admin" });
+            } else if (body.pin === "4321") {
+                return jsonResponse({ status: "ok", token: "demo_token_43210", user: "Demo User", admin: false, authenticated: true, is_admin: false, name: "Demo User" });
             } else {
-                return jsonResponse({ status: "error", message: "Invalid PIN. Use 1234." }, 401);
+                return jsonResponse({ status: "error", message: "Invalid PIN. Use 1234 or 4321." }, 401);
             }
         }
 
@@ -82,7 +84,9 @@
             return jsonResponse({
                 cameras: [
                     { id: 0, friendly_name: "Front Door", enabled: true, failures: 0, sd_recording_enabled: true },
-                    { id: 1, friendly_name: "Backyard", enabled: true, failures: 0, sd_recording_enabled: false }
+                    { id: 1, friendly_name: "Backyard", enabled: true, failures: 0, sd_recording_enabled: false },
+                    { id: 2, friendly_name: "Doorbell", enabled: true, failures: 0, sd_recording_enabled: true },
+                    { id: 3, friendly_name: "Sidewalk", enabled: true, failures: 0, sd_recording_enabled: false }
                 ]
             });
         }
@@ -166,10 +170,20 @@
             set: function(val) {
                 if (typeof val === 'string' && val.includes('/api/camera/')) {
                     let match = val.match(/\/api\/camera\/(\d+)\//);
-                    let idx = match ? match[1] : 1;
-                    // For the demo, provide a static placeholder image
+                    let idx = match ? parseInt(match[1]) : 1;
+                    // For the demo, provide realistic images
                     let timeParam = val.includes('?t=') ? `?t=${Date.now()}` : '';
-                    val = `https://picsum.photos/seed/cam${idx}/400/300${timeParam}`;
+                    if (idx === 0) {
+                        val = `img/cam0.png${timeParam}`;
+                    } else if (idx === 1) {
+                        val = `img/cam1.png${timeParam}`;
+                    } else if (idx === 2) {
+                        val = `img/cam2.png${timeParam}`;
+                    } else if (idx === 3) {
+                        val = `img/cam3.png${timeParam}`;
+                    } else {
+                        val = `https://loremflickr.com/400/300/yard?lock=${idx + 10}${timeParam.replace('?t=', '&t=')}`;
+                    }
                 }
                 return originalImgSrc.set.call(this, val);
             },
@@ -205,10 +219,11 @@
         });
         modal.innerHTML = `
             <h2 style="margin-top:0; color:#00d4ff; border-bottom:1px solid #333; padding-bottom:10px;">Demo Instructions</h2>
-            <p><strong>1. Login PIN:</strong> <span style="color:#00d4ff">1234</span></p>
-            <p><strong>2. Local Mock:</strong> The system state is mocked locally in your browser (no real backend).</p>
-            <p><strong>3. Features:</strong> Explore all tabs (Cameras, Diagnostics, Network) to see the interface.</p>
-            <p><strong>4. Testing:</strong> You can bypass zones or trigger alarms in Diagnostics to see the UI respond.</p>
+            <p><strong>1. Admin PIN:</strong> <span style="color:#00d4ff">1234</span> (Full Access)</p>
+            <p><strong>2. User PIN:</strong> <span style="color:#00d4ff">4321</span> (Non-Admin)</p>
+            <p><strong>3. Local Mock:</strong> The system state is mocked locally in your browser (no real backend).</p>
+            <p><strong>4. Features:</strong> Explore all tabs (Cameras, Diagnostics, Network) to see the interface.</p>
+            <p><strong>5. Testing:</strong> You can bypass zones or trigger alarms in Diagnostics to see the UI respond.</p>
             <div style="text-align:center; margin-top:20px;">
                 <button id="closeHelpBtn" style="background:#00d4ff; color:#000; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">Got it!</button>
             </div>

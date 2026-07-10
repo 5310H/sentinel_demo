@@ -179,4 +179,63 @@
         });
     }
 
+    // Inject Help Modal and Button (replaces alert)
+    window.addEventListener('DOMContentLoaded', () => {
+        // Remove old hardcoded button if it exists
+        const oldBtns = document.querySelectorAll('button');
+        oldBtns.forEach(b => { if(b.innerText === '?') b.remove(); });
+
+        const helpBtn = document.createElement('div');
+        helpBtn.innerHTML = '?';
+        Object.assign(helpBtn.style, {
+            position: 'fixed', bottom: '20px', right: '20px', zIndex: '9999',
+            background: '#00d4ff', color: '#000', borderRadius: '50%',
+            width: '50px', height: '50px', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontWeight: 'bold', fontSize: '24px',
+            cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,212,255,0.4)',
+            userSelect: 'none'
+        });
+
+        const modal = document.createElement('div');
+        Object.assign(modal.style, {
+            position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            background: '#080c12', border: '1px solid #00d4ff', borderRadius: '10px',
+            padding: '25px', zIndex: '10000', color: '#fff', width: '80%', maxWidth: '400px',
+            display: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', fontFamily: 'sans-serif'
+        });
+        modal.innerHTML = `
+            <h2 style="margin-top:0; color:#00d4ff; border-bottom:1px solid #333; padding-bottom:10px;">Demo Instructions</h2>
+            <p><strong>1. Login PIN:</strong> <span style="color:#00d4ff">1234</span></p>
+            <p><strong>2. Local Mock:</strong> The system state is mocked locally in your browser (no real backend).</p>
+            <p><strong>3. Features:</strong> Explore all tabs (Cameras, Diagnostics, Network) to see the interface.</p>
+            <p><strong>4. Testing:</strong> You can bypass zones or trigger alarms in Diagnostics to see the UI respond.</p>
+            <div style="text-align:center; margin-top:20px;">
+                <button id="closeHelpBtn" style="background:#00d4ff; color:#000; border:none; padding:10px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">Got it!</button>
+            </div>
+        `;
+
+        const backdrop = document.createElement('div');
+        Object.assign(backdrop.style, {
+            position: 'fixed', top: '0', left: '0', width: '100%', height: '100%',
+            background: 'rgba(0,0,0,0.6)', zIndex: '9998', display: 'none', backdropFilter: 'blur(3px)'
+        });
+
+        document.body.appendChild(backdrop);
+        document.body.appendChild(modal);
+        document.body.appendChild(helpBtn);
+
+        helpBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+            backdrop.style.display = 'block';
+        });
+
+        const close = () => {
+            modal.style.display = 'none';
+            backdrop.style.display = 'none';
+        };
+
+        document.getElementById('closeHelpBtn').addEventListener('click', close);
+        backdrop.addEventListener('click', close);
+    });
+
 })();

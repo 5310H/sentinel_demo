@@ -368,7 +368,7 @@
                 
                 const imageSrc = `/api/camera/${index}/snapshot?t=${Date.now()}`;
                     
-                const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%23666'%3EOffline%3C/text%3E%3C/svg%3E`;
+                const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%25%22 height=%22100%25%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23111%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2220%22 fill=%22%23666%22%3EOffline%3C/text%3E%3C/svg%3E`;
 
                 feed.innerHTML = `
                     <img id="grid-img-${index}" 

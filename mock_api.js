@@ -55,9 +55,9 @@
         }
 
         if (url.includes('/api/auth')) {
-            let body = config ? JSON.parse(config.body) : {};
+            let body = (config && config.body) ? JSON.parse(config.body) : {};
             if (body.pin === "1234") {
-                return jsonResponse({ status: "ok", token: "demo_token_12345", user: "Demo Admin", admin: true });
+                return jsonResponse({ status: "ok", token: "demo_token_12345", user: "Demo Admin", admin: true, authenticated: true, is_admin: true, name: "Demo Admin" });
             } else {
                 return jsonResponse({ status: "error", message: "Invalid PIN. Use 1234." }, 401);
             }

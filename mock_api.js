@@ -249,7 +249,7 @@
             backdrop.style.display = 'none';
         };
 
-        document.getElementById('closeHelpBtn').addEventListener('click', close);
+        modal.querySelector('#closeHelpBtn').addEventListener('click', close);
         backdrop.addEventListener('click', close);
     });
 

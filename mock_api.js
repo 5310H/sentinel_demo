@@ -90,9 +90,9 @@
                 ]
             });
         }
-        
+
         if (url.includes('/api/camera/')) {
-             return jsonResponse({ status: "ok" });
+            return jsonResponse({ status: "ok" });
         }
 
         if (url.includes('/api/config/update')) {
@@ -138,9 +138,9 @@
         }
 
         if (url.includes('/api/users')) {
-             return jsonResponse([
-                 { id: 0, name: "Admin", email: "demo@example.com", role: "master" }
-             ]);
+            return jsonResponse([
+                { id: 0, name: "Admin", email: "demo@example.com", role: "master" }
+            ]);
         }
 
         if (url.includes('/api/zones')) {
@@ -167,7 +167,7 @@
     const originalImgSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
     if (originalImgSrc) {
         Object.defineProperty(HTMLImageElement.prototype, 'src', {
-            set: function(val) {
+            set: function (val) {
                 if (typeof val === 'string' && val.includes('/api/camera/')) {
                     let match = val.match(/\/api\/camera\/(\d+)\//);
                     let idx = match ? parseInt(match[1]) : 1;
@@ -187,7 +187,7 @@
                 }
                 return originalImgSrc.set.call(this, val);
             },
-            get: function() {
+            get: function () {
                 return originalImgSrc.get.call(this);
             }
         });
@@ -197,7 +197,7 @@
     window.addEventListener('DOMContentLoaded', () => {
         // Remove old hardcoded button if it exists
         const oldBtns = document.querySelectorAll('button');
-        oldBtns.forEach(b => { if(b.innerText === '?') b.remove(); });
+        oldBtns.forEach(b => { if (b.innerText === '?') b.remove(); });
 
         const helpBtn = document.createElement('div');
         helpBtn.innerHTML = '?';

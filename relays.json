@@ -37,7 +37,9 @@
     "location": "_",
     "type": "_",
     "is_repeat": false,
-    "gpio": 0
+    "connection_type": "remote",
+    "device_id": "tuya_relay_1",
+    "entity_key": 8
   },
   {
     "id": 5,

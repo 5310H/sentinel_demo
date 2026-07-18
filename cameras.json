@@ -10,17 +10,5 @@
     "snapshot_cmd": "http://thingino:thingino@192.168.69.45/image.jpg",
     "stream_url": "rtsp://thingino:thingino@192.168.69.45:554/ch0",
     "zone_id": 40
-  },
-  {
-    "hostname": "192.168.69.46",
-    "port": 80,
-    "friendly_name": "Front Cam",
-    "camera_id": "ch0",
-    "username": "thingino",
-    "password": "thingino",
-    "enabled": true,
-    "snapshot_cmd": "http://thingino:thingino@192.168.69.46/image.jpg",
-    "stream_url": "rtsp://thingino:thingino@192.168.69.46:554/ch0",
-    "zone_id": 41
   }
 ]

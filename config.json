@@ -39,7 +39,12 @@
   "exitd_elay": 60,
   "cancel_delay": 10,
   "wan_monitor_enabled": false,
-  "opnsense_ip": "192.168.1.1",
+  "opnsense_ip": "192.168.69.1",
   "opnsense_key": "YOUR_API_KEY",
-  "opnsense_secret": "YOUR_API_SECRET"
+  "opnsense_secret": "YOUR_API_SECRET",
+  "edge_proxy_url": "https://sentinel-checkin-proxy.trahreg.workers.dev",
+  "edge_checkin_interval_ms": 600000,
+  "stripe_customer_id": "",
+  "stripe_subscription_id": "",
+  "stripe_status": "inactive"
 }

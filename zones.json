@@ -3,8 +3,6 @@
     "id": 1,
     "name": "Zone 1",
     "description": "Smoke Detectors",
-    "type": "1",
-    "call": "4",
     "location": "Whole House",
     "model": "4W-B",
     "manufacturer": "System Sensor",
@@ -15,14 +13,14 @@
     "i2c_address": 0,
     "is_perimeter": false,
     "is_interior": false,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "4"
   },
   {
     "id": 2,
     "name": "Zone 2",
     "description": "CO Detector",
-    "type": "1",
-    "call": "1",
     "location": "Furnace Area",
     "model": "_",
     "manufacturer": "_",
@@ -33,32 +31,34 @@
     "ic2_address": 0,
     "is_perimeter": false,
     "is_interior": false,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "1"
   },
   {
-    "id":3,
+    "id": 3,
     "name": "Zone 3",
     "description": "Front Door Sensor",
-    "type": "1",
-    "call": "2",
     "location": "Front and Garage Doors",
     "model": "_",
     "manufacturer": "_",
     "is_chime": true,
     "is_alarm_on_armed_only": true,
-    "gpio": 34,
+    "connection_type": "remote",
+    "device_id": "test_plug_1",
+    "entity_key": 33,
     "is_i2c": false,
     "i2c_address": 0,
     "is_perimeter": true,
     "is_interior": false,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "2"
   },
   {
     "id": 4,
     "name": "Zone 4",
     "description": "Montion Detector",
-    "type": "1",
-    "call": "2",
     "location": "Family Room",
     "model": "_",
     "manufacturer": "Honeywell",
@@ -69,14 +69,14 @@
     "i2c_address": 0,
     "is_perimeter": false,
     "is_interior": true,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "2"
   },
   {
     "id": 5,
     "name": "Zone 5",
     "description": "Window Sensors",
-    "type": "1",
-    "call": "2",
     "location": "First Floor Windows",
     "model": "_",
     "manufacturer": "_",
@@ -87,14 +87,14 @@
     "i2c_address": 0,
     "is_perimeter": true,
     "is_interior": false,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "2"
   },
   {
     "id": 6,
     "name": "Zone 6",
     "description": "Window Sensors",
-    "type": "1",
-    "call": "2",
     "Location": "Basement Windows",
     "model": "_",
     "manufacturer": "_",
@@ -105,14 +105,14 @@
     "i2c_address": 0,
     "is_perimeter": true,
     "is_interior": false,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "2"
   },
   {
     "id": 7,
     "name": "Zone 7",
     "description": "Rear Door Sensors",
-    "type": "1",
-    "call": "2",
     "location": "Kitchen and Family Room Doors",
     "model": "_",
     "manufacturer": "_",
@@ -123,14 +123,14 @@
     "i2c_address": 0,
     "is_perimeter": true,
     "is_interior": false,
-    "is_panic": false
+    "is_panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "2"
   },
   {
     "id": 8,
     "name": "Zone 8",
     "description": "Freeze Sensor",
-    "type": "1",
-    "call": "1",
     "location": "Furnace Area",
     "model": "_",
     "manufacturer": "_",
@@ -141,6 +141,8 @@
     "i2c_address": 0,
     "is_perimeter": false,
     "is_interior": false,
-    "is_Panic": false
+    "is_Panic": false,
+    "sensor_type": "1",
+    "dispatch_service": "1"
   }
 ]

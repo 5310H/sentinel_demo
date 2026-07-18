@@ -763,16 +763,16 @@
             // SECTION 3: AUTHENTICATION
             logSection("SECTION 3: Authentication");
             try {
-                const authRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: "1234" }), headers: { 'Content-Type': 'application/json' } });
+                const authRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: "1234", step: "pin" }), headers: { 'Content-Type': 'application/json' } });
                 const authBody = await authRes.json();
                 await assert(authBody.authenticated === true, "Valid PIN (1234) authenticates successfully", "Valid PIN (1234) failed authentication");
             } catch (e) {
                 await assert(false, "", `Valid PIN auth failed: ${e.message}`);
             }
             try {
-                const invalidAuthRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: "9999" }), headers: { 'Content-Type': 'application/json' } });
+                const invalidAuthRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: "1111", step: "pin" }), headers: { 'Content-Type': 'application/json' } });
                 const invalidAuthBody = await invalidAuthRes.json();
-                await assert(invalidAuthBody.authenticated === false, "Invalid PIN (9999) correctly rejected", "Invalid PIN (9999) was NOT rejected");
+                await assert(invalidAuthBody.authenticated === false, "Invalid PIN (1111) correctly rejected", "Invalid PIN (1111) was NOT rejected");
             } catch (e) {
                 await assert(false, "", `Invalid PIN auth failed: ${e.message}`);
             }

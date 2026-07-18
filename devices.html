@@ -170,6 +170,11 @@
             font-family: 'Outfit', sans-serif;
         }
         
+        select option {
+            background: #111;
+            color: var(--text-main);
+        }
+
         .settings-row.vertical input {
             text-align: left;
             width: 100%;
@@ -249,12 +254,12 @@
             border: 1px solid rgba(0, 229, 255, 0.3);
         }
 
-@media (hover: hover) {
+        @media (hover: hover) {
             .btn-primary:hover {
-            background: rgba(0, 229, 255, 0.2);
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+                background: rgba(0, 229, 255, 0.2);
+                box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+            }
         }
-}
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.05);
@@ -262,11 +267,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-@media (hover: hover) {
+        @media (hover: hover) {
             .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
+                background: rgba(255, 255, 255, 0.1);
+            }
         }
-}
         
         .btn-danger {
             background: rgba(255, 42, 85, 0.1);
@@ -275,11 +280,11 @@
             margin-top: 15px;
         }
         
-@media (hover: hover) {
+        @media (hover: hover) {
             .btn-danger:hover {
-            background: rgba(255, 42, 85, 0.2);
+                background: rgba(255, 42, 85, 0.2);
+            }
         }
-}
 
         /* Device List Cards */
         .device-card {
@@ -293,13 +298,13 @@
             overflow: hidden;
         }
         
-@media (hover: hover) {
+        @media (hover: hover) {
             .device-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+                border-color: rgba(255, 255, 255, 0.15);
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            }
         }
-}
         
         .device-header {
             display: flex;
@@ -357,6 +362,7 @@
             font-size: 14px;
             color: var(--accent);
             font-family: 'Courier New', monospace;
+            word-break: break-all;
         }
 
         .back-link {
@@ -371,11 +377,11 @@
             font-weight: 500;
         }
 
-@media (hover: hover) {
+        @media (hover: hover) {
             .back-link:hover {
-            color: var(--text-main);
+                color: var(--text-main);
+            }
         }
-}
 
         /* Messages */
         .message {
@@ -403,7 +409,7 @@
         @media (max-width: 768px) {
             .panel-container { padding: 20px; border-radius: 20px; }
             .settings-row { flex-direction: column; align-items: flex-start; }
-            .settings-row input { text-align: left; width: 100%; margin-top: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+            .settings-row input, .settings-row select { text-align: left; width: 100%; margin-top: 10px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
             .switch { margin-top: 15px; }
         }
     
@@ -429,13 +435,13 @@
         text-decoration: none;
         transition: all 0.3s ease;
     }
-@media (hover: hover) {
+    @media (hover: hover) {
         .fab-back:hover {
-        background: rgba(8, 12, 18, 0.95);
-        transform: scale(1.08);
-        box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
+            background: rgba(8, 12, 18, 0.95);
+            transform: scale(1.08);
+            box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
+        }
     }
-}
     .fab-back:active {
         transform: scale(0.92);
     }
@@ -444,7 +450,14 @@
         height: 24px;
         stroke-width: 2.5;
     }
-</style>
+
+    .protocol-group {
+        display: none;
+    }
+    .protocol-group.active {
+        display: block;
+    }
+    </style>
     <script src="mock_api.js"></script>
 </head>
 <body>
@@ -459,43 +472,62 @@
 
     <div class="panel-container">
         <div class="header">
-            <h1 class="panel-title">ESPHome Devices</h1>
-            <p class="panel-subtitle">Smart Home Integration</p>
+            <h1 class="panel-title">Connected Devices</h1>
+            <p class="panel-subtitle">Smart Home Integrations</p>
         </div>
 
         <div id="message-container"></div>
 
         <!-- Add/Edit Device Form -->
-        <h2 class="settings-title" id="form-title">Add ESPHome Device</h2>
+        <h2 class="settings-title" id="form-title">Add Device</h2>
         <form id="device-form" onsubmit="return saveDevice(event)">
             
             <div class="settings-group">
                 <div class="settings-row">
                     <div>
+                        <div class="settings-label">Device ID</div>
+                        <div class="settings-label-sub">Internal ID (no spaces)</div>
+                    </div>
+                    <input type="text" id="id" name="id" placeholder="living_room_light" required>
+                </div>
+                <div class="settings-row">
+                    <div>
                         <div class="settings-label">Friendly Name</div>
                         <div class="settings-label-sub">Display name for this device</div>
                     </div>
-                    <input type="text" id="friendly_name" name="friendly_name" placeholder="Living Room" required>
+                    <input type="text" id="name" name="name" placeholder="Living Room Light" required>
                 </div>
                 
                 <div class="settings-row">
                     <div>
-                        <div class="settings-label">Hostname / IP Address</div>
-                        <div class="settings-label-sub">Network address</div>
+                        <div class="settings-label">Protocol</div>
+                        <div class="settings-label-sub">Device ecosystem</div>
                     </div>
-                    <input type="text" id="hostname" name="hostname" placeholder="192.168.1.100" inputmode="url" required>
-                </div>
-                
-                <div class="settings-row">
-                    <div>
-                        <div class="settings-label">API Port</div>
-                        <div class="settings-label-sub">Native API port (default: 6053)</div>
-                    </div>
-                    <input type="number" id="port" name="port" placeholder="6053" value="6053" min="1" max="65535">
+                    <select id="protocol" name="protocol" onchange="handleProtocolChange()">
+                        <option value="0">ESPHome (0)</option>
+                        <option value="1">Tuya (1)</option>
+                        <option value="2">Matter (2)</option>
+                        <option value="3">Zigbee (3)</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="settings-group">
+            <!-- ESPHome Fields -->
+            <div class="settings-group protocol-group" id="group-esphome">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Hostname / IP</div>
+                        <div class="settings-label-sub">Network address</div>
+                    </div>
+                    <input type="text" id="host" name="host" placeholder="192.168.1.100">
+                </div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">API Port</div>
+                        <div class="settings-label-sub">Native API port</div>
+                    </div>
+                    <input type="number" id="port" name="port" placeholder="6053" value="6053" min="1" max="65535">
+                </div>
                 <div class="settings-row">
                     <div>
                         <div class="settings-label">API Password</div>
@@ -503,33 +535,56 @@
                     </div>
                     <input type="password" id="password" name="password" placeholder="••••••••">
                 </div>
-                
                 <div class="settings-row vertical">
                     <div>
                         <div class="settings-label">Encryption Key</div>
-                        <div class="settings-label-sub">32-byte base64 key for encrypted API</div>
+                        <div class="settings-label-sub">32-byte base64 key</div>
                     </div>
                     <input type="text" id="encryption_key" name="encryption_key" placeholder="Base64 encoded key (optional)">
                 </div>
             </div>
+
+            <!-- Tuya Fields -->
+            <div class="settings-group protocol-group" id="group-tuya">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Tuya Device ID</div>
+                        <div class="settings-label-sub">From Tuya IoT Platform</div>
+                    </div>
+                    <input type="text" id="tuya_device_id" name="tuya_device_id" placeholder="eb1234567890">
+                </div>
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Local Key</div>
+                        <div class="settings-label-sub">For local execution</div>
+                    </div>
+                    <input type="text" id="tuya_local_key" name="tuya_local_key" placeholder="abcdef1234567890">
+                </div>
+            </div>
+
+            <!-- Matter Fields -->
+            <div class="settings-group protocol-group" id="group-matter">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Matter Node ID</div>
+                        <div class="settings-label-sub">Provisioned node ID</div>
+                    </div>
+                    <input type="number" id="matter_node_id" name="matter_node_id" placeholder="1234">
+                </div>
+            </div>
+
+            <!-- Zigbee Fields -->
+            <div class="settings-group protocol-group" id="group-zigbee">
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">IEEE Address</div>
+                        <div class="settings-label-sub">Zigbee MAC address</div>
+                    </div>
+                    <input type="text" id="zigbee_ieee" name="zigbee_ieee" placeholder="00:11:22:33:44:55:66:77">
+                </div>
+            </div>
             
             <div class="settings-group">
-                <div class="settings-row">
-                    <div>
-                        <div class="settings-label">Virtual Zone Start</div>
-                        <div class="settings-label-sub">Sensor mapping (1-96)</div>
-                    </div>
-                    <input type="number" id="virtual_zone_start" name="virtual_zone_start" value="33" min="1" max="96">
-                </div>
-                
-                <div class="settings-row">
-                    <div>
-                        <div class="settings-label">Virtual Relay Start</div>
-                        <div class="settings-label-sub">Switch mapping (1-31)</div>
-                    </div>
-                    <input type="number" id="virtual_relay_start" name="virtual_relay_start" value="8" min="1" max="31">
-                </div>
-                
                 <div class="settings-row">
                     <div>
                         <div class="settings-label">Enable Device</div>
@@ -554,15 +609,26 @@
             </div>
         </div>
 
-        <a href="index.html" class="back-link">← Return to Control Panel</a>
+        <a href="index.html" class="back-link">← Return to Dashboard</a>
     </div>
 
     <script>
         let editingDevice = null;
 
         window.addEventListener('DOMContentLoaded', () => {
+            handleProtocolChange();
             loadDevices();
         });
+
+        function handleProtocolChange() {
+            const protocol = document.getElementById('protocol').value;
+            document.querySelectorAll('.protocol-group').forEach(el => el.classList.remove('active'));
+            
+            if (protocol === "0") document.getElementById('group-esphome').classList.add('active');
+            else if (protocol === "1") document.getElementById('group-tuya').classList.add('active');
+            else if (protocol === "2") document.getElementById('group-matter').classList.add('active');
+            else if (protocol === "3") document.getElementById('group-zigbee').classList.add('active');
+        }
 
         function showMessage(text, isError = false) {
             const container = document.getElementById('message-container');
@@ -574,7 +640,7 @@
 
         async function loadDevices() {
             try {
-                const response = await fetch('/api/esphome');
+                const response = await fetch('/api/devices');
                 if (!response.ok) throw new Error('Failed to load devices');
                 const devices = await response.json();
                 displayDevices(devices);
@@ -582,6 +648,14 @@
                 document.getElementById('device-list').innerHTML =
                     `<div style="text-align: center; color: var(--armed); padding: 20px;">Error: ${error.message}</div>`;
             }
+        }
+
+        function getProtocolName(p) {
+            if (p === 0) return "ESPHome";
+            if (p === 1) return "Tuya";
+            if (p === 2) return "Matter";
+            if (p === 3) return "Zigbee";
+            return "Unknown";
         }
 
         function displayDevices(devices) {
@@ -595,35 +669,41 @@
             listElement.innerHTML = devices.map(device => `
                 <div class="device-card">
                     <div class="device-header">
-                        <div class="device-name">${escapeHtml(device.friendly_name || device.hostname)}</div>
+                        <div class="device-name">${escapeHtml(device.name || device.id)}</div>
                         <div class="badge ${device.enabled ? '' : 'disabled'}">
-                            ${device.enabled ? 'ACTIVE' : 'DISABLED'}
+                            ${getProtocolName(device.protocol)}
                         </div>
                     </div>
                     
                     <div class="device-info-grid">
                         <div class="info-cell">
+                            <div class="info-label">ID</div>
+                            <div class="info-value">${escapeHtml(device.id)}</div>
+                        </div>
+                        ${device.protocol === 0 ? `
+                        <div class="info-cell">
                             <div class="info-label">Host</div>
-                            <div class="info-value">${escapeHtml(device.hostname)}:${device.port}</div>
-                        </div>
-                        <div class="info-cell">
-                            <div class="info-label">Zones & Relays</div>
-                            <div class="info-value">Z${device.virtual_zone_start} / R${device.virtual_relay_start}</div>
-                        </div>
-                        ${device.password ? `
-                        <div class="info-cell">
-                            <div class="info-label">Password</div>
-                            <div class="info-value">••••••••</div>
+                            <div class="info-value">${escapeHtml(device.host)}:${device.port}</div>
                         </div>` : ''}
-                        ${device.encryption_key ? `
+                        ${device.protocol === 1 ? `
                         <div class="info-cell">
-                            <div class="info-label">Encryption</div>
-                            <div class="info-value">Enabled</div>
+                            <div class="info-label">Tuya ID</div>
+                            <div class="info-value">${escapeHtml(device.tuya_device_id)}</div>
+                        </div>` : ''}
+                        ${device.protocol === 2 ? `
+                        <div class="info-cell">
+                            <div class="info-label">Node ID</div>
+                            <div class="info-value">${device.matter_node_id}</div>
+                        </div>` : ''}
+                        ${device.protocol === 3 ? `
+                        <div class="info-cell">
+                            <div class="info-label">IEEE</div>
+                            <div class="info-value">${escapeHtml(device.zigbee_ieee)}</div>
                         </div>` : ''}
                     </div>
                     
-                    <button type="button" class="btn-secondary" style="margin-bottom: 10px;" onclick='editDevice(${JSON.stringify(device)})'>Edit Configuration</button>
-                    <button type="button" class="btn-danger" style="margin: 0;" onclick="deleteDevice('${escapeHtml(device.hostname)}')">Delete Device</button>
+                    <button type="button" class="btn-secondary" style="margin-bottom: 10px;" onclick='editDevice(${JSON.stringify(device)})'>Edit Device</button>
+                    <button type="button" class="btn-danger" style="margin: 0;" onclick="deleteDevice('${escapeHtml(device.id)}')">Delete Device</button>
                 </div>
             `).join('');
         }
@@ -633,17 +713,21 @@
 
             const formData = new FormData(event.target);
             const data = {
-                hostname: formData.get('hostname'),
+                id: formData.get('id'),
+                name: formData.get('name'),
+                protocol: parseInt(formData.get('protocol')) || 0,
+                enabled: formData.get('enabled') === 'on',
+                host: formData.get('host') || '',
                 port: parseInt(formData.get('port')) || 6053,
-                friendly_name: formData.get('friendly_name'),
                 password: formData.get('password') || '',
                 encryption_key: formData.get('encryption_key') || '',
-                virtual_zone_start: parseInt(formData.get('virtual_zone_start')) || 33,
-                virtual_relay_start: parseInt(formData.get('virtual_relay_start')) || 8,
-                enabled: formData.get('enabled') === 'on'
+                tuya_device_id: formData.get('tuya_device_id') || '',
+                tuya_local_key: formData.get('tuya_local_key') || '',
+                matter_node_id: parseInt(formData.get('matter_node_id')) || 0,
+                zigbee_ieee: formData.get('zigbee_ieee') || ''
             };
 
-            const endpoint = editingDevice ? '/api/esphome/update' : '/api/esphome/add';
+            const endpoint = editingDevice ? '/api/devices/update' : '/api/devices/add';
 
             try {
                 const response = await fetch(endpoint, {
@@ -667,50 +751,58 @@
         }
 
         function editDevice(device) {
-            editingDevice = device.hostname;
+            editingDevice = device.id;
 
-            document.getElementById('form-title').textContent = 'Edit ESPHome Device';
+            document.getElementById('form-title').textContent = 'Edit Device';
             document.getElementById('submit-btn').textContent = 'Save Changes';
             document.getElementById('cancel-btn').style.display = 'block';
 
-            document.getElementById('hostname').value = device.hostname;
-            document.getElementById('hostname').readOnly = true;
-            document.getElementById('hostname').style.opacity = '0.5';
+            document.getElementById('id').value = device.id;
+            document.getElementById('id').readOnly = true;
+            document.getElementById('id').style.opacity = '0.5';
             
-            document.getElementById('port').value = device.port;
-            document.getElementById('friendly_name').value = device.friendly_name || '';
+            document.getElementById('name').value = device.name || '';
+            document.getElementById('protocol').value = device.protocol || 0;
+            document.getElementById('enabled').checked = device.enabled;
+            
+            document.getElementById('host').value = device.host || '';
+            document.getElementById('port').value = device.port || 6053;
             document.getElementById('password').value = device.password || '';
             document.getElementById('encryption_key').value = device.encryption_key || '';
-            document.getElementById('virtual_zone_start').value = device.virtual_zone_start;
-            document.getElementById('virtual_relay_start').value = device.virtual_relay_start;
-            document.getElementById('enabled').checked = device.enabled;
+            
+            document.getElementById('tuya_device_id').value = device.tuya_device_id || '';
+            document.getElementById('tuya_local_key').value = device.tuya_local_key || '';
+            document.getElementById('matter_node_id').value = device.matter_node_id || '';
+            document.getElementById('zigbee_ieee').value = device.zigbee_ieee || '';
 
+            handleProtocolChange();
             document.getElementById('device-form').scrollIntoView({ behavior: 'smooth' });
         }
 
         function cancelEdit() {
             editingDevice = null;
 
-            document.getElementById('form-title').textContent = 'Add ESPHome Device';
+            document.getElementById('form-title').textContent = 'Add Device';
             document.getElementById('submit-btn').textContent = 'Add Device';
             document.getElementById('cancel-btn').style.display = 'none';
             
-            document.getElementById('hostname').readOnly = false;
-            document.getElementById('hostname').style.opacity = '1';
+            document.getElementById('id').readOnly = false;
+            document.getElementById('id').style.opacity = '1';
             
             document.getElementById('device-form').reset();
+            handleProtocolChange();
         }
 
-        async function deleteDevice(hostname) {
-            if (!confirm(`Delete device "${hostname}"?\n\nThis will remove all configuration for this device.`)) {
+        async function deleteDevice(id) {
+            if (!confirm(`Delete device "${id}"?\n\nThis will remove all configuration for this device.`)) {
                 return;
             }
 
             try {
-                const response = await fetch('/api/esphome/delete', {
+                const response = await fetch('/api/devices/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ hostname })
+                    body: JSON.stringify({ id })
                 });
 
                 const result = await response.json();

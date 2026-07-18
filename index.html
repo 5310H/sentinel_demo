@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
@@ -87,9 +88,10 @@
             .dashboard { grid-template-columns: 1fr; padding: 15px; border-radius: 16px; margin-top: 10px; }
             .col-span-1, .col-span-2 { grid-column: 1 / -1 !important; }
             .header-module { flex-direction: column; align-items: center; text-align: center; }
-            .header-module > div { margin-bottom: 15px; }
+            .header-module > div { margin-bottom: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; }
             .header-module > div:last-child { margin-bottom: 0; }
-            .time-display { font-size: 52px; }
+            .time-display { font-size: 52px; text-align: center; width: 100%; justify-content: center; display: flex; }
+            .brand { justify-content: center; width: 100%; }
             .weather-temp { font-size: 36px; }
             .action-buttons { grid-template-columns: 1fr; }
             .admin-links { grid-template-columns: repeat(2, 1fr); }
@@ -473,7 +475,7 @@
             padding: 20px 0;
             font-size: 26px;
             font-weight: 400;
-            color: #f8fafc;
+            color: var(--text-main);
             cursor: pointer;
             text-align: center;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -571,7 +573,7 @@
             transition: all 0.2s;
         }
 @media (hover: hover) {
-            .admin-link:hover { color: white; background: rgba(255,255,255,0.1); }
+            .admin-link:hover { color: var(--text-main); background: rgba(255,255,255,0.1); }
 }
         
         /* 2FA Input Classes reused */
@@ -716,57 +718,96 @@
             50% { opacity: 0.6; }
             100% { opacity: 1; }
         }
+/* Light Mode support */
+[data-theme="light"] {
+    --bg-color: #f0f4f8;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --glass-highlight: rgba(0, 0, 0, 0.05);
+    --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.1);
+    --text-main: #1a202c;
+    --text-dim: #4a5568;
+    --ready: #0088ff;
+    --accent: #0077ff;
+}
+.theme-toggle {
+    cursor: pointer;
+    font-size: 18px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    margin-left: 10px;
+}
+@media (hover: hover) {
+    .theme-toggle:hover { opacity: 1; }
+}
+
 </style>
     <script src="mock_api.js"></script>
 </head>
+
 <body>
 
     <!-- Main Dashboard -->
     <div class="dashboard">
-        
+
         <!-- Header -->
         <div class="header-module col-span-all">
             <div>
                 <div class="brand">
                     Sentinel Command Center
-                    <span class="tts-toggle" id="tts-toggle-btn" onclick="toggleTTS()" title="Toggle Voice Announcements">🔊</span>
+                    <span class="tts-toggle" id="tts-toggle-btn" onclick="toggleTTS()"
+                        title="Toggle Voice Announcements">🔊</span>
+                    <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div id="wan-badge" style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">CELLULAR BACKUP</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-18 13:08 EDT</div>
+                <div id="wan-badge"
+                    style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
+                    CELLULAR BACKUP</div>
             </div>
             <div>
                 <div class="time-display" id="live-time">--:--</div>
             </div>
         </div>
-        
+
         <!-- ROW 2 -->
         <!-- System Status (1 column wide) -->
         <div class="module col-span-1">
             <div class="module-title">System Status</div>
             <div class="status-display" id="status-display">SYSTEM LOCKED</div>
-            <div id="alarm-banner" style="display:none; background:red; color:white; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; text-align:center;">
+            <div id="alarm-banner"
+                style="display:none; background:red; color:white; padding:10px; margin-top:10px; border-radius:5px; font-weight:bold; text-align:center;">
                 ALARM: <span id="alarm-text"></span>
             </div>
             <button class="btn-unlock" onclick="openKeypad()" id="btn-unlock-text">UNLOCK SYSTEM</button>
-            
+
             <div class="action-buttons" id="arm-buttons">
                 <button class="action-btn btn-away" onclick="doAction('/api/arm', {mode:'away'})">ARM AWAY</button>
                 <button class="action-btn btn-stay" onclick="doAction('/api/arm', {mode:'stay'})">ARM STAY</button>
                 <button class="action-btn btn-night" onclick="doAction('/api/arm', {mode:'night'})">ARM NIGHT</button>
-                <button class="action-btn" style="background:#8b5cf6;" onclick="doAction('/api/arm', {mode:'vacation'})">VACATION</button>
+                <button class="action-btn" style="background:#8b5cf6;"
+                    onclick="doAction('/api/arm', {mode:'vacation'})">VACATION</button>
             </div>
             <div class="action-buttons" id="disarm-buttons" style="display:none;">
-                <button class="action-btn btn-disarm-action" onclick="doAction('/api/disarm', {})">DISARM SYSTEM</button>
+                <button class="action-btn btn-disarm-action" onclick="doAction('/api/disarm', {})">DISARM
+                    SYSTEM</button>
             </div>
-            
+
             <div class="admin-menu-container" id="admin-menu">
-                <button class="action-btn" style="width:100%; background: #374151; color: white; border: 1px solid #4b5563;" onclick="document.getElementById('admin-links-grid').classList.toggle('open')">MAINTENANCE & SETTINGS ⚙️</button>
+                <button class="action-btn"
+                    style="width:100%; background: var(--glass-bg); color: var(--text-main); border: 1px solid var(--glass-border);"
+                    onclick="document.getElementById('admin-links-grid').classList.toggle('open')">MAINTENANCE &
+                    SETTINGS ⚙️</button>
                 <div class="admin-links" id="admin-links-grid">
                     <a href="users.html" class="admin-link">Users</a>
                     <a href="config.html" class="admin-link">Settings</a>
+                    <a href="zones.html" class="admin-link">Zones</a>
+                    <a href="relays.html" class="admin-link">Relays</a>
+                    <a href="presence.html" class="admin-link">Presence</a>
                     <a href="devices.html" class="admin-link">Devices</a>
                     <a href="cameras.html" class="admin-link">Cameras</a>
-                                        <a href="scheduler.html" class="admin-link">Schedule</a>
+                    <a href="scheduler.html" class="admin-link">Schedule</a>
+                    <a href="tester.html" class="admin-link" style="color:var(--not)">Sys-Tester</a>
                     <a href="audit.html" class="admin-link">Audit</a>
                     <a href="health.html" class="admin-link">System Health</a>
                     <a href="diagnostics.html" class="admin-link" style="color:var(--alarm)">Diagnostics</a>
@@ -781,7 +822,7 @@
                 <div style="color:#666; font-size:12px;">Loading cameras...</div>
             </div>
         </div>
-        
+
         <!-- ROW 3 -->
         <!-- Sensors & Zones -->
         <div class="module secure-module col-span-1">
@@ -802,7 +843,7 @@
                 <div class="weather-icon" id="weather-icon">☁️</div>
             </div>
         </div>
-        
+
         <!-- Local Sports -->
         <div class="module col-span-1">
             <div class="module-title">Local Sports</div>
@@ -851,9 +892,17 @@
                     <span class="ind-label">Tamper</span>
                     <span class="ind-value ok" id="tamper-value">SECURE</span>
                 </div>
+                <div class="indicator-card">
+                    <span class="ind-label">Cloudflare Proxy</span>
+                    <span class="ind-value" id="cf-status">WAIT</span>
+                </div>
+                <div class="indicator-card">
+                    <span class="ind-label">Last Check-in</span>
+                    <span class="ind-value" id="cf-time">--:--</span>
+                </div>
             </div>
         </div>
-        
+
         <!-- Audit Log Snippet -->
         <div class="module secure-module col-span-1">
             <div class="module-title">Recent Activity</div>
@@ -871,14 +920,17 @@
                 <div class="panic-thumb" id="panic-thumb"></div>
             </div>
         </div>
-        
+
     </div>
 
     <!-- Fullscreen Live Stream Modal -->
     <div id="fullscreen-modal" class="fullscreen-modal">
         <div class="modal-header">
-            <h2 id="modal-camera-name" style="display:flex; align-items:center; gap:10px;"><div class="status-dot"></div>Camera</h2>
-            <button onclick="closeFullscreen()" style="border:none; background:transparent; font-size: 24px; color: var(--text-main); cursor: pointer;">✕</button>
+            <h2 id="modal-camera-name" style="display:flex; align-items:center; gap:10px;">
+                <div class="status-dot"></div>Camera
+            </h2>
+            <button onclick="closeFullscreen()"
+                style="border:none; background:transparent; font-size: 24px; color: var(--text-main); cursor: pointer;">✕</button>
         </div>
         <div class="modal-content-fs">
             <img id="fullscreen-image" src="" alt="Camera Feed">
@@ -893,28 +945,42 @@
         <div class="modal-overlay" id="keypad-modal">
             <div class="keypad-container" style="position: relative;">
                 <div class="close-modal" onclick="closeKeypad()">&#10005;</div>
-                <div id="keypad-title" style="text-align:center; color:white; margin-bottom:15px; font-weight:600; letter-spacing:2px; font-size: 18px;">ENTER PIN</div>
+                <div id="keypad-title"
+                    style="text-align:center; color:white; margin-bottom:15px; font-weight:600; letter-spacing:2px; font-size: 18px;">
+                    ENTER PIN</div>
                 <div class="pin-display" id="pin-display"></div>
-                <div style="color: #ef4444; font-size: 12px; margin-bottom: 10px; text-align: center; min-height: 15px;" id="pin-error-msg"></div>
-                <div id="remember-device-container" style="display: none; align-items: center; justify-content: center; margin-bottom: 15px; color: rgba(255,255,255,0.7); font-size: 12px;">
+                <div style="color: #ef4444; font-size: 12px; margin-bottom: 10px; text-align: center; min-height: 15px;"
+                    id="pin-error-msg"></div>
+                <div id="remember-device-container"
+                    style="display: none; align-items: center; justify-content: center; margin-bottom: 15px; color: rgba(255,255,255,0.7); font-size: 12px;">
                     <input type="checkbox" id="remember-device-cb" style="margin-right: 8px;">
                     <label for="remember-device-cb">Remember this device (30 days)</label>
                 </div>
                 <div class="keypad">
-                    <div class="key" onclick="press(1)">1</div><div class="key" onclick="press(2)">2</div><div class="key" onclick="press(3)">3</div>
-                    <div class="key" onclick="press(4)">4</div><div class="key" onclick="press(5)">5</div><div class="key" onclick="press(6)">6</div>
-                    <div class="key" onclick="press(7)">7</div><div class="key" onclick="press(8)">8</div><div class="key" onclick="press(9)">9</div>
-                    <div class="key key-c" onclick="clr()">C</div><div class="key" onclick="press(0)">0</div><div class="key key-ok" onclick="submit()">OK</div>
+                    <div class="key" onclick="press(1)">1</div>
+                    <div class="key" onclick="press(2)">2</div>
+                    <div class="key" onclick="press(3)">3</div>
+                    <div class="key" onclick="press(4)">4</div>
+                    <div class="key" onclick="press(5)">5</div>
+                    <div class="key" onclick="press(6)">6</div>
+                    <div class="key" onclick="press(7)">7</div>
+                    <div class="key" onclick="press(8)">8</div>
+                    <div class="key" onclick="press(9)">9</div>
+                    <div class="key key-c" onclick="clr()">C</div>
+                    <div class="key" onclick="press(0)">0</div>
+                    <div class="key key-ok" onclick="submit()">OK</div>
                 </div>
-                <button class="modal-btn modal-btn-secondary" onclick="closeKeypad()" style="margin-top: 15px;">CANCEL</button>
+                <button class="modal-btn modal-btn-secondary" onclick="closeKeypad()"
+                    style="margin-top: 15px;">CANCEL</button>
             </div>
         </div>
     </div>
 
-      <!-- 2FA Setup Modal (Reused Logic) -->
+    <!-- 2FA Setup Modal (Reused Logic) -->
     <div class="modal-overlay" id="totp-modal" style="z-index: 2000;">
         <div class="modal-content" style="max-width: 400px; width: 90%;">
-            <div style="color: var(--accent); font-size: 16px; font-weight: bold; margin-bottom: 15px;">🔐 Two-Factor Authentication Required</div>
+            <div style="color: var(--accent); font-size: 16px; font-weight: bold; margin-bottom: 15px;">🔐 Two-Factor
+                Authentication Required</div>
             <div style="color: #aaa; font-size: 12px; margin-bottom: 15px;">
                 Before you can arm/disarm the system, you must set up 2-Factor Authentication.<br><br>
                 We've sent a setup code to your email.
@@ -922,9 +988,11 @@
             <div style="font-size:12px">Enter the 2FA setup key from your email:</div>
             <input type="text" class="modal-input" id="secret-input-box" maxlength="16" placeholder="ABCD1234EFGH5678">
             <div style="font-size:12px; margin-top: 15px;">Then enter a 6-digit code from your authenticator app:</div>
-            <input type="text" class="modal-input" id="totp-input" maxlength="6" placeholder="000000" inputmode="numeric">
+            <input type="text" class="modal-input" id="totp-input" maxlength="6" placeholder="000000"
+                inputmode="numeric">
             <button class="modal-btn modal-btn-primary" onclick="verify2FA()">Verify & Enable</button>
-            <button class="modal-btn modal-btn-secondary" onclick="sessionStorage.removeItem('sentinel_token'); location.reload()">Cancel & Logout</button>
+            <button class="modal-btn modal-btn-secondary"
+                onclick="sessionStorage.removeItem('sentinel_token'); location.reload()">Cancel & Logout</button>
         </div>
     </div>
 
@@ -945,6 +1013,120 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
         }
         setInterval(updateClock, 1000); updateClock();
+
+        // --- SIREN AUDIO LOGIC ---
+        let audioCtx;
+        let sirenOscillator;
+        let sirenGain;
+        let sirenInterval;
+        let isSirenPlaying = false;
+        
+        function startSiren() {
+            if (isSirenPlaying) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                isSirenPlaying = true;
+                sirenOscillator = audioCtx.createOscillator();
+                sirenGain = audioCtx.createGain();
+                
+                sirenOscillator.type = 'square';
+                sirenOscillator.connect(sirenGain);
+                sirenGain.connect(audioCtx.destination);
+                
+                sirenOscillator.start();
+                
+                let high = true;
+                sirenInterval = setInterval(() => {
+                    if (sirenOscillator) {
+                        sirenOscillator.frequency.setValueAtTime(high ? 1200 : 800, audioCtx.currentTime);
+                        high = !high;
+                    }
+                }, 400); // Toggle every 400ms
+            } catch (e) {
+                console.error("Audio Context failed", e);
+            }
+        }
+        
+        function stopSiren() {
+            if (!isSirenPlaying) return;
+            isSirenPlaying = false;
+            clearInterval(sirenInterval);
+            if (sirenOscillator) {
+                sirenOscillator.stop();
+                sirenOscillator.disconnect();
+                sirenOscillator = null;
+            }
+            if (sirenGain) {
+                sirenGain.disconnect();
+                sirenGain = null;
+            }
+        }
+
+        // --- AUTO-LOCK IDLE LOGIC ---
+        let idleTimeout;
+        const IDLE_TIMEOUT_MS = 120000; // 2 minutes auto-lock
+        
+        function lockConsole() {
+            if(isAuthenticated) {
+                sessionStorage.removeItem('sentinel_token');
+                sessionStorage.removeItem('sentinel_is_admin');
+                document.body.classList.remove('unlocked');
+                isAuthenticated = false;
+                isAdmin = false;
+                document.getElementById('btn-unlock-text').innerText = "UNLOCK SYSTEM";
+                document.getElementById('btn-unlock-text').style.background = "";
+                document.getElementById('admin-menu').style.display = "none";
+                updateUI({state: window.lastKnownState || 0, ready: window.lastKnownReady !== undefined ? window.lastKnownReady : true});
+            }
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimeout);
+            idleTimeout = setTimeout(() => {
+                if (isAuthenticated) {
+                    lockConsole();
+                }
+            }, IDLE_TIMEOUT_MS);
+        }
+
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, resetIdleTimer, true);
+        });
+        resetIdleTimer();
+
+        // --- WAKE LOCK API (KEEP SCREEN ON DURING ALARM) ---
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator && wakeLock === null) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Wake Lock released');
+                        wakeLock = null;
+                    });
+                    console.log('Wake Lock active (Alarm Mode)');
+                }
+            } catch (err) {
+                console.log('Wake Lock error:', err.name, err.message);
+            }
+        }
+        
+        async function releaseWakeLock() {
+            if (wakeLock !== null) {
+                await wakeLock.release();
+                wakeLock = null;
+            }
+        }
+
+        // Re-request wake lock if visibility changes while we are supposed to hold it (i.e., in alarm state)
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && (window.lastKnownState === 4)) {
+                await requestWakeLock();
+            }
+        });
+
         
         // --- WEATHER FETCH (Open-Meteo via Backend Config fallback to IP) ---
         async function fetchWeather() {
@@ -1096,37 +1278,147 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         setInterval(fetchSportsScores, 5 * 60 * 1000); // 5 mins
 
         // --- ACTIVITY LOG FETCH ---
+        // Maps numeric event_type from /events endpoint to human-readable labels
+        const EVENT_TYPE_MAP = {
+            1:  { label: 'SYSTEM BOOT',      icon: '⚙️',  color: '#a78bfa' },
+            2:  { label: 'ARMED',            icon: '🔒', color: '#ef4444' },
+            3:  { label: 'DISARMED',         icon: '🔓', color: '#10b981' },
+            4:  { label: 'ZONE TRIPPED',     icon: '⚡', color: '#fbbf24' },
+            5:  { label: 'TAMPER DETECTED',  icon: '🚨', color: '#ef4444' },
+            6:  { label: 'POWER LOSS',       icon: '🔋', color: '#f97316' },
+            7:  { label: 'POWER RESTORED',   icon: '⚡', color: '#10b981' },
+            8:  { label: 'HIGH TEMP',        icon: '🌡️', color: '#f97316' },
+            9:  { label: 'NETWORK LOST',     icon: '📡', color: '#ef4444' },
+            10: { label: 'NETWORK FOUND',    icon: '📡', color: '#10b981' },
+            11: { label: 'LOGIN FAILED',     icon: '⛔', color: '#f97316' },
+            12: { label: 'ALERT SENT',       icon: '📢', color: '#60a5fa' },
+        };
+
+        function fmtTimestamp(ts) {
+            // ts is a unix epoch integer (seconds)
+            const d = new Date(ts * 1000);
+            if (isNaN(d)) return '—';
+            const mo  = d.toLocaleDateString([], { month: 'short' });
+            const day = d.getDate();
+            const t   = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const yr  = d.getFullYear();
+            const thisYr = new Date().getFullYear();
+            return (yr !== thisYr) ? `${mo} ${day}, ${yr} ${t}` : `${mo} ${day}  ${t}`;
+        }
+
+        function fmtAuditTimestamp(raw) {
+            // raw may be unix int (seconds) or ISO string from audit log
+            const ts = (typeof raw === 'number') ? raw : Math.floor(new Date(raw).getTime() / 1000);
+            return fmtTimestamp(ts);
+        }
+
+        function auditEntryToUnix(raw) {
+            if (typeof raw === 'number') return raw;
+            return Math.floor(new Date(raw).getTime() / 1000);
+        }
+
         async function fetchAuditLog() {
-            try {
-                const r = await fetch('/api/audit');
-                const logs = await r.json();
-                const list = document.getElementById('audit-list');
-                list.innerHTML = '';
-                
-                // Show up to 4 most recent events
-                const recent = logs.slice(0, 4);
-                if(recent.length === 0) {
-                    list.innerHTML = '<li class="audit-item"><span style="color:#666">No recent events</span></li>';
-                    return;
-                }
-                
-                recent.forEach(log => {
-                    const li = document.createElement('li');
-                    li.className = 'audit-item';
-                    
-                    const time = new Date(log.timestamp * 1000);
-                    const timeStr = time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    
-                    let actionColor = '#9ca3af';
-                    if(log.action.includes('ARM')) actionColor = '#ef4444';
-                    else if(log.action.includes('DISARM')) actionColor = '#10b981';
-                    
-                    li.innerHTML = `<span style="color:${actionColor}">${log.action} (${log.user})</span> <span class="audit-time">${timeStr}</span>`;
-                    list.appendChild(li);
+            const list = document.getElementById('audit-list');
+
+            // ── Fetch both sources concurrently ──────────────────────────────
+            const [auditResult, eventsResult] = await Promise.allSettled([
+                fetch('/api/audit').then(r => r.ok ? r.json() : Promise.reject(r.status)),
+                fetch('/events').then(r => r.ok ? r.json() : Promise.reject(r.status))
+            ]);
+
+            // ── Normalize audit log entries ───────────────────────────────────
+            let unified = [];
+
+            if (auditResult.status === 'fulfilled') {
+                const data = auditResult.value;
+                const entries = Array.isArray(data) ? data : (data.entries || []);
+                entries.forEach(e => {
+                    const action = (e.action || 'EVENT').toUpperCase();
+                    const success = e.success !== false;
+
+                    let icon = '📋', color = '#9ca3af';
+                    if (action.includes('ARM') && !action.includes('DISARM')) { icon = '🔒'; color = '#ef4444'; }
+                    else if (action.includes('DISARM'))                        { icon = '🔓'; color = '#10b981'; }
+                    else if (action.includes('LOGIN') || action.includes('AUTH')) {
+                        icon  = success ? '🔑' : '⛔';
+                        color = success ? '#60a5fa' : '#f97316';
+                    }
+                    else if (action.includes('TRIGGER') || action.includes('ZONE') || action.includes('ALARM')) { icon = '⚡'; color = '#fbbf24'; }
+                    else if (action.includes('TAMPER'))                        { icon = '🚨'; color = '#ef4444'; }
+                    else if (action.includes('POWER'))                         { icon = '🔋'; color = '#f97316'; }
+                    else if (action.includes('NETWORK'))                       { icon = '📡'; color = '#60a5fa'; }
+                    else if (action.includes('BOOT') || action.includes('SYSTEM')) { icon = '⚙️'; color = '#a78bfa'; }
+                    else if (!success)                                         { icon = '⚠️'; color = '#f97316'; }
+
+                    // Build a clean label: replace underscores, title-case
+                    const label = action.replace(/_/g, ' ');
+                    const user  = e.user || 'system';
+                    const ip    = e.ip   || e.ip_address || '';
+                    const details = [e.details, ip && ip !== '127.0.0.1' ? `from ${ip}` : ''].filter(Boolean).join(' · ');
+
+                    unified.push({
+                        ts: auditEntryToUnix(e.timestamp),
+                        label, icon, color,
+                        sub: user,
+                        details,
+                        source: 'audit'
+                    });
                 });
-            } catch(e) {
-                // If endpoint doesn't exist or not authed, just hide/fail silently
             }
+
+            // ── Normalize hardware events from /events ────────────────────────
+            if (eventsResult.status === 'fulfilled') {
+                const events = Array.isArray(eventsResult.value) ? eventsResult.value : [];
+                events.forEach(ev => {
+                    const meta = EVENT_TYPE_MAP[ev.event_type] || { label: `EVENT ${ev.event_type}`, icon: '📋', color: '#9ca3af' };
+                    const zoneNote = (ev.zone_id && ev.zone_id > 0) ? `Zone ${ev.zone_id}` : '';
+                    unified.push({
+                        ts: ev.timestamp || 0,
+                        label: meta.label,
+                        icon: meta.icon,
+                        color: meta.color,
+                        sub: zoneNote,
+                        details: '',
+                        source: 'events'
+                    });
+                });
+            }
+
+            // ── Dedup: audit log already mirrors hardware events; prefer audit ─
+            // Keep events-source entries only if no audit entry within 5s of same type
+            unified = unified.filter((e, _, arr) => {
+                if (e.source !== 'events') return true;
+                const label = e.label;
+                return !arr.some(a => a.source === 'audit' && a.label.includes(label.split(' ')[0]) && Math.abs(a.ts - e.ts) < 5);
+            });
+
+            // ── Sort newest first ─────────────────────────────────────────────
+            unified.sort((a, b) => b.ts - a.ts);
+
+            // ── Render (up to 12 entries) ─────────────────────────────────────
+            list.innerHTML = '';
+            const display = unified.slice(0, 12);
+
+            if (display.length === 0) {
+                list.innerHTML = '<li class="audit-item"><span style="color:#666">No recent events</span></li>';
+                return;
+            }
+
+            display.forEach(ev => {
+                const li = document.createElement('li');
+                li.className = 'audit-item';
+
+                const timeStr = fmtTimestamp(ev.ts);
+                const sub     = ev.sub  ? `<span style="color:#6b7280;font-weight:normal;"> · ${ev.sub}</span>` : '';
+                const details = ev.details ? `<span style="color:#6b7280;font-size:10px;display:block;padding-left:18px;margin-top:1px;">${ev.details}</span>` : '';
+
+                li.innerHTML =
+                    `<div style="display:flex;justify-content:space-between;align-items:center;gap:4px;">` +
+                        `<span>${ev.icon} <span style="color:${ev.color}">${ev.label}${sub}</span></span>` +
+                        `<span class="audit-time" style="white-space:nowrap;flex-shrink:0;">${timeStr}</span>` +
+                    `</div>${details}`;
+                list.appendChild(li);
+            });
         }
         fetchAuditLog();
         setInterval(fetchAuditLog, 10000);
@@ -1237,25 +1529,28 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         });
 
         async function openKeypad() {
+            // First interaction generally allows audio context to start
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
             if(isAuthenticated) {
-                sessionStorage.removeItem('sentinel_token');
-                sessionStorage.removeItem('sentinel_is_admin');
-                document.body.classList.remove('unlocked');
-                isAuthenticated = false;
-                isAdmin = false;
-                document.getElementById('btn-unlock-text').innerText = "UNLOCK SYSTEM";
-                document.getElementById('btn-unlock-text').style.background = "";
-                document.getElementById('admin-menu').style.display = "none";
-                updateUI({state: window.lastKnownState || 0, ready: window.lastKnownReady !== undefined ? window.lastKnownReady : true});
+                lockConsole();
                 return;
             } else {
                 let keypadModal = document.getElementById('keypad-modal');
                 if (!keypadModal) {
-                    document.getElementById('btn-unlock-text').innerText = 'Err: Keypad Missing';
-                    return;
+                    try {
+                        const r = await fetch('keypad.html');
+                        if (!r.ok) throw new Error('Keypad load failed');
+                        const html = await r.text();
+                        document.getElementById('dynamic-components').insertAdjacentHTML('beforeend', html);
+                        keypadModal = document.getElementById('keypad-modal');
+                    } catch(e) {
+                        console.error('Failed to load keypad', e);
+                        document.getElementById('btn-unlock-text').innerText = 'Err: Keypad Missing';
+                        return;
+                    }
                 }
-                
-                document.getElementById('btn-unlock-text').innerText = 'UNLOCK SYSTEM'; 
+                document.getElementById('btn-unlock-text').innerText = 'UNLOCK SYSTEM';
                 keypadMode = "pin";
                 document.getElementById('keypad-title').innerText = "ENTER PIN";
                 document.getElementById('keypad-title').style.color = "white";
@@ -1328,14 +1623,21 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             } catch(e) { alert('Error setting up 2FA.'); }
         }
 
+        let isSubmitting = false;
+
         async function submit() {
+            if (isSubmitting) return;
             try {
-                document.getElementById('pin-error-msg').innerText = '';
+                isSubmitting = true;
+                document.getElementById('pin-error-msg').innerText = 'VALIDATING...';
+                document.getElementById('pin-error-msg').style.color = 'var(--accent)';
                 
                 if (keypadMode === 'totp') {
                     if (currentPin.length !== 6) {
                         document.getElementById('pin-error-msg').innerText = 'INVALID LENGTH';
+                        document.getElementById('pin-error-msg').style.color = '#ef4444';
                         clr();
+                        isSubmitting = false;
                         return;
                     }
                     const rememberDevice = document.getElementById('remember-device-cb').checked;
@@ -1356,8 +1658,10 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                         grantAccess(d2);
                     } else { 
                         document.getElementById('pin-error-msg').innerText = 'INVALID 2FA CODE';
+                        document.getElementById('pin-error-msg').style.color = '#ef4444';
                         clr();
                     }
+                    isSubmitting = false;
                     return;
                 }
 
@@ -1384,11 +1688,15 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                     clr();
                 } else { 
                     document.getElementById('pin-error-msg').innerText = 'INVALID PIN';
+                    document.getElementById('pin-error-msg').style.color = '#ef4444';
                     clr(); 
                 }
             } catch(e) { 
                 document.getElementById('pin-error-msg').innerText = 'ERROR - TRY AGAIN';
+                document.getElementById('pin-error-msg').style.color = '#ef4444';
                 clr();
+            } finally {
+                isSubmitting = false;
             }
         }
         
@@ -1434,25 +1742,64 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         }
 
         // --- SYSTEM STATUS FETCH ---
+        // Exit timer countdown interval handle
+        let exitTimerInterval = null;
+
         function updateUI(cfg) {
             const state = parseInt(cfg.state || 0);
             const isReady = !!(cfg.ready);
             const display = document.getElementById('status-display');
-            
-            display.innerText = (state === 0) ? (isReady ? "READY TO ARM" : "NOT READY") : 
-                                (state === 1) ? "ARMING (EXIT NOW)" : 
-                                (state === 3) ? "ENTRY DELAY" : 
-                                (state === 4) ? "SYSTEM ALARM" : "SYSTEM ARMED";
-            display.className = "status-display " + ((state === 0) ? (isReady ? "ready" : "not-ready") : 
-                                                    (state === 4) ? "alarm" : "armed");
+
+            // Clear any running exit-timer countdown if we're no longer in state 1
+            if (state !== 1 && exitTimerInterval) {
+                clearInterval(exitTimerInterval);
+                exitTimerInterval = null;
+            }
+
+            if (state === 1) {
+                // cfg.timer is in deciseconds (0.1s units) from backend
+                const timerDs = parseInt(cfg.timer || 0);
+                const totalSec = Math.ceil(timerDs / 10);
+
+                // Only restart the visual countdown if we got a fresh timer value
+                if (timerDs > 0 && !exitTimerInterval) {
+                    let remaining = totalSec;
+                    display.innerText = `ARMING — EXIT NOW (${remaining}s)`;
+                    display.className = 'status-display armed';
+                    exitTimerInterval = setInterval(() => {
+                        remaining--;
+                        if (remaining <= 0) {
+                            clearInterval(exitTimerInterval);
+                            exitTimerInterval = null;
+                            display.innerText = 'SYSTEM ARMED';
+                        } else {
+                            display.innerText = `ARMING — EXIT NOW (${remaining}s)`;
+                        }
+                    }, 1000);
+                } else if (!exitTimerInterval) {
+                    // No timer value from backend, just show static label
+                    display.innerText = 'ARMING (EXIT NOW)';
+                    display.className = 'status-display armed';
+                }
+            } else {
+                display.innerText = (state === 0) ? (isReady ? "READY TO ARM" : "NOT READY") :
+                                    (state === 3) ? "ENTRY DELAY" :
+                                    (state === 4) ? "SYSTEM ALARM" : "SYSTEM ARMED";
+                display.className = "status-display " + ((state === 0) ? (isReady ? "ready" : "not-ready") :
+                                                        (state === 4) ? "alarm" : "armed");
+            }
             
             const alarmBanner = document.getElementById('alarm-banner');
             if (alarmBanner) {
                 if (state === 4) {
                     alarmBanner.style.display = "block";
                     document.getElementById('alarm-text').innerText = (cfg.violation && cfg.violation !== "None") ? cfg.violation : "Unknown";
+                    startSiren();
+                    requestWakeLock();
                 } else {
                     alarmBanner.style.display = "none";
+                    stopSiren();
+                    releaseWakeLock();
                 }
             }
             
@@ -1529,36 +1876,52 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 const r = await fetch('/api/status');
                 const d = await r.json();
                 if(d.config) updateUI(d.config);
-                
+            } catch(e) { console.error('Status fetch failed:', e); }
+            
+            try {
                 const r2 = await fetch('/status');
                 if(r2.ok) {
-                const d2 = await r2.json();
-                
-                // Temp
-                if(d2.temperature_f !== undefined) {
-                    document.getElementById('temp-value').innerText = Math.round(d2.temperature_f) + '°F';
+                    const d2 = await r2.json();
+                    
+                    // Temp
+                    if(d2.temperature_f !== undefined) {
+                        document.getElementById('temp-value').innerText = Math.round(d2.temperature_f) + '°F';
+                    }
+                    
+                    // Power
+                    const pwrVal = document.getElementById('power-value');
+                    if(d2.on_backup_power) { pwrVal.innerText = 'BATTERY'; pwrVal.className = 'ind-value warn'; } 
+                    else { pwrVal.innerText = 'AC MAIN'; pwrVal.className = 'ind-value ok'; }
+                    
+                    // Tamper
+                    const tmpVal = document.getElementById('tamper-value');
+                    if(d2.tamper_detected) { tmpVal.innerText = 'ALERT!'; tmpVal.className = 'ind-value alert'; } 
+                    else { tmpVal.innerText = 'SECURE'; tmpVal.className = 'ind-value ok'; }
+                    
+                    // Network
+                    const netVal = document.getElementById('net-value');
+                    if(d2.network_state !== undefined) {
+                        if (d2.network_state === 3) { netVal.innerText = 'OFFLINE'; netVal.className = 'ind-value alert'; }
+                        else if (d2.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
+                        else if (d2.network_state === 1) { netVal.innerText = 'PRIMARY'; netVal.className = 'ind-value ok'; }
+                        else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
+                    }
+                } else {
+                    // Health endpoint unreachable — show error state
+                    document.getElementById('temp-value').innerText = 'ERROR';
+                    document.getElementById('temp-value').style.color = 'var(--alarm)';
+                    const netVal = document.getElementById('net-value');
+                    netVal.innerText = 'NO DATA';
+                    netVal.className = 'ind-value alert';
                 }
-                
-                // Power
-                const pwrVal = document.getElementById('power-value');
-                if(d2.on_backup_power) { pwrVal.innerText = 'BATTERY'; pwrVal.className = 'ind-value warn'; } 
-                else { pwrVal.innerText = 'AC MAIN'; pwrVal.className = 'ind-value ok'; }
-                
-                // Tamper
-                const tmpVal = document.getElementById('tamper-value');
-                if(d2.tamper_detected) { tmpVal.innerText = 'ALERT!'; tmpVal.className = 'ind-value alert'; } 
-                else { tmpVal.innerText = 'SECURE'; tmpVal.className = 'ind-value ok'; }
-                
-                // Network
+            } catch(e) {
+                console.error('Health fetch failed:', e);
+                document.getElementById('temp-value').innerText = 'ERROR';
+                document.getElementById('temp-value').style.color = 'var(--alarm)';
                 const netVal = document.getElementById('net-value');
-                if(d2.network_state !== undefined) {
-                    if (d2.network_state === 3) { netVal.innerText = 'OFFLINE'; netVal.className = 'ind-value alert'; }
-                    else if (d2.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
-                    else if (d2.network_state === 1) { netVal.innerText = 'PRIMARY'; netVal.className = 'ind-value ok'; }
-                    else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
-                }
-                }
-            } catch(e) { console.error(e); }
+                netVal.innerText = 'NO DATA';
+                netVal.className = 'ind-value alert';
+            }
         }
 
         async function doAction(url, body) {
@@ -1568,12 +1931,24 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 return;
             }
             body.pin = pinToSend;
-            await fetch(url, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body) 
-            });
-            setTimeout(() => { location.reload(); }, 500);
+            try {
+                const res = await fetch(url, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body) 
+                });
+                const data = await res.json();
+                if (!res.ok || data.status === 'error') {
+                    alert('Action failed: ' + (data.message || 'Unknown error'));
+                    if (data.message === 'Unauthorized' || res.status === 401) {
+                        currentPin = ""; // Reset pin on auth failure
+                    }
+                } else {
+                    setTimeout(() => { location.reload(); }, 500);
+                }
+            } catch(e) {
+                alert('Request failed: ' + e.message);
+            }
         }
 
         
@@ -1582,10 +1957,10 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         let dashboardGridRefreshInterval = null;
         let fullscreenRefreshInterval = null;
         let currentFullscreenCamera = null;
-        const REFRESH_RATE_GRID = 3000; // Refresh grid every 3s
+        const REFRESH_RATE_GRID = 60000;
         const REFRESH_RATE_FULLSCREEN = 800;
         
-        const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27100%25%27 height=%27100%25%27%3E%3Crect width=%27100%25%27 height=%27100%25%27 fill=%27%23111%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 font-family=%27sans-serif%27 font-size=%2720%27 fill=%27%23666%27%3EOffline%3C/text%3E%3C/svg%3E`;
+        const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%23666'%3EOffline%3C/text%3E%3C/svg%3E`;
 
         async function loadDashboardCameras() {
             try {
@@ -1630,7 +2005,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                          src="${imageSrc}" 
                          alt="${cam.friendly_name || 'Camera '+index}"
                          onload="if(this.naturalWidth <= 1) { this.src='https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=600&q=80'; }"
-                         onerror="this.onerror=null; this.src='${svgPlaceholder}'; document.getElementById('dash-cam-status-${index}').className='status-dot offline';">
+                         onerror="this.onerror=null; this.src=&quot;${svgPlaceholder}&quot;; document.getElementById('dash-cam-status-${index}').className='status-dot offline';">
                     <div class="camera-overlay">
                         <div class="camera-name">
                             <div class="status-dot ${statusClass}" id="dash-cam-status-${index}"></div>
@@ -1707,47 +2082,61 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             modal.style.display = 'flex';
             name.innerHTML = `<div class="status-dot"></div>${cam.friendly_name || 'Camera ' + index}`;
             
-            // Try MJPEG stream first, if it breaks fallback to snapshot polling
-            img.src = `/api/camera/${index}/stream`;
-            
-            img.onerror = () => {
-                img.onerror = null; // Prevent infinite loop if fallback fails
-                // If stream fails, fallback to snapshot polling loop
-                if (fullscreenRefreshInterval) clearInterval(fullscreenRefreshInterval);
-                
-                const fetchFrame = () => {
-                    if (currentFullscreenCamera !== index) return;
-                    const temp = new Image();
-                    temp.onload = function() {
-                        if (this.naturalWidth <= 1) {
-                            img.src = svgPlaceholder;
-                            // Optionally update the modal title to show offline
-                            const nameEl = document.getElementById('modal-camera-name');
-                            if (nameEl && !nameEl.innerHTML.includes('offline')) {
-                                nameEl.innerHTML = `<div class="status-dot offline"></div>${dashboardCameras[index].friendly_name} (Offline)`;
-                            }
-                        } else {
-                            img.src = this.src;
-                            const nameEl = document.getElementById('modal-camera-name');
-                            if (nameEl && nameEl.innerHTML.includes('offline')) {
-                                nameEl.innerHTML = `<div class="status-dot"></div>${dashboardCameras[index].friendly_name}`;
-                            }
+            // Clear any existing fullscreen refresh loop
+            if (fullscreenRefreshInterval) { clearTimeout(fullscreenRefreshInterval); fullscreenRefreshInterval = null; }
+
+            // Probe whether the MJPEG stream is available before committing to it.
+            // In many builds (mock/linux) the /stream endpoint returns a JSON 404,
+            // which browsers may not fire img.onerror for reliably.  Using fetch()
+            // to check first is deterministic and avoids a blank/frozen image.
+            fetch(`/api/camera/${index}/stream`, { method: 'GET', signal: AbortSignal.timeout ? AbortSignal.timeout(2000) : undefined })
+                .then(res => {
+                    const ct = res.headers.get('Content-Type') || '';
+                    if (res.ok && ct.includes('multipart')) {
+                        // Real MJPEG stream available — hand off to browser
+                        img.src = `/api/camera/${index}/stream`;
+                    } else {
+                        // Stream not available (404, JSON error, etc.) — use snapshot polling
+                        startSnapshotPolling(index, img);
+                    }
+                })
+                .catch(() => {
+                    // Network error or AbortSignal timeout — fall back to snapshot polling
+                    startSnapshotPolling(index, img);
+                });
+        }
+
+        function startSnapshotPolling(index, img) {
+            const fetchFrame = () => {
+                if (currentFullscreenCamera !== index) return;
+                const temp = new Image();
+                temp.onload = function() {
+                    if (this.naturalWidth <= 1) {
+                        img.src = svgPlaceholder;
+                        const nameEl = document.getElementById('modal-camera-name');
+                        if (nameEl && !nameEl.innerHTML.includes('Offline')) {
+                            nameEl.innerHTML = `<div class="status-dot offline"></div>${dashboardCameras[index].friendly_name || 'Camera '+index} (Offline)`;
                         }
-                        if (currentFullscreenCamera === index) {
-                            fullscreenRefreshInterval = setTimeout(fetchFrame, REFRESH_RATE_FULLSCREEN);
+                    } else {
+                        img.src = this.src;
+                        const nameEl = document.getElementById('modal-camera-name');
+                        if (nameEl && nameEl.innerHTML.includes('Offline')) {
+                            nameEl.innerHTML = `<div class="status-dot"></div>${dashboardCameras[index].friendly_name || 'Camera '+index}`;
                         }
-                    };
-                    temp.onerror = () => { 
-                        img.src = svgPlaceholder; 
-                        if (currentFullscreenCamera === index) {
-                            fullscreenRefreshInterval = setTimeout(fetchFrame, REFRESH_RATE_FULLSCREEN);
-                        }
-                    };
-                    temp.src = `/api/camera/${index}/snapshot?t=${Date.now()}`;
+                    }
+                    if (currentFullscreenCamera === index) {
+                        fullscreenRefreshInterval = setTimeout(fetchFrame, REFRESH_RATE_FULLSCREEN);
+                    }
                 };
-                
-                fetchFrame();
+                temp.onerror = () => {
+                    img.src = svgPlaceholder;
+                    if (currentFullscreenCamera === index) {
+                        fullscreenRefreshInterval = setTimeout(fetchFrame, REFRESH_RATE_FULLSCREEN);
+                    }
+                };
+                temp.src = `/api/camera/${index}/snapshot?t=${Date.now()}`;
             };
+            fetchFrame();
         }
 
         function closeFullscreen() {
@@ -1767,6 +2156,50 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
 
         check();
 
+        // --- THEME TOGGLE LOGIC ---
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('sentinel_theme', newTheme);
+            const btn = document.getElementById('theme-toggle-btn');
+            if (btn) btn.innerText = newTheme === 'light' ? '☀️' : '🌙';
+        }
+
+        // Initialize Theme
+        (function() {
+            const savedTheme = localStorage.getItem('sentinel_theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                const btn = document.getElementById('theme-toggle-btn');
+                if (btn) btn.innerText = savedTheme === 'light' ? '☀️' : '🌙';
+            }
+        })();
+
+
+// --- CLOUDFLARE CHECK-IN STATUS ---
+setInterval(async () => {
+    try {
+        let res = await fetch('/api/checkin/log');
+        if (!res.ok) return;
+        let data = await res.json();
+        if(data && data.length > 0) {
+            let last = data[data.length-1];
+            let statusEl = document.getElementById('cf-status');
+            let timeEl = document.getElementById('cf-time');
+            if(statusEl) {
+                statusEl.innerText = (last.status === 200) ? 'OK' : 'ERR';
+                statusEl.className = 'ind-value ' + ((last.status === 200) ? 'ok' : 'err');
+            }
+            if(timeEl) {
+                let d = new Date(last.timestamp * 1000);
+                timeEl.innerText = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+        }
+    } catch(e) {}
+}, 5000);
+
 </script>
 </body>
+
 </html>

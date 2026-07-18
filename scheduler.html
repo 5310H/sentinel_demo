@@ -1,253 +1,258 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scheduler - Sentinel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --alarm: #ff003c;
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+        [data-theme="light"] {
+            --bg-color: #f0f4f8;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-highlight: rgba(0, 0, 0, 0.05);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.1);
+            --text-main: #1a202c;
+            --text-dim: #4a5568;
+            --ready: #0088ff;
+            --accent: #0077ff;
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+            animation: bg-pulse 10s infinite alternate;
         }
 
-        .container {
-            max-width: 1400px;
+        @keyframes bg-pulse {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 100% 100%; }
+        }
+
+        .container { 
+            width: 100%; 
+            max-width: 1200px; 
             margin: 0 auto;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 30px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
         }
 
         @media (max-width: 768px) {
-            .container {
-                padding: 12px;
-            }
+            .container { padding: 20px; border-radius: 24px; }
         }
 
-        header {
+        .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
+            gap: 15px;
         }
 
-        h1 {
-            color: #333;
-            font-size: 28px;
+        .back-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            width: 44px;
+            height: 44px;
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
-        }
-
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 2s ease-in-out infinite;
-            background: #4caf50;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            color: var(--text-main);
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+
+        .title {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            color: var(--text-main);
+            flex: 1;
         }
 
         .btn-primary {
-            background: #667eea;
-            color: white;
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-
-@media (hover: hover) {
-            .btn-primary:hover {
-            background: #5568d3;
+        
+        .btn-primary:hover {
+            background: rgba(0, 229, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0,229,255,0.3);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
-}
 
-        .btn-success {
-            background: #4caf50;
-            color: white;
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
         }
+        
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
 
         .btn-danger {
-            background: #f44336;
-            color: white;
-        }
-
-        .btn-warning {
-            background: #ff9800;
-            color: white;
-        }
-
-        .btn-small {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        .stats-panel {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgba(255, 0, 60, 0.1);
+            border: 1px solid var(--alarm);
+            color: var(--alarm);
+            padding: 12px 24px;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
         }
 
+        .btn-danger:hover {
+            background: rgba(255, 0, 60, 0.2);
+            box-shadow: 0 0 15px rgba(255,0,60,0.3);
+        }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
+            margin-bottom: 30px;
         }
 
         .stat-item {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
             text-align: center;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            padding: 15px;
-            backdrop-filter: blur(10px);
         }
 
         .stat-label {
-            color: rgba(255, 255, 255, 0.9);
+            color: var(--text-dim);
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             margin-bottom: 8px;
         }
 
         .stat-value {
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .action-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th {
-            background: #f8f9fa;
-            padding: 12px;
-            text-align: left;
+            color: var(--text-main);
+            font-size: 28px;
             font-weight: 600;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .device-card {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: all 0.3s;
         }
 
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e0e0e0;
+        .device-card:hover {
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.3);
         }
 
-@media (hover: hover) {
-            tr:hover {
-            background: #f8f9fa;
+        .device-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-}
+
+        .device-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent);
+        }
 
         .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
             font-size: 11px;
-            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
         }
 
-        .badge-interval {
-            background: #e3f2fd;
-            color: #1976d2;
+        .badge-enabled { background: rgba(0,255,0,0.1); color: #00ffaa; border-color: #00ffaa; }
+        .badge-disabled { background: rgba(255,0,60,0.1); color: var(--alarm); border-color: var(--alarm); }
+
+        .device-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
         }
 
-        .badge-cron {
-            background: #f3e5f5;
-            color: #7b1fa2;
+        .info-cell {
+            background: rgba(255,255,255,0.02);
+            padding: 10px;
+            border-radius: 8px;
         }
 
-        .badge-once {
-            background: #fff3e0;
-            color: #f57c00;
+        .info-label {
+            color: var(--text-dim);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
         }
 
-        .badge-enabled {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .badge-disabled {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .badge-low {
-            background: #e0e0e0;
-            color: #616161;
-        }
-
-        .badge-normal {
-            background: #bbdefb;
-            color: #1976d2;
-        }
-
-        .badge-high {
-            background: #ffccbc;
-            color: #e64a19;
-        }
-
-        .badge-critical {
-            background: #ffcdd2;
-            color: #c62828;
+        .info-value {
+            font-size: 14px;
+            color: var(--text-main);
         }
 
         /* Modal Styles */
@@ -259,49 +264,24 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            justify-content: center;
+            align-items: center;
         }
 
         .modal-content {
-            background: white;
-            margin: 5% auto;
+            background: var(--bg-color);
             padding: 30px;
-            border-radius: 16px;
+            border-radius: 24px;
             width: 90%;
             max-width: 600px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 40px rgba(0,229,255,0.1);
+            border: 1px solid var(--glass-border);
+            max-height: 90vh;
+            overflow-y: auto;
         }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .modal-header h2 {
-            color: #333;
-            font-size: 24px;
-        }
-
-        .close {
-            font-size: 32px;
-            font-weight: bold;
-            color: #999;
-            cursor: pointer;
-            line-height: 1;
-            transition: color 0.2s;
-        }
-
-@media (hover: hover) {
-            .close:hover {
-            color: #333;
-        }
-}
-
+        
         .form-group {
             margin-bottom: 20px;
         }
@@ -309,8 +289,11 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: #555;
+            color: var(--text-dim);
             font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         input[type="text"],
@@ -318,151 +301,78 @@
         select,
         textarea {
             width: 100%;
-            padding: 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             font-size: 14px;
-            transition: border-color 0.2s;
+            color: var(--text-main);
+            transition: all 0.3s;
         }
 
         input:focus,
         select:focus,
         textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0,229,255,0.2);
         }
 
         .form-hint {
-            font-size: 12px;
-            color: #999;
-            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 6px;
         }
 
         .modal-footer {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-top: 25px;
+            gap: 15px;
+            margin-top: 30px;
             padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--glass-border);
         }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-        }
-    
-    /* Standardized FAB Back Button */
-    .fab-back {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: rgba(8, 12, 18, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: var(--accent, #00e5ff);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        z-index: 9999;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        text-decoration: none;
-        transition: all 0.3s ease;
-    }
-@media (hover: hover) {
-        .fab-back:hover {
-        background: rgba(8, 12, 18, 0.95);
-        transform: scale(1.08);
-        box-shadow: 0 0 15px var(--accent, rgba(0,229,255,0.6));
-    }
-}
-    .fab-back:active {
-        transform: scale(0.92);
-    }
-    .fab-back svg {
-        width: 24px;
-        height: 24px;
-        stroke-width: 2.5;
-    }
-</style>
+    </style>
     <script src="mock_api.js"></script>
 </head>
-
 <body>
-
-<!-- Standardized FAB Back Button -->
-<a href="index.html" class="fab-back" aria-label="Return to Dashboard">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-    </svg>
-</a>
-
     <div class="container">
-        <header>
-            <h1>
-                ⏰ Scheduler
-                <span class="status-indicator"></span>
-            </h1>
-            <a href="/index.html" class="btn btn-primary">← Back to Dashboard</a>
-        </header>
+        <div class="header">
+            <a href="index.html" class="back-btn">←</a>
+            <div class="title">Scheduler</div>
+            <button class="btn-primary" onclick="showCreateModal()">+ Create Task</button>
+        </div>
 
-        <div class="stats-panel">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-label">Total Tasks</div>
-                    <div class="stat-value" id="totalTasks">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Active</div>
-                    <div class="stat-value" id="activeTasks">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Interval</div>
-                    <div class="stat-value" id="intervalTasks">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Cron</div>
-                    <div class="stat-value" id="cronTasks">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">One-Shot</div>
-                    <div class="stat-value" id="onceTasks">0</div>
-                </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Total Tasks</div>
+                <div class="stat-value" id="totalTasks">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Active</div>
+                <div class="stat-value" id="activeTasks">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Interval</div>
+                <div class="stat-value" id="intervalTasks">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Cron</div>
+                <div class="stat-value" id="cronTasks">0</div>
             </div>
         </div>
 
-        <div class="action-bar">
-            <button class="btn btn-success" onclick="showCreateModal()">+ Create Task</button>
-            <button class="btn btn-primary" onclick="refreshTasks()">🔄 Refresh</button>
+        <div id="tasksTable">
+            <div style="text-align: center; color: var(--text-dim); padding: 40px;">
+                Loading...
+            </div>
         </div>
-
-        <div class="table-wrapper" id="tasksTable"></div>
     </div>
 
     <!-- Create Task Modal -->
     <div id="createModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Create Scheduled Task</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
+            <div class="title" style="margin-bottom: 20px;">Create Task</div>
 
             <div class="form-group">
                 <label for="taskName">Task Name</label>
@@ -599,20 +509,24 @@
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="createTask()">Create Task</button>
-                <button class="btn" onclick="closeModal()" style="background:#e0e0e0;color:#333;">Cancel</button>
+                <button class="btn-primary" onclick="createTask()">Save Task</button>
+                <button class="btn-secondary" onclick="closeModal()">Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Apply theme from localStorage if available
+        if(localStorage.getItem('sentinel_theme') === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+
         let tasks = [];
 
         // Type names
         const typeNames = ['Interval', 'Cron', 'Once', 'Sunrise', 'Sunset'];
         const priorityNames = ['Low', 'Normal', 'High', 'Critical'];
 
-        // Load tasks on page load
         document.addEventListener('DOMContentLoaded', () => {
             refreshTasks();
         });
@@ -633,44 +547,21 @@
             document.getElementById('activeTasks').textContent = tasks.filter(t => t.enabled).length;
             document.getElementById('intervalTasks').textContent = tasks.filter(t => t.type === 0).length;
             document.getElementById('cronTasks').textContent = tasks.filter(t => t.type === 1).length;
-            document.getElementById('onceTasks').textContent = tasks.filter(t => t.type === 2).length;
         }
 
         function renderTasks() {
             const container = document.getElementById('tasksTable');
 
             if (tasks.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📅</div>
-                        <h3>No Scheduled Tasks</h3>
-                        <p>Create your first scheduled task to automate actions</p>
-                    </div>
-                `;
+                container.innerHTML = '<div style="text-align: center; color: var(--text-dim); padding: 40px;">No scheduled tasks found</div>';
                 return;
             }
 
-            let html = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Schedule</th>
-                            <th>Priority</th>
-                            <th>Status</th>
-                            <th>Runs</th>
-                            <th>Last Run</th>
-                            <th>Next Run</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
+            let html = '';
 
             tasks.forEach(task => {
-                const typeBadge = `<span class="badge badge-${typeNames[task.type].toLowerCase()}">${typeNames[task.type]}</span>`;
-                const priorityBadge = `<span class="badge badge-${priorityNames[task.priority].toLowerCase()}">${priorityNames[task.priority]}</span>`;
+                const typeBadge = '<span class="badge">' + typeNames[task.type] + '</span>';
+                const priorityBadge = '<span class="badge">' + priorityNames[task.priority] + '</span>';
                 const statusBadge = task.enabled ?
                     '<span class="badge badge-enabled">Enabled</span>' :
                     '<span class="badge badge-disabled">Disabled</span>';
@@ -679,36 +570,35 @@
                 if (task.type === 0) {
                     scheduleInfo = `Every ${task.interval}s`;
                 } else if (task.type === 1) {
-                    scheduleInfo = 'Cron';
+                    scheduleInfo = task.cron || 'Cron';
                 } else if (task.type === 2) {
                     scheduleInfo = formatTimestamp(task.run_time);
                 }
 
                 html += `
-                    <tr>
-                        <td><strong>${task.name}</strong><br><small>ID: ${task.id}</small></td>
-                        <td>${typeBadge}</td>
-                        <td>${scheduleInfo}</td>
-                        <td>${priorityBadge}</td>
-                        <td>${statusBadge}</td>
-                        <td>${task.run_count}</td>
-                        <td>${task.last_run > 0 ? formatTimestamp(task.last_run) : 'Never'}</td>
-                        <td>${task.next_run > 0 ? formatTimestamp(task.next_run) : 'N/A'}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-small ${task.enabled ? 'btn-warning' : 'btn-success'}" 
-                                        onclick="toggleTask(${task.id}, ${!task.enabled})">
-                                    ${task.enabled ? 'Disable' : 'Enable'}
-                                </button>
-                                <button class="btn btn-small btn-primary" onclick="triggerTask(${task.id})">▶ Run</button>
-                                <button class="btn btn-small btn-danger" onclick="deleteTask(${task.id})">🗑</button>
+                    <div class="device-card">
+                        <div class="device-header">
+                            <div class="device-name">${task.name} <span style="font-size:12px; color:var(--text-dim);">(ID: ${task.id})</span></div>
+                            <div style="display:flex; gap:10px;">
+                                ${statusBadge}
+                                ${typeBadge}
                             </div>
-                        </td>
-                    </tr>
+                        </div>
+                        <div class="device-info-grid">
+                            <div class="info-cell"><div class="info-label">Schedule</div><div class="info-value">${scheduleInfo}</div></div>
+                            <div class="info-cell"><div class="info-label">Priority</div><div class="info-value">${priorityNames[task.priority]}</div></div>
+                            <div class="info-cell"><div class="info-label">Last Run</div><div class="info-value">${task.last_run > 0 ? formatTimestamp(task.last_run) : 'Never'}</div></div>
+                            <div class="info-cell"><div class="info-label">Next Run</div><div class="info-value">${task.next_run > 0 ? formatTimestamp(task.next_run) : 'N/A'}</div></div>
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top: 5px;">
+                            <button class="${task.enabled ? 'btn-secondary' : 'btn-primary'}" onclick="toggleTask(${task.id}, ${!task.enabled})">${task.enabled ? 'Disable' : 'Enable'}</button>
+                            <button class="btn-primary" onclick="triggerTask(${task.id})">Run Now</button>
+                            <button class="btn-danger" onclick="deleteTask(${task.id})">Delete</button>
+                        </div>
+                    </div>
                 `;
             });
 
-            html += '</tbody></table>';
             container.innerHTML = html;
         }
 
@@ -724,7 +614,7 @@
         }
 
         function showCreateModal() {
-            document.getElementById('createModal').style.display = 'block';
+            document.getElementById('createModal').style.display = 'flex';
         }
 
         function closeModal() {
@@ -799,97 +689,59 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        closeModal();
-                        refreshTasks();
-                        // Reset form
-                        document.getElementById('taskName').value = '';
-                        document.getElementById('interval').value = '60';
-                        document.getElementById('cron').value = '';
-                        document.getElementById('runTime').value = '';
-                        document.getElementById('actionType').value = '0';
-                        updateActionFields();
-                    } else {
-                        alert('Failed to create task: ' + (data.error || 'Unknown error'));
-                    }
-                })
-                .catch(err => {
-                    console.error('Create failed:', err);
-                    alert('Failed to create task');
-                });
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to create task');
+                closeModal();
+                refreshTasks();
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error creating task');
+            });
         }
 
-        function toggleTask(id, enable) {
-            fetch(`/api/scheduler/tasks/${id}`, {
-                method: 'PUT',
+        function toggleTask(id, enabled) {
+            fetch(`/api/scheduler/tasks/${id}/enable`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled: enable })
+                body: JSON.stringify({ enabled })
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        refreshTasks();
-                    } else {
-                        alert('Failed to update task');
-                    }
-                })
-                .catch(err => {
-                    console.error('Toggle failed:', err);
-                    alert('Failed to update task');
-                });
+            .then(res => {
+                if (res.ok) refreshTasks();
+                else throw new Error('Failed to toggle task');
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error toggling task');
+            });
         }
 
         function triggerTask(id) {
-            if (!confirm('Manually trigger this task now?')) return;
-
-            fetch(`/api/scheduler/tasks/${id}/trigger`, {
-                method: 'POST'
+            fetch(`/api/scheduler/tasks/${id}/trigger`, { method: 'POST' })
+            .then(res => {
+                if (res.ok) {
+                    alert('Task triggered successfully');
+                    refreshTasks();
+                } else throw new Error('Failed to trigger task');
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Task triggered successfully');
-                        setTimeout(refreshTasks, 1000);
-                    } else {
-                        alert('Failed to trigger task: ' + (data.error || 'Unknown error'));
-                    }
-                })
-                .catch(err => {
-                    console.error('Trigger failed:', err);
-                    alert('Failed to trigger task');
-                });
+            .catch(err => {
+                console.error(err);
+                alert('Error triggering task');
+            });
         }
 
         function deleteTask(id) {
-            if (!confirm('Delete this task? This cannot be undone.')) return;
-
-            fetch(`/api/scheduler/tasks/${id}`, {
-                method: 'DELETE'
+            if (!confirm('Are you sure you want to delete this task?')) return;
+            fetch(`/api/scheduler/tasks/${id}`, { method: 'DELETE' })
+            .then(res => {
+                if (res.ok) refreshTasks();
+                else throw new Error('Failed to delete task');
             })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        refreshTasks();
-                    } else {
-                        alert('Failed to delete task');
-                    }
-                })
-                .catch(err => {
-                    console.error('Delete failed:', err);
-                    alert('Failed to delete task');
-                });
-        }
-
-        // Close modal on outside click
-        window.onclick = function (event) {
-            const modal = document.getElementById('createModal');
-            if (event.target == modal) {
-                closeModal();
-            }
+            .catch(err => {
+                console.error(err);
+                alert('Error deleting task');
+            });
         }
     </script>
 </body>
-
 </html>

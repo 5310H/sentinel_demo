@@ -521,7 +521,7 @@
                 document.getElementById('map-modal-desc').innerText = 'Assign this switch output to a physical Relay.';
                 document.getElementById('map-select-label').innerText = 'Select Relay';
                 relays.forEach(r => {
-                    select.innerHTML += \`<option value="\${r.id}">Relay \${r.id}: \${r.name}</option>\`;
+                    select.innerHTML += `<option value="${r.id}">Relay ${r.id}: ${r.name}</option>`;
                 });
             } else {
                 // Zones (Sensors)
@@ -529,7 +529,7 @@
                 document.getElementById('map-modal-desc').innerText = 'Assign this sensor input to a physical Zone.';
                 document.getElementById('map-select-label').innerText = 'Select Zone';
                 zones.forEach(z => {
-                    select.innerHTML += \`<option value="\${z.id}">Zone \${z.id}: \${z.name}</option>\`;
+                    select.innerHTML += `<option value="${z.id}">Zone ${z.id}: ${z.name}</option>`;
                 });
             }
 

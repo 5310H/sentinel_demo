@@ -383,12 +383,23 @@
         </div>
         <div class="settings-row">
             <div><div class="settings-label">Type</div><div class="settings-label-sub">Category</div></div>
-            <select id="type" name="type">
-                <option value="Door">Door</option>
-                <option value="Window">Window</option>
-                <option value="Motion">Motion</option>
-                <option value="Glass">Glass</option>
-                <option value="Smoke">Smoke</option>
+            <select id="sensor_type" name="sensor_type">
+                <option value="door">Door</option>
+                <option value="window">Window</option>
+                <option value="motion">Motion</option>
+                <option value="camera">Camera</option>
+                <option value="glass_break">Glass Break</option>
+                <option value="fire">Fire</option>
+                <option value="smoke">Smoke</option>
+                <option value="panic">Panic</option>
+                <option value="medical">Medical</option>
+                <option value="temp">Temperature</option>
+                <option value="water">Water</option>
+                <option value="co">CO Detector</option>
+                <option value="garage_door">Garage Door</option>
+                <option value="gate">Gate</option>
+                <option value="humidity">Humidity</option>
+                <option value="shock">Shock</option>
             </select>
         </div>
         <div class="settings-row">
@@ -465,7 +476,7 @@
     <div class="device-card">
         <div class="device-header">
             <div class="device-name">${item.name}</div>
-            <div class="badge">${item.type}</div>
+            <div class="badge">${item.sensor_type}</div>
         </div>
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>

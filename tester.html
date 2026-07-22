@@ -291,24 +291,21 @@
             </div>
         </div>
 
-        <!-- ESPHome Device Testing -->
+        <!-- Third-Party Device Testing -->
         <div class="card">
-            <div class="card-header">ESPHome Devices</div>
-            <div class="card-body">
-                <p style="font-size: 12px; color: var(--dim); margin-top: 0;">Test ESPHome Native API device connectivity and zone mapping.</p>
+            <div class="card-header">Third-Party Devices</div>
+                        <div class="card-body">
+                <p style="font-size: 12px; color: var(--dim); margin-top: 0;">Test Third-Party Devices (ESPHome, Tuya, Zigbee, Matter) API connectivity and entity mapping. Devices must be added via their respective configuration pages first.</p>
                 <div style="margin-bottom: 10px;">
-                    <div class="item-name">Add ESPHome Device</div>
-                    <input type="text" id="esphome-host" class="input-dark" placeholder="IP Address (e.g. 192.168.1.100)" style="margin-bottom: 5px;">
-                    <input type="text" id="esphome-port" class="input-dark" placeholder="Port (default: 6053)" value="6053" style="margin-bottom: 5px;">
-                    <input type="text" id="esphome-password" class="input-dark" placeholder="API Password (optional)" style="margin-bottom: 5px;">
-                    <button class="btn" onclick="connectESPHome()">Connect Device</button>
+                    <button class="btn" onclick="testAllDevices()">Test All Connected Devices</button>
                 </div>
                 <div style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px;">
-                    <div class="item-name">Connected Devices</div>
-                    <div id="esphome-devices" style="font-size: 11px; color: var(--dim); min-height: 40px;">
-                        No devices connected
+                    <div class="item-name">Monitored Devices</div>
+                    <div id="third-party-devices" style="font-size: 11px; color: var(--dim); min-height: 40px;">
+                        Loading devices...
                     </div>
                 </div>
+            </div>
                 <div style="border-top: 1px solid #333; padding-top: 10px; margin-top: 10px;">
                     <button class="btn" onclick="testESPHomeDevices()">Test All ESPHome Devices</button>
                 </div>
@@ -339,7 +336,7 @@
         let isConnected = null;
         let lastData = null;
         let lastLogSeq = 0;
-        let esphomeDevices = []; // Track ESPHome devices
+        let thirdPartyDevices = []; // Track ESPHome devices
 
         function log(msg, type = 'info') {
             const c = document.getElementById('sys-console');
@@ -412,7 +409,7 @@
         }
 
         // ESPHome Device Management
-        async function connectESPHome() {
+        /* connect removed */ async function deprecated1() {
             const host = document.getElementById('esphome-host').value;
             const port = document.getElementById('esphome-port').value || '6053';
             const password = document.getElementById('esphome-password').value;
@@ -439,14 +436,14 @@
                 
                 if (result.status === 'ok' || result.status === 'success') {
                     log(`ESPHome: Connected to ${result.device_name || host}`, 'success');
-                    esphomeDevices.push({
+                    thirdPartyDevices.push({
                         host: host,
                         port: port,
                         name: result.device_name || host,
                         entities: result.entities || 0,
                         connected: true
                     });
-                    updateESPHomeList();
+                    updateDeviceList();
                     
                     // Clear form
                     document.getElementById('esphome-host').value = '';
@@ -459,110 +456,91 @@
             }
         }
 
-        function updateESPHomeList() {
-            const container = document.getElementById('esphome-devices');
+                function updateDeviceList() {
+            const container = document.getElementById('third-party-devices');
             if (!container) return;
 
-            if (esphomeDevices.length === 0) {
-                container.innerHTML = 'No devices connected';
+            if (thirdPartyDevices.length === 0) {
+                container.innerHTML = 'No devices configured.';
                 container.style.color = 'var(--dim)';
                 return;
             }
 
             container.style.color = 'var(--text)';
-            container.innerHTML = esphomeDevices.map((dev, idx) => `
+            container.innerHTML = thirdPartyDevices.map((dev, idx) => `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #222;">
                     <div>
-                        <div style="font-weight: bold; color: var(--accent);">${dev.name}</div>
-                        <div style="font-size: 10px; color: var(--dim);">${dev.host}:${dev.port} • ${dev.entities || 0} entities</div>
+                        <div style="font-weight: bold; color: var(--accent);">${dev.name || dev.id}</div>
+                        <div style="font-size: 10px; color: var(--dim);">Protocol: ${dev.protocol} • ${dev.host || dev.tuya_device_id || dev.zigbee_ieee || 'No Host'}</div>
                     </div>
-                    <button class="btn" style="width: auto; padding: 2px 8px; font-size: 10px;" onclick="removeESPHomeDevice(${idx})">Remove</button>
                 </div>
             `).join('');
         }
 
-        function removeESPHomeDevice(index) {
-            const dev = esphomeDevices[index];
-            log(`ESPHome: Removing device ${dev.name}`, 'warn');
-            esphomeDevices.splice(index, 1);
-            updateESPHomeList();
+`, 'warn');
+            thirdPartyDevices.splice(index, 1);
+            updateDeviceList();
         }
 
-        async function testESPHomeDevices() {
-            if (esphomeDevices.length === 0) {
-                log('ESPHome: No devices to test', 'warn');
+                async function testAllDevices() {
+            if (thirdPartyDevices.length === 0) {
+                log('Tester: No third-party devices to test', 'warn');
                 return;
             }
 
-            log('=== ESPHome Device Test Started ===', 'info');
+            log('=== Device API Test Started ===', 'info');
 
-            for (const dev of esphomeDevices) {
-                log(`ESPHome: Testing ${dev.name} (${dev.host}:${dev.port})...`, 'info');
+            for (const dev of thirdPartyDevices) {
+                log(`Testing ${dev.name || dev.id} (Protocol: ${dev.protocol})...`, 'info');
 
                 try {
-                    // Test 1: Connectivity
-                    const statusRes = await fetch('/api/esphome/status', {
+                    // Test 1: Connectivity Status
+                    const statusRes = await fetch('/api/devices/status', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ host: dev.host, port: dev.port })
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token') },
+                        body: JSON.stringify({ id: dev.id })
                     });
                     const statusData = await statusRes.json();
 
-                    if (statusData.connected) {
+                    if (statusData.status === 'ok' || statusData.connected) {
                         log(`  ✓ Device connected`, 'success');
-                        log(`  • Uptime: ${statusData.uptime || 'unknown'}`, 'info');
-                        log(`  • Version: ${statusData.version || 'unknown'}`, 'info');
                     } else {
                         log(`  ✗ Device not responding`, 'error');
-                        continue;
                     }
 
                     // Test 2: Entity Discovery
-                    const entitiesRes = await fetch('/api/esphome/entities', {
+                    const entitiesRes = await fetch('/api/devices/entities', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ host: dev.host, port: dev.port })
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token') },
+                        body: JSON.stringify({ id: dev.id })
                     });
                     const entitiesData = await entitiesRes.json();
 
                     if (entitiesData.entities && entitiesData.entities.length > 0) {
                         log(`  ✓ Found ${entitiesData.entities.length} entities`, 'success');
-                        
-                        // List binary sensors (potential zones)
-                        const sensors = entitiesData.entities.filter(e => e.type === 'binary_sensor');
-                        if (sensors.length > 0) {
-                            log(`  • Binary Sensors: ${sensors.map(s => s.name).join(', ')}`, 'info');
-                        }
-
-                        // List switches (potential relays)
-                        const switches = entitiesData.entities.filter(e => e.type === 'switch');
-                        if (switches.length > 0) {
-                            log(`  • Switches: ${switches.map(s => s.name).join(', ')}`, 'info');
-                        }
                     } else {
                         log(`  ⚠ No entities found`, 'warn');
                     }
 
-                    // Test 3: State Subscription
-                    const subscribeRes = await fetch('/api/esphome/subscribe', {
+                    // Test 3: Subscription
+                    const subRes = await fetch('/api/devices/subscribe', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ host: dev.host, port: dev.port })
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token') },
+                        body: JSON.stringify({ id: dev.id })
                     });
-                    const subscribeData = await subscribeRes.json();
-
-                    if (subscribeData.status === 'ok') {
-                        log(`  ✓ State subscription active`, 'success');
+                    const subData = await subRes.json();
+                    
+                    if (subData.status === 'ok') {
+                        log(`  ✓ Subscribed to events`, 'success');
                     } else {
-                        log(`  ⚠ State subscription failed`, 'warn');
+                        log(`  ⚠ Subscription failed`, 'warn');
                     }
 
                 } catch (e) {
                     log(`  ✗ Test failed: ${e.message}`, 'error');
                 }
             }
-
-            log('=== ESPHome Device Test Complete ===', 'success');
+            log('=== Device API Test Complete ===', 'success');
         }
 
         async function update() {
@@ -908,25 +886,25 @@
             logSection("SECTION 10: Network Configuration");
             log("Skipping network configuration tests in browser environment.", 'dim');
 
-            // SECTION 11: ESPHOME INTEGRATION
-            if (esphomeDevices.length > 0) {
-                logSection("SECTION 11: ESPHome Integration");
-                for (const dev of esphomeDevices) {
+            // SECTION 11: DEVICE INTEGRATION
+            if (thirdPartyDevices.length > 0) {
+                logSection("SECTION 11: Device Integration");
+                for (const dev of thirdPartyDevices) {
                     try {
-                        const statusRes = await fetch('/api/esphome/status', {
+                        const statusRes = await fetch('/api/devices/status', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ host: dev.host, port: dev.port })
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token') },
+                            body: JSON.stringify({ id: dev.id })
                         });
                         const statusData = await statusRes.json();
-                        await assert(statusData.connected === true, `ESPHome device ${dev.name} is connected`, `ESPHome device ${dev.name} not connected`);
+                        await assert(statusData.connected === true, `Device ${dev.name} is connected`, `Device ${dev.name} not connected`);
                     } catch (e) {
-                        await assert(false, "", `ESPHome device ${dev.name} test failed: ${e.message}`);
+                        await assert(false, "", `Device ${dev.name} test failed: ${e.message}`);
                     }
                 }
             } else {
-                logSection("SECTION 11: ESPHome Integration");
-                log("No ESPHome devices configured, skipping tests.", 'dim');
+                logSection("SECTION 11: Device Integration");
+                log("No third-party devices configured, skipping tests.", 'dim');
             }
 
             // SUMMARY
@@ -953,33 +931,29 @@
         }
 
         // Load persisted ESPHome devices on page load
-        async function loadESPHomeDevices() {
+                async function loadDevices() {
             try {
-                const response = await fetch('/api/esphome');
+                const response = await fetch('/api/devices', {
+                    headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token') }
+                });
                 if (response.ok) {
-                    const devices = await response.json();
-                    if (Array.isArray(devices)) {
-                        esphomeDevices = devices.map(dev => ({
-                            host: dev.hostname,
-                            port: dev.port || 6053,
-                            name: dev.friendly_name || dev.hostname,
-                            entities: 0, // Will be updated on test
-                            connected: dev.enabled || false
-                        }));
-                        updateESPHomeList();
-                        if (esphomeDevices.length > 0) {
-                            log(`Loaded ${esphomeDevices.length} ESPHome device(s) from storage`, 'success');
+                    const data = await response.json();
+                    if (data.devices && Array.isArray(data.devices)) {
+                        thirdPartyDevices = data.devices;
+                        updateDeviceList();
+                        if (thirdPartyDevices.length > 0) {
+                            log(`Loaded ${thirdPartyDevices.length} device(s) from storage`, 'success');
                         }
                     }
                 }
             } catch (e) {
-                log(`Failed to load ESPHome devices: ${e.message}`, 'warn');
+                log(`Failed to load devices: ${e.message}`, 'warn');
             }
         }
 
         setInterval(update, 2000);
         update();
-        loadESPHomeDevices(); // Load persisted devices
+        loadDevices(); // Load persisted devices
         log("System Tester Loaded. Connecting...", 'success');
     </script>
 </body>

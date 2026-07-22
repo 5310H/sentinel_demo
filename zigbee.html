@@ -244,21 +244,13 @@
 
         <div class="form-group">
             <div class="form-info">
-                <label class="form-label">API Port</label>
-                <div class="form-desc">Native API port (Default 6053)</div>
+                <label class="form-label">IEEE Address</label>
+                <div class="form-desc">Zigbee MAC Address (e.g. 00:15:8D:00:02:11:22:33)</div>
             </div>
-            <input type="number" class="form-input" id="dev-port" value="6053">
+            <input type="text" class="form-input" id="dev-pass">
         </div>
 
-        <div class="form-group">
-            <div class="form-info">
-                <label class="form-label">API Password</label>
-                <div class="form-desc">Optional authentication</div>
-            </div>
-            <input type="password" class="form-input" id="dev-pass">
-        </div>
-
-        <button class="btn" onclick="addDevice()">Add ESPHome Device</button>
+        <button class="btn" onclick="addDevice()">Add Zigbee Node</button>
     </div>
 
     <script>

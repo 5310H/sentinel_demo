@@ -354,7 +354,6 @@
             stroke-width: 2.5;
         }
     </style>
-    <script src="mock_api.js"></script>
 </head>
 <body>
 
@@ -384,7 +383,7 @@
         </div>
         <div class="settings-row">
             <div><div class="settings-label">Type</div><div class="settings-label-sub">Category</div></div>
-            <select id="sensor_type" name="sensor_type">
+            <select id="type" name="type">
                 <option value="Door">Door</option>
                 <option value="Window">Window</option>
                 <option value="Motion">Motion</option>
@@ -397,33 +396,8 @@
             <input type="text" id="location" name="location">
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">Dispatch Service</div><div class="settings-label-sub">Who to call on alarm</div></div>
-            <select id="dispatch_service" name="dispatch_service">
-                <option value="none">None</option>
-                <option value="police">Police</option>
-                <option value="fire">Fire</option>
-                <option value="medical">Medical</option>
-                <option value="other">Other</option>
-            </select>
-        </div>
-        <div class="settings-row">
-            <div><div class="settings-label">Connection Type</div><div class="settings-label-sub">Physical or Remote</div></div>
-            <select id="connection_type" name="connection_type" onchange="handleConnType()">
-                <option value="0">Physical (GPIO/I2C)</option>
-                <option value="1">Remote Entity</option>
-            </select>
-        </div>
-        <div class="settings-row conn-physical">
             <div><div class="settings-label">GPIO Pin</div><div class="settings-label-sub">Hardware Pin (virtual = -1)</div></div>
             <input type="number" id="gpio" name="gpio">
-        </div>
-        <div class="settings-row conn-remote" style="display:none;">
-            <div><div class="settings-label">Device ID</div><div class="settings-label-sub">Parent Device (e.g. tuya_hub)</div></div>
-            <input type="text" id="device_id" name="device_id">
-        </div>
-        <div class="settings-row conn-remote" style="display:none;">
-            <div><div class="settings-label">Entity Key</div><div class="settings-label-sub">Sensor Index (e.g. 101)</div></div>
-            <input type="number" id="entity_key" name="entity_key">
         </div>
         <div class="settings-row">
             <div><div class="settings-label">Chime</div><div class="settings-label-sub">Play chime on open</div></div>
@@ -491,24 +465,17 @@
     <div class="device-card">
         <div class="device-header">
             <div class="device-name">${item.name}</div>
-            <div class="badge">${item.sensor_type}</div>
+            <div class="badge">${item.type}</div>
         </div>
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>
-            <div class="info-cell"><div class="info-label">Dispatch</div><div class="info-value">${item.dispatch_service || 'None'}</div></div>
-            <div class="info-cell"><div class="info-label">Routing</div><div class="info-value">${item.connection_type === 1 ? 'Remote (' + item.device_id + ':' + item.entity_key + ')' : 'Physical (GPIO: ' + (item.gpio !== undefined ? item.gpio : 'N/A') + ')'}</div></div>
+            <div class="info-cell"><div class="info-label">ID / GPIO</div><div class="info-value">${item.id} / ${item.gpio !== undefined ? item.gpio : 'N/A'}</div></div>
         </div>
         <button class="btn-secondary" onclick="editItem(${item.id})">Edit</button>
         <button class="btn-danger" onclick="deleteItem(${item.id})">Delete</button>
     </div>`;
     
             }).join('');
-        }
-
-        function handleConnType() {
-            const isRemote = document.getElementById('connection_type').value == "1";
-            document.querySelectorAll('.conn-physical').forEach(e => e.style.display = isRemote ? 'none' : 'flex');
-            document.querySelectorAll('.conn-remote').forEach(e => e.style.display = isRemote ? 'flex' : 'none');
         }
 
         function editItem(idOrAddr) {
@@ -534,8 +501,6 @@
                 }
             }
             
-            handleConnType();
-
             // For presence tracker updates
             if (document.getElementById('is_update')) {
                 document.getElementById('is_update').value = "true";
@@ -553,7 +518,6 @@
             
             if (document.getElementById('id')) document.getElementById('id').value = "-1";
             if (document.getElementById('is_update')) document.getElementById('is_update').value = "false";
-            handleConnType();
         }
 
         async function saveItem(event) {
@@ -571,8 +535,6 @@
             if (data.id) data.id = parseInt(data.id);
             if (data.gpio) data.gpio = parseInt(data.gpio);
             if (data.duration) data.duration = parseInt(data.duration);
-            if (data.connection_type) data.connection_type = parseInt(data.connection_type);
-            if (data.entity_key) data.entity_key = parseInt(data.entity_key);
 
             try {
                 const response = await fetch('/api/config/zones', {

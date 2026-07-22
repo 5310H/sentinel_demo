@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Entity Manager - Sentinel</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --ready: #00f0ff; 
+            --not: #ff007f; 
+            --armed: #ff2a55; 
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 40px 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+        }
+
+        .fab-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            text-decoration: none;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .fab-back:hover {
+            background: rgba(0, 229, 255, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .fab-back svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .panel-container {
+            width: 100%; 
+            max-width: 900px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
+            margin-bottom: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+        }
+        
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 25%; width: 50%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .panel-subtitle {
+            font-size: 13px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .device-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .device-info h3 {
+            margin: 0 0 5px 0;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .device-info p {
+            margin: 0;
+            color: var(--text-dim);
+            font-size: 14px;
+        }
+
+        .device-protocol {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Entities View */
+        #entities-view {
+            display: none;
+        }
+
+        .back-to-devices {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: opacity 0.3s;
+        }
+        .back-to-devices:hover { opacity: 0.8; }
+
+        .entity-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .entity-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .entity-icon {
+            font-size: 24px;
+            color: var(--accent);
+            opacity: 0.8;
+            background: rgba(0, 229, 255, 0.1);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .entity-details h4 {
+            margin: 0 0 4px 0;
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .entity-details p {
+            margin: 0;
+            color: var(--text-dim);
+            font-size: 13px;
+        }
+
+        .entity-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-accent {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent);
+            border-color: rgba(0, 229, 255, 0.2);
+        }
+
+        .btn-accent:hover {
+            background: rgba(0, 229, 255, 0.2);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        .modal-title { font-size: 20px; font-weight: 500; margin: 0 0 20px 0; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .form-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+            font-family: 'Outfit', sans-serif;
+            appearance: none;
+        }
+        .form-select:focus { border-color: var(--accent); }
+        
+        .modal-actions { display: flex; gap: 10px; margin-top: 30px; }
+        .modal-actions .btn { flex: 1; padding: 12px; }
+
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="fab-back" aria-label="Return to Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <div class="panel-container" id="devices-view">
+        <div class="header">
+            <h1 class="panel-title">Entity Manager</h1>
+            <div class="panel-subtitle">Select a physical device to assign logical entities</div>
+        </div>
+        
+        <div id="devices-list">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <div class="panel-container" id="entities-view">
+        <div class="back-to-devices" onclick="showDevicesView()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Devices
+        </div>
+        
+        <div class="header">
+            <h1 class="panel-title" id="current-device-name">Device Entities</h1>
+            <div class="panel-subtitle">Map exposed entities to Sentinel Zones or Relays</div>
+        </div>
+        
+        <div id="entities-list">
+            <div class="loader"></div>
+        </div>
+    </div>
+
+    <!-- Mapping Modal -->
+    <div class="modal-overlay" id="map-modal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="map-modal-title">Map Entity</h2>
+            <p style="color: var(--text-dim); font-size: 14px; margin-bottom: 20px;" id="map-modal-desc">Assign this entity to a Zone.</p>
+            
+            <input type="hidden" id="mapping-entity-key">
+            <input type="hidden" id="mapping-device-id">
+            <input type="hidden" id="mapping-entity-type">
+
+            <div class="form-group">
+                <label class="form-label" id="map-select-label">Select Zone</label>
+                <select class="form-select" id="map-select">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-accent" onclick="saveMapping()">Save Mapping</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = sessionStorage.getItem('sentinel_token');
+        let currentDeviceId = null;
+        let zones = [];
+        let relays = [];
+
+        // Determine protocol name from int
+        function getProtocolName(id) {
+            switch(id) {
+                case 0: return 'ESPHome';
+                case 1: return 'Tuya';
+                case 2: return 'Matter';
+                case 3: return 'Zigbee';
+                default: return 'Unknown';
+            }
+        }
+
+        // Fetch physical devices
+        async function loadDevices() {
+            try {
+                const res = await fetch('/api/devices', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                
+                const list = document.getElementById('devices-list');
+                list.innerHTML = '';
+                
+                if (data.devices && data.devices.length > 0) {
+                    data.devices.forEach(dev => {
+                        list.innerHTML += `
+                            <div class="device-card" onclick="showEntitiesView('${dev.id}', '${dev.name}')">
+                                <div class="device-info">
+                                    <h3>${dev.name || dev.id}</h3>
+                                    <p>${dev.host || dev.tuya_device_id || dev.zigbee_ieee || 'No Address'}</p>
+                                </div>
+                                <div class="device-protocol">${getProtocolName(dev.protocol)}</div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No physical devices found. Add them on the ESPHome, Tuya, or Zigbee tabs.</p>';
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('devices-list').innerHTML = '<p style="text-align:center; color:var(--not);">Error loading devices.</p>';
+            }
+        }
+
+        // Fetch Zones & Relays for the dropdowns
+        async function loadZonesAndRelays() {
+            try {
+                const zRes = await fetch('/api/config/zones', { headers: { 'Authorization': 'Bearer ' + token }});
+                zones = await zRes.json();
+                
+                const rRes = await fetch('/api/config/relays', { headers: { 'Authorization': 'Bearer ' + token }});
+                relays = await rRes.json();
+            } catch(err) {
+                console.error('Failed to load zones/relays', err);
+            }
+        }
+
+        // Show Entities View
+        async function showEntitiesView(deviceId, deviceName) {
+            currentDeviceId = deviceId;
+            document.getElementById('devices-view').style.display = 'none';
+            document.getElementById('entities-view').style.display = 'block';
+            document.getElementById('current-device-name').innerText = deviceName + ' Entities';
+            
+            const list = document.getElementById('entities-list');
+            list.innerHTML = '<div class="loader"></div>';
+
+            try {
+                // Fetch entities for this specific device
+                const res = await fetch('/api/devices/entities', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token 
+                    },
+                    body: JSON.stringify({ id: deviceId })
+                });
+                
+                const data = await res.json();
+                list.innerHTML = '';
+
+                if (data.entities && data.entities.length > 0) {
+                    data.entities.forEach(ent => {
+                        let isMapped = ent.mapped_zone !== null || ent.mapped_relay !== null;
+                        let mappingText = isMapped ? (ent.mapped_zone ? `Mapped to Zone ${ent.mapped_zone}` : `Mapped to Relay ${ent.mapped_relay}`) : 'Unmapped';
+                        
+                        let icon = ent.type === 0 ? '🔘' : (ent.type === 1 ? '📊' : '🔌');
+                        let typeName = ent.type === 0 ? 'Binary Sensor' : (ent.type === 1 ? 'Sensor' : 'Switch');
+                        let btnText = ent.type === 2 ? 'Map to Relay' : 'Map to Zone';
+
+                        list.innerHTML += `
+                            <div class="entity-card">
+                                <div class="entity-info">
+                                    <div class="entity-icon">${icon}</div>
+                                    <div class="entity-details">
+                                        <h4>${ent.name || 'Unnamed Entity'}</h4>
+                                        <p>${typeName} &middot; <span style="color: ${isMapped ? 'var(--ready)' : 'var(--text-dim)'}">${mappingText}</span></p>
+                                    </div>
+                                </div>
+                                <div class="entity-actions">
+                                    <button class="btn btn-accent" onclick="openMapModal('${ent.key}', ${ent.type})">${btnText}</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No entities discovered for this device.</p>';
+                }
+
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<p style="text-align:center; color:var(--not);">Error fetching entities.</p>';
+            }
+        }
+
+        function showDevicesView() {
+            document.getElementById('entities-view').style.display = 'none';
+            document.getElementById('devices-view').style.display = 'block';
+        }
+
+        // Modals
+        function openMapModal(key, type) {
+            document.getElementById('mapping-entity-key').value = key;
+            document.getElementById('mapping-device-id').value = currentDeviceId;
+            document.getElementById('mapping-entity-type').value = type;
+
+            const select = document.getElementById('map-select');
+            select.innerHTML = '<option value="">-- Select --</option>';
+
+            if (type === 2) {
+                // Relays
+                document.getElementById('map-modal-title').innerText = 'Map to Sentinel Relay';
+                document.getElementById('map-modal-desc').innerText = 'Assign this switch output to a physical Relay.';
+                document.getElementById('map-select-label').innerText = 'Select Relay';
+                relays.forEach(r => {
+                    select.innerHTML += \`<option value="\${r.id}">Relay \${r.id}: \${r.name}</option>\`;
+                });
+            } else {
+                // Zones (Sensors)
+                document.getElementById('map-modal-title').innerText = 'Map to Sentinel Zone';
+                document.getElementById('map-modal-desc').innerText = 'Assign this sensor input to a physical Zone.';
+                document.getElementById('map-select-label').innerText = 'Select Zone';
+                zones.forEach(z => {
+                    select.innerHTML += \`<option value="\${z.id}">Zone \${z.id}: \${z.name}</option>\`;
+                });
+            }
+
+            document.getElementById('map-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('map-modal').classList.remove('active');
+        }
+
+        async function saveMapping() {
+            const key = document.getElementById('mapping-entity-key').value;
+            const devId = document.getElementById('mapping-device-id').value;
+            const type = parseInt(document.getElementById('mapping-entity-type').value);
+            const targetId = document.getElementById('map-select').value;
+
+            if (!targetId) {
+                alert('Please select a target mapping.');
+                return;
+            }
+
+            const endpoint = type === 2 ? '/api/devices/entity/map_relay' : '/api/devices/entity/map_zone';
+            const payload = {
+                device_id: devId,
+                entity_key: parseInt(key),
+                target_id: parseInt(targetId)
+            };
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.ok) {
+                    closeModal();
+                    // Refresh view
+                    showEntitiesView(currentDeviceId, document.getElementById('current-device-name').innerText.replace(' Entities',''));
+                } else {
+                    alert('Failed to save mapping');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error saving mapping');
+            }
+        }
+
+        // Init
+        loadZonesAndRelays();
+        loadDevices();
+    </script>
+</body>
+</html>

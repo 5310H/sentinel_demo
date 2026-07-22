@@ -201,7 +201,6 @@
             background: rgba(0,0,0,0.5);
             border-radius: 12px;
             object-fit: cover;
-            margin-bottom: 15px;
             cursor: pointer;
             transition: all 0.3s;
             border: 1px solid rgba(255,255,255,0.05);
@@ -210,6 +209,27 @@
 @media (hover: hover) {
             .camera-snapshot:hover { border-color: var(--glass-highlight); box-shadow: 0 0 15px var(--glass-highlight); }
 }
+
+        .snapshot-container {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .snapshot-timestamp {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ccc;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
 
         .camera-info {
             font-size: 12px;
@@ -405,7 +425,6 @@
         stroke-width: 2.5;
     }
 </style>
-    <script src="mock_api.js"></script>
 </head>
 <body>
 
@@ -429,7 +448,7 @@
             </div>
 
             <div class="header-actions">
-                <button class="btn" onclick="location.href='cameras_live.html'">Live View</button>
+                <button class="btn" onclick="showLiveView()">Live View</button>
                 <button class="btn" onclick="showAddCameraModal()">Add Camera</button>
             </div>
         </div>
@@ -513,6 +532,9 @@
     <div class="fullscreen-modal" id="fullscreen-modal" onclick="hideFullscreen()">
         <button class="close-btn" onclick="hideFullscreen()">×</button>
         <img class="fullscreen-image" id="fullscreen-image" src="">
+        <div style="position:fixed; bottom:30px; left:50%; transform:translateX(-50%); z-index:2001;">
+            <button class="btn btn-secondary" onclick="event.stopPropagation(); hideFullscreen()" style="padding:12px 30px; font-size:14px;">← Back to Grid</button>
+        </div>
     </div>
 
     <script>
@@ -594,12 +616,15 @@
                             <div class="camera-name">${cam.friendly_name}</div>
                             <div class="badge ${statusClass}">${statusText}</div>
                         </div>
-                        <img class="camera-snapshot" 
-                             id="snapshot-${index}" 
-                             src="/api/camera/${index}/snapshot?t=${Date.now()}" 
-                             alt="${cam.friendly_name}"
-                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22220%22%3E%3Crect fill=%22%23111%22 width=%22320%22 height=%22220%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Outfit,sans-serif%22 font-size=%2216%22 fill=%22%23666%22%3ENo Image%3C/text%3E%3C/svg%3E'"
-                             onclick="showFullscreen(${index})">
+                        <div class="snapshot-container">
+                            <img class="camera-snapshot" 
+                                 id="snapshot-${index}" 
+                                 src="/api/camera/${index}/snapshot?t=${Date.now()}" 
+                                 alt="${cam.friendly_name}"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22220%22%3E%3Crect fill=%22%23111%22 width=%22320%22 height=%22220%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Outfit,sans-serif%22 font-size=%2216%22 fill=%22%23666%22%3ENo Image%3C/text%3E%3C/svg%3E'"
+                                 onclick="showFullscreen(${index})">
+                            <span class="snapshot-timestamp" id="ts-${index}">${lastSnapshot}</span>
+                        </div>
                         <div class="camera-info">
                             <span>Host: ${cam.hostname}:${cam.port}</span>
                             <span>Updated: ${lastSnapshot}</span>
@@ -656,6 +681,8 @@
         function refreshSnapshot(id) {
             const img = document.getElementById(`snapshot-${id}`);
             if (img) img.src = `/api/camera/${id}/snapshot?t=${Date.now()}`;
+            const ts = document.getElementById(`ts-${id}`);
+            if (ts) ts.textContent = new Date().toLocaleString();
         }
 
         function showFullscreen(id) {
@@ -666,6 +693,37 @@
 
         function hideFullscreen() {
             document.getElementById('fullscreen-modal').classList.remove('visible');
+            if (window.liveViewInterval) {
+                clearInterval(window.liveViewInterval);
+                window.liveViewInterval = null;
+            }
+        }
+
+        // Live View — cycles through all online cameras in the fullscreen modal
+        let liveViewIndex = 0;
+        function showLiveView() {
+            const onlineCams = cameras.filter(c => c.enabled && c.consecutive_failures <= 2);
+            if (onlineCams.length === 0) {
+                alert('No online cameras available for live view.');
+                return;
+            }
+            liveViewIndex = 0;
+            const origIndex = cameras.indexOf(onlineCams[0]);
+            showFullscreen(origIndex);
+
+            // Auto-refresh the current camera every 2 seconds
+            if (window.liveViewInterval) clearInterval(window.liveViewInterval);
+            window.liveViewInterval = setInterval(() => {
+                const img = document.getElementById('fullscreen-image');
+                if (img && document.getElementById('fullscreen-modal').classList.contains('visible')) {
+                    const cam = onlineCams[liveViewIndex];
+                    const camIdx = cameras.indexOf(cam);
+                    img.src = `/api/camera/${camIdx}/snapshot?t=${Date.now()}`;
+                } else {
+                    clearInterval(window.liveViewInterval);
+                    window.liveViewInterval = null;
+                }
+            }, 2000);
         }
 
         async function testCamera(id) {

@@ -354,7 +354,6 @@
             stroke-width: 2.5;
         }
     </style>
-    <script src="mock_api.js"></script>
 </head>
 <body>
 
@@ -470,12 +469,6 @@
             }).join('');
         }
 
-        function handleConnType() {
-            const isRemote = document.getElementById('connection_type').value == "1";
-            document.querySelectorAll('.conn-physical').forEach(e => e.style.display = isRemote ? 'none' : 'flex');
-            document.querySelectorAll('.conn-remote').forEach(e => e.style.display = isRemote ? 'flex' : 'none');
-        }
-
         function editItem(idOrAddr) {
             let item;
             if (typeof idOrAddr === 'string') {
@@ -499,8 +492,6 @@
                 }
             }
             
-            handleConnType();
-
             // For presence tracker updates
             if (document.getElementById('is_update')) {
                 document.getElementById('is_update').value = "true";
@@ -518,7 +509,6 @@
             
             if (document.getElementById('id')) document.getElementById('id').value = "-1";
             if (document.getElementById('is_update')) document.getElementById('is_update').value = "false";
-            handleConnType();
         }
 
         async function saveItem(event) {
@@ -536,8 +526,6 @@
             if (data.id) data.id = parseInt(data.id);
             if (data.gpio) data.gpio = parseInt(data.gpio);
             if (data.duration) data.duration = parseInt(data.duration);
-            if (data.connection_type) data.connection_type = parseInt(data.connection_type);
-            if (data.entity_key) data.entity_key = parseInt(data.entity_key);
 
             try {
                 const response = await fetch('/api/config/relays', {

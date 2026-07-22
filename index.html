@@ -11,8 +11,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-:root { 
+    <style>\n:root { 
             --bg-color: #030406;
             --glass-bg: rgba(8, 12, 18, 0.55);
             --glass-border: rgba(255, 255, 255, 0.06);
@@ -740,9 +739,7 @@
 @media (hover: hover) {
     .theme-toggle:hover { opacity: 1; }
 }
-
-</style>
-    <script src="mock_api.js"></script>
+\n</style>
 </head>
 
 <body>
@@ -760,7 +757,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-18 15:24 EDT</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-22 09:52 EDT</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -805,6 +802,7 @@
                     <a href="relays.html" class="admin-link">Relays</a>
                     <a href="presence.html" class="admin-link">Presence</a>
                     <a href="devices.html" class="admin-link">Devices</a>
+                    <a href="esphome.html" class="admin-link">ESPHome</a>
                     <a href="cameras.html" class="admin-link">Cameras</a>
                     <a href="scheduler.html" class="admin-link">Schedule</a>
                     <a href="tuya.html" class="admin-link">Tuya</a>
@@ -998,8 +996,7 @@
         </div>
     </div>
 
-    <script>
-window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno); }); window.addEventListener('unhandledrejection', function(e) { alert('Promise Error: ' + e.reason); }); let currentPin = "";
+    <script>\nwindow.addEventListener('error', function(e) { alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno); }); window.addEventListener('unhandledrejection', function(e) { alert('Promise Error: ' + e.reason); }); let currentPin = "";
         let savedPin = "";
         let keypadMode = "pin"; // 'pin' or 'totp'
         let currentUser = "";
@@ -1443,7 +1440,11 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                     card.className = 'zone-card' + (z.open ? ' open' : '');
                     
                     const stateText = z.open ? 'OPEN' : 'CLOSED';
-                    card.innerHTML = `<span class="zone-name" title="${z.name}">${z.name}</span> <span class="zone-state">${stateText}</span>`;
+                    let html = `<span class="zone-name" title="${z.name}">${z.name}</span> <span class="zone-state">${stateText}</span>`;
+                    if (z.raw_adc_voltage !== undefined) {
+                        html += `<div style="font-size: 10px; color: #8892b0; margin-top: 5px; width: 100%;">ADC: ${z.raw_adc_voltage}V</div>`;
+                    }
+                    card.innerHTML = html;
                     grid.appendChild(card);
                 });
             } catch(e) {}
@@ -2200,8 +2201,7 @@ setInterval(async () => {
         }
     } catch(e) {}
 }, 5000);
-
-</script>
+\n</script>
 </body>
 
 </html>

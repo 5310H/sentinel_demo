@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ESPHome Config - Sentinel</title>
+    <script>
+        if (!sessionStorage.getItem('sentinel_token')) {
+            window.location.replace("index.html");
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #030406;
+            --glass-bg: rgba(8, 12, 18, 0.55);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --glass-highlight: rgba(0, 212, 255, 0.15);
+            --glass-shadow: 0 25px 45px -5px rgba(0, 0, 0, 0.8);
+            
+            --accent: #00e5ff;
+            --text-main: #f4f7f6;
+            --text-dim: #708090;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 127, 0.08) 0%, transparent 45%);
+            background-size: cover;
+            background-attachment: fixed;
+            color: var(--text-main); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            min-height: 100vh; 
+            padding: 40px 20px; 
+            -webkit-user-select: none; 
+            user-select: none; 
+        }
+
+        .fab-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            text-decoration: none;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            z-index: 1000;
+        }
+
+        .panel-container {
+            width: 100%; 
+            max-width: 700px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-highlight);
+            border-radius: 32px;
+            box-shadow: var(--glass-shadow);
+            padding: 40px; 
+            margin-bottom: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            position: relative;
+        }
+        
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 25%; width: 50%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .panel-title {
+            font-size: 28px;
+            font-weight: 300;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 0%, #a0a5b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-info {
+            flex: 1;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--text-main);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .form-desc {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .form-input {
+            width: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            font-family: 'Outfit', sans-serif;
+            text-align: right;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            background: rgba(0, 229, 255, 0.05);
+        }
+
+        .btn {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: rgba(0, 229, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 229, 255, 0.1);
+        }
+
+        .device-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .device-info h3 { margin: 0 0 5px 0; font-size: 18px; font-weight: 500; }
+        .device-info p { margin: 0; color: var(--text-dim); font-size: 14px; }
+        
+        .device-actions { display: flex; gap: 10px; }
+        .btn-small { 
+            background: rgba(255,0,0,0.1); color: #ff3366; 
+            border: 1px solid rgba(255,0,0,0.2); 
+            padding: 6px 12px; border-radius: 8px; cursor: pointer; 
+        }
+
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="fab-back" aria-label="Return to Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+    </a>
+
+    <div class="panel-container">
+        <div class="header">
+            <h1 class="panel-title">ESPHome Physical Nodes</h1>
+            <div class="panel-subtitle">Configure hardware connections</div>
+        </div>
+
+        <div class="section-title">Configured Nodes</div>
+        <div id="device-list"><div class="loader"></div></div>
+
+        <div class="section-title" style="margin-top: 40px;">Add New Node</div>
+        
+        <div class="form-group">
+            <div class="form-info">
+                <label class="form-label">Device Name</label>
+                <div class="form-desc">Internal ID (no spaces)</div>
+            </div>
+            <input type="text" class="form-input" id="dev-id" placeholder="living_room_light">
+        </div>
+
+        <div class="form-group">
+            <div class="form-info">
+                <label class="form-label">Hostname / IP</label>
+                <div class="form-desc">Network address</div>
+            </div>
+            <input type="text" class="form-input" id="dev-host" placeholder="192.168.1.100">
+        </div>
+
+        <div class="form-group">
+            <div class="form-info">
+                <label class="form-label">API Port</label>
+                <div class="form-desc">Native API port (Default 6053)</div>
+            </div>
+            <input type="number" class="form-input" id="dev-port" value="6053">
+        </div>
+
+        <div class="form-group">
+            <div class="form-info">
+                <label class="form-label">API Password</label>
+                <div class="form-desc">Optional authentication</div>
+            </div>
+            <input type="password" class="form-input" id="dev-pass">
+        </div>
+
+        <button class="btn" onclick="addDevice()">Add ESPHome Device</button>
+    </div>
+
+    <script>
+        const token = sessionStorage.getItem('sentinel_token');
+
+        async function loadDevices() {
+            try {
+                const res = await fetch('/api/devices', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                
+                const list = document.getElementById('device-list');
+                list.innerHTML = '';
+                
+                if (data.devices && data.devices.length > 0) {
+                    const esphomeDevices = data.devices.filter(d => d.protocol === 0);
+                    
+                    if (esphomeDevices.length > 0) {
+                        esphomeDevices.forEach(dev => {
+                            list.innerHTML += `
+                                <div class="device-card">
+                                    <div class="device-info">
+                                        <h3>${dev.name || dev.id}</h3>
+                                        <p>${dev.host}:${dev.port}</p>
+                                    </div>
+                                    <div class="device-actions">
+                                        <button class="btn-small" onclick="deleteDevice('${dev.id}')">Remove</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No ESPHome nodes configured.</p>';
+                    }
+                } else {
+                    list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No ESPHome nodes configured.</p>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function addDevice() {
+            const payload = {
+                id: document.getElementById('dev-id').value,
+                name: document.getElementById('dev-id').value,
+                protocol: 0,
+                host: document.getElementById('dev-host').value,
+                port: parseInt(document.getElementById('dev-port').value),
+                password: document.getElementById('dev-pass').value
+            };
+
+            if (!payload.id || !payload.host) {
+                alert('Device ID and Hostname are required.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/devices/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    loadDevices();
+                    document.getElementById('dev-id').value = '';
+                    document.getElementById('dev-host').value = '';
+                } else {
+                    alert('Failed to add device.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error adding device.');
+            }
+        }
+
+        async function deleteDevice(id) {
+            if (!confirm('Remove this physical device? Entities mapped to it will break.')) return;
+            try {
+                const res = await fetch('/api/devices/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ id: id })
+                });
+                if (res.ok) {
+                    loadDevices();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadDevices();
+    </script>
+</body>
+</html>

@@ -11,7 +11,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>\n:root { 
+    <style>
+:root { 
             --bg-color: #030406;
             --glass-bg: rgba(8, 12, 18, 0.55);
             --glass-border: rgba(255, 255, 255, 0.06);
@@ -739,7 +740,8 @@
 @media (hover: hover) {
     .theme-toggle:hover { opacity: 1; }
 }
-\n</style>
+
+</style>
 <script src="mock_api.js"></script>\n</head>
 
 <body>
@@ -757,7 +759,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-22 10:10 EDT</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-22 10:19 EDT</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -996,7 +998,8 @@
         </div>
     </div>
 
-    <script>\nwindow.addEventListener('error', function(e) { alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno); }); window.addEventListener('unhandledrejection', function(e) { alert('Promise Error: ' + e.reason); }); let currentPin = "";
+    <script>
+window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + ' at ' + e.filename + ':' + e.lineno); }); window.addEventListener('unhandledrejection', function(e) { alert('Promise Error: ' + e.reason); }); let currentPin = "";
         let savedPin = "";
         let keypadMode = "pin"; // 'pin' or 'totp'
         let currentUser = "";
@@ -2201,7 +2204,8 @@ setInterval(async () => {
         }
     } catch(e) {}
 }, 5000);
-\n</script>
+
+</script>
 </body>
 
 </html>

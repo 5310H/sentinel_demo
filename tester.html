@@ -333,6 +333,14 @@
     </div>
 
     <script>
+        
+        let ttsEnabled = true; // Auto-enable TTS in sys-tester
+        let lastChimeCount = -1;
+        function playChime(zoneName) {
+            if (ttsEnabled && 'speechSynthesis' in window && zoneName) {
+                speechSynthesis.speak(new SpeechSynthesisUtterance(zoneName));
+            }
+        }
         let isConnected = null;
         let lastData = null;
         let lastLogSeq = 0;
@@ -544,6 +552,14 @@
                 const res = await fetch('/api/status?t=' + Date.now());
                 const data = await res.json();
                 lastData = data;
+
+                
+                if (data && data.config && data.config.chime_count !== undefined) {
+                    if (lastChimeCount !== -1 && data.config.chime_count > lastChimeCount) {
+                        playChime(data.config.chime_name);
+                    }
+                    lastChimeCount = data.config.chime_count;
+                }
 
                 if (isConnected !== true) {
                     isConnected = true;

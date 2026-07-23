@@ -403,6 +403,15 @@
             </select>
         </div>
         <div class="settings-row">
+            <div><div class="settings-label">Dispatch</div><div class="settings-label-sub">Who to call on alarm</div></div>
+            <select id="dispatch_service" name="dispatch_service">
+                <option value="none">None</option>
+                <option value="police">Police</option>
+                <option value="fire">Fire</option>
+                <option value="medical">Medical</option>
+            </select>
+        </div>
+        <div class="settings-row">
             <div><div class="settings-label">Location</div><div class="settings-label-sub">Where is it?</div></div>
             <input type="text" id="location" name="location">
         </div>
@@ -477,6 +486,7 @@
         <div class="device-header">
             <div class="device-name">${item.name}</div>
             <div class="badge">${item.sensor_type}</div>
+            <div class="badge" style="background:var(--danger)">${item.dispatch_service || 'none'}</div>
         </div>
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>

@@ -375,7 +375,7 @@
             }
             try {
                 log(`Triggering Zone: ${name} (GPIO ${id})...`, 'warn');
-                await fetch(`/api/trigger?id=${id}`);
+                await fetch(`/api/trigger?id=${id}`, {method: 'GET'});
                 setTimeout(update, 100);
             } catch(e) {
                 log(`Error triggering zone: ${e.message}`, 'error');

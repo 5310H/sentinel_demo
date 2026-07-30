@@ -318,7 +318,18 @@
             <div class="card-body">
                 <p style="font-size: 12px; color: var(--dim); margin-top: 0;">Run a full automated test suite against the system's API endpoints. Results will appear in the console below.</p>
                 <button id="test-runner-btn" class="btn" style="background: var(--accent); color: black;" onclick="runSystemTest()">Run Full System Test</button>
-                <div id="test-summary" style="margin-top: 10px; font-size: 12px;"></div>
+            </div>
+        </div>
+
+        <!-- SIA DC-09 IP Central Station Tester -->
+        <div class="card">
+            <div class="card-header">SIA DC-09 Central Station Tester</div>
+            <div class="card-body">
+                <p style="font-size: 12px; color: var(--dim); margin-top: 0;">Test live transmission of SIA DC-09 frames (SIA-DCS / Fire Alarm FA) to your Central Station receiver or local mock server.</p>
+                <button class="btn" style="background: var(--ready); color: black; font-weight: 600;" onclick="testSIADispatch()">Test SIA DC-09 Transmission</button>
+                <div id="sia-test-status" style="margin-top: 10px; font-size: 12px; font-family: monospace; color: var(--ready);"></div>
+            </div>
+        </div>    <div id="test-summary" style="margin-top: 10px; font-size: 12px;"></div>
             </div>
         </div>
 
@@ -971,6 +982,25 @@
                 }
             } catch (e) {
                 log(`Failed to load devices: ${e.message}`, 'warn');
+            }
+        }
+
+        async function testSIADispatch() {
+            const statusDiv = document.getElementById('sia-test-status');
+            statusDiv.innerText = "Transmitting SIA DC-09 Frame...";
+            try {
+                const res = await fetch('/api/test_sia', { credentials: 'same-origin' });
+                const data = await res.json();
+                if (res.ok && data.status === 'ok') {
+                    statusDiv.innerText = "✅ ACK RECEIVED: " + data.message;
+                    statusDiv.style.color = "#00f0ff";
+                } else {
+                    statusDiv.innerText = "❌ FAILED: " + (data.message || "No ACK response received");
+                    statusDiv.style.color = "#ff007f";
+                }
+            } catch (e) {
+                statusDiv.innerText = "❌ ERROR: " + e.message;
+                statusDiv.style.color = "#ff007f";
             }
         }
 

@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Sentinel Command Center</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030406">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -62,8 +64,7 @@
 
         /* Glassmorphism Container */
         .dashboard { 
-            width: 100%; 
-            max-width: 1200px; 
+            width: 100%;
             background: var(--glass-bg);
             backdrop-filter: blur(35px);
             -webkit-backdrop-filter: blur(35px);
@@ -90,7 +91,7 @@
             .header-module { flex-direction: column; align-items: center; text-align: center; }
             .header-module > div { margin-bottom: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; }
             .header-module > div:last-child { margin-bottom: 0; }
-            .time-display { font-size: 52px; text-align: center; width: 100%; display: block; margin: 0 auto; }
+            .time-display { font-size: 26px; text-align: center; width: 100%; display: block; margin: 0 auto; }
             .brand { justify-content: center; width: 100%; }
             .weather-temp { font-size: 36px; }
             .action-buttons { grid-template-columns: 1fr; }
@@ -319,7 +320,7 @@
         .audit-list {
             list-style: none;
             padding: 0; margin: 0;
-            max-height: 120px;
+            max-height: 260px;
             overflow-y: auto;
         }
         .audit-item {
@@ -759,7 +760,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-23 13:12 EDT</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-30 11:44 EDT</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -895,7 +896,7 @@
                     <span class="ind-value ok" id="tamper-value">SECURE</span>
                 </div>
                 <div class="indicator-card">
-                    <span class="ind-label">Cloudflare Proxy</span>
+                    <span class="ind-label">Check-In Status</span>
                     <span class="ind-value" id="cf-status">WAIT</span>
                 </div>
                 <div class="indicator-card">
@@ -985,7 +986,7 @@
                 Authentication Required</div>
             <div style="color: #aaa; font-size: 12px; margin-bottom: 15px;">
                 Before you can arm/disarm the system, you must set up 2-Factor Authentication.<br><br>
-                We've sent a setup code to your email.
+                We've sent a one-time setup code to your email. You can use standard authenticator apps like <strong>Google, Microsoft, or Apple Passwords</strong> to scan or enter this key.
             </div>
             <div style="font-size:12px">Enter the 2FA setup key from your email:</div>
             <input type="text" class="modal-input" id="secret-input-box" maxlength="16" placeholder="ABCD1234EFGH5678">
@@ -1007,6 +1008,18 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         let storedToken = sessionStorage.getItem('sentinel_token');
         let isAuthenticated = (storedToken !== null && storedToken !== '');
         let isAdmin = sessionStorage.getItem('sentinel_is_admin') === 'true';
+
+        // --- TTS Mobile Workaround ---
+        let ttsInitialized = false;
+        document.body.addEventListener('click', () => {
+            if (!ttsInitialized && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+                let u = new SpeechSynthesisUtterance('');
+                u.volume = 0;
+                window.speechSynthesis.speak(u);
+                ttsInitialized = true;
+                console.log("[TTS] Audio context initialized on click");
+            }
+        }, { once: true });
 
         // --- TIME & DATE ---
         function updateClock() {
@@ -1267,12 +1280,18 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                         }
                     }
 
-                    document.getElementById('score-' + t.id).innerText = scoreTxt;
-                    document.getElementById('status-' + t.id).innerText = statusTxt;
+                    const scoreEl = document.getElementById('score-' + t.id);
+                    if (scoreEl) {
+                        scoreEl.innerText = scoreTxt;
+                        document.getElementById('status-' + t.id).innerText = statusTxt;
+                    }
                 } catch (e) {
                     console.log(`Sports fetch failed for ${t.id}`, e);
-                    document.getElementById('score-' + t.id).innerText = "Err";
-                    document.getElementById('status-' + t.id).innerText = "Unavailable";
+                    const scoreEl = document.getElementById('score-' + t.id);
+                    if (scoreEl) {
+                        scoreEl.innerText = "Err";
+                        document.getElementById('status-' + t.id).innerText = "Unavailable";
+                    }
                 }
             }
         }
@@ -1373,7 +1392,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 const events = Array.isArray(eventsResult.value) ? eventsResult.value : [];
                 events.forEach(ev => {
                     const meta = EVENT_TYPE_MAP[ev.event_type] || { label: `EVENT ${ev.event_type}`, icon: '📋', color: '#9ca3af' };
-                    const zoneNote = (ev.zone_id && ev.zone_id > 0) ? `Zone ${ev.zone_id}` : '';
+                    const zoneNote = (ev.event_type === 4 && ev.zone_id !== undefined && ev.zone_id > 0) ? `Zone ${ev.zone_id}` : '';
                     unified.push({
                         ts: ev.timestamp || 0,
                         label: meta.label,
@@ -1623,7 +1642,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 const authData = await authResponse.json();
                 if(authData.authenticated) {
                     document.getElementById('totp-modal').classList.remove('visible');
-                    alert('2FA Enabled Successfully!');
+                    alert('2FA Enabled Successfully!\n\nFor the best experience, add this dashboard to your phone\'s Home Screen so it behaves like a native app:\n\n📱 iOS (Safari): Tap the Share icon (square with an up arrow) at the bottom, then select "Add to Home Screen".\n\n📱 Android (Chrome): Tap the 3-dot menu at the top right, then select "Add to Home screen".');
                     grantAccess(authData);
                 } else { alert('Invalid TOTP code.'); }
             } catch(e) { alert('Error setting up 2FA.'); }
@@ -1839,21 +1858,39 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             
             // --- TEXT TO SPEECH ANNOUNCEMENTS ---
             const ttsEnabled = localStorage.getItem('tts_enabled') !== 'false';
-            if (ttsEnabled && window.lastKnownState !== undefined && window.lastKnownState !== state) {
-                let msg = "";
-                if (state === 0) msg = "System Disarmed";
-                else if (state === 1) msg = "System Arming. Please exit.";
-                else if (state === 2) msg = "System Armed";
-                else if (state === 3) msg = "Entry Delay. Please enter PIN.";
-                else if (state === 4) msg = "ALARM! ALARM! ALARM!";
-                
-                if (msg && 'speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(msg);
-                    utterance.rate = 0.95; // Slightly slower for clarity
-                    utterance.pitch = 1.0;
-                    window.speechSynthesis.speak(utterance);
+            if (ttsEnabled) {
+                // State change announcement
+                if (window.lastKnownState !== undefined && window.lastKnownState !== state) {
+                    let msg = "";
+                    if (state === 0) msg = "System Disarmed";
+                    else if (state === 1) msg = "System Arming. Please exit.";
+                    else if (state === 2) msg = "System Armed";
+                    else if (state === 3) msg = "Entry Delay. Please enter PIN.";
+                    else if (state === 4) msg = "ALARM! ALARM! ALARM!";
+                    
+                    if (msg && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+                        window.utterances = window.utterances || [];
+                        const utterance = new SpeechSynthesisUtterance(msg);
+                        utterance.rate = 0.95; // Slightly slower for clarity
+                        utterance.pitch = 1.0;
+                        window.utterances.push(utterance);
+                        window.speechSynthesis.speak(utterance);
+                    }
                 }
+                
+                // Chime announcement
+                if (cfg.chime_count !== undefined && window.lastChimeCount !== undefined && cfg.chime_count !== window.lastChimeCount) {
+                    let msg = cfg.chime_name || "Zone Open";
+                    if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+                        window.utterances = window.utterances || [];
+                        const utterance = new SpeechSynthesisUtterance(msg);
+                        utterance.rate = 0.95;
+                        utterance.pitch = 1.0;
+                        window.utterances.push(utterance);
+                        window.speechSynthesis.speak(utterance);
+                    }
+                }
+                window.lastChimeCount = cfg.chime_count;
             }
             window.lastKnownState = state;
             window.lastKnownReady = isReady;
@@ -1876,6 +1913,19 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         if (localStorage.getItem('tts_enabled') === 'false') {
             document.getElementById('tts-toggle-btn').innerText = '🔇';
         }
+
+        // Unlock TTS for mobile devices on first interaction
+        const unlockTTS = () => {
+            if ('speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined') {
+                const utterance = new SpeechSynthesisUtterance('');
+                utterance.volume = 0;
+                window.speechSynthesis.speak(utterance);
+            }
+            document.removeEventListener('click', unlockTTS);
+            document.removeEventListener('touchstart', unlockTTS);
+        };
+        document.addEventListener('click', unlockTTS);
+        document.addEventListener('touchstart', unlockTTS);
 
         async function check() {
             try {
@@ -2204,6 +2254,31 @@ setInterval(async () => {
         }
     } catch(e) {}
 }, 5000);
+
+// --- AUTO-LOGOFF TIMER ---
+let inactivityTimer;
+const INACTIVITY_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+
+function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    if (sessionStorage.getItem('sentinel_token')) {
+        inactivityTimer = setTimeout(() => {
+            console.log("Inactivity limit reached. Logging off.");
+            sessionStorage.removeItem('sentinel_token');
+            if (typeof showKeypad === 'function') {
+                showKeypad(); // Force login modal
+            } else {
+                window.location.replace("index.html");
+            }
+        }, INACTIVITY_LIMIT_MS);
+    }
+}
+
+['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+    document.addEventListener(evt, resetInactivityTimer, { passive: true });
+});
+
+resetInactivityTimer();
 
 </script>
 </body>

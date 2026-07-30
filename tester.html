@@ -751,12 +751,23 @@
 
             // SECTION 3: AUTHENTICATION
             logSection("SECTION 3: Authentication");
+            let masterPin = "9999";
             try {
-                const authRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: "1234", step: "pin" }), headers: { 'Content-Type': 'application/json' } });
-                const authBody = await authRes.json();
-                await assert(authBody.authenticated === true, "Valid PIN (1234) authenticates successfully", "Valid PIN (1234) failed authentication");
+                const usersRes = await fetch('/users.json');
+                const users = await usersRes.json();
+                if (users && users.length > 0) {
+                    masterPin = users[0].pin.startsWith('ENC:') ? users[0].pin.substring(4) : users[0].pin;
+                    for (const user of users) {
+                        const rawPin = user.pin.startsWith('ENC:') ? user.pin.substring(4) : user.pin;
+                        const authRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: rawPin, step: "pin" }), headers: { 'Content-Type': 'application/json' } });
+                        const authBody = await authRes.json();
+                        await assert(authBody.authenticated === true, `Valid PIN for ${user.name} authenticates successfully`, `Valid PIN for ${user.name} failed authentication`);
+                    }
+                } else {
+                    await assert(false, "", "No users found in users.json to test");
+                }
             } catch (e) {
-                await assert(false, "", `Valid PIN auth failed: ${e.message}`);
+                await assert(false, "", `User PIN auth failed: ${e.message}`);
             }
             try {
                 const invalidAuthRes = await fetch('/api/auth', { method: 'POST', body: JSON.stringify({ pin: "1111", step: "pin" }), headers: { 'Content-Type': 'application/json' } });
@@ -777,7 +788,7 @@
                 let postArmStatus = await (await fetch('/api/status')).json();
                 await assert(postArmStatus.config.state !== 0, "System state changed after ARM", "System state did not change after ARM");
 
-                const disarmRes = await fetch('/api/disarm', { method: 'POST', body: JSON.stringify({ pin: "1234" }), headers: { 'Content-Type': 'application/json' } });
+                const disarmRes = await fetch('/api/disarm', { method: 'POST', body: JSON.stringify({ pin: masterPin }), headers: { 'Content-Type': 'application/json' } });
                 const disarmBody = await disarmRes.json();
                 await assert(disarmBody.status === 'ok', "DISARM endpoint accepted", "DISARM endpoint response invalid");
                 log("Waiting 1s...", 'dim');

@@ -378,16 +378,23 @@
     <div class="settings-group">
         <input type="hidden" id="id" name="id" value="-1">
         <div class="settings-row">
-            <div><div class="settings-label">Name</div><div class="settings-label-sub">Device Name</div></div>
+            <div><div class="settings-label">Name</div><div class="settings-label-sub">Relay / Output Name</div></div>
             <input type="text" id="name" name="name" required>
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">Type</div><div class="settings-label-sub">Category</div></div>
+            <div><div class="settings-label">Description</div><div class="settings-label-sub">Notes / Function</div></div>
+            <input type="text" id="description" name="description">
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Type</div><div class="settings-label-sub">Output Category</div></div>
             <select id="type" name="type">
                 <option value="Siren">Siren</option>
                 <option value="Strobe">Strobe</option>
+                <option value="Chime">Chime</option>
+                <option value="Bell">Bell</option>
                 <option value="Switch">Switch</option>
                 <option value="Light">Light</option>
+                <option value="Other">Other</option>
             </select>
         </div>
         <div class="settings-row">
@@ -395,12 +402,30 @@
             <input type="text" id="location" name="location">
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">GPIO Pin</div><div class="settings-label-sub">Hardware Pin</div></div>
+            <div><div class="settings-label">Duration (sec)</div><div class="settings-label-sub">0 for infinite (until reset)</div></div>
+            <input type="number" id="duration" name="duration" value="0">
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Pulse / Repeat</div><div class="settings-label-sub">Repeat pulsing output</div></div>
+            <label class="switch"><input type="checkbox" id="is_repeat" name="is_repeat"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Connection Type</div><div class="settings-label-sub">Driver Target</div></div>
+            <select id="connection_type" name="connection_type">
+                <option value="0">Local GPIO Hardware</option>
+                <option value="1">Home Assistant Entity</option>
+                <option value="2">ESPHome Native</option>
+                <option value="3">Tuya Smart</option>
+                <option value="4">Zigbee</option>
+            </select>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">GPIO Pin</div><div class="settings-label-sub">Hardware Pin (virtual = -1)</div></div>
             <input type="number" id="gpio" name="gpio">
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">Duration (sec)</div><div class="settings-label-sub">0 for infinite</div></div>
-            <input type="number" id="duration" name="duration" value="0">
+            <div><div class="settings-label">Mapped Entity ID</div><div class="settings-label-sub">HA Entity or Topic string</div></div>
+            <input type="text" id="mapped_entity_id" name="mapped_entity_id">
         </div>
     </div>
     
@@ -460,7 +485,8 @@
         </div>
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>
-            <div class="info-cell"><div class="info-label">GPIO Pin</div><div class="info-value">${item.gpio !== undefined ? item.gpio : 'N/A'}</div></div>
+            <div class="info-cell"><div class="info-label">GPIO / Entity</div><div class="info-value">${item.gpio !== undefined ? item.gpio : 'N/A'} / ${item.mapped_entity_id || 'Local'}</div></div>
+            <div class="info-cell"><div class="info-label">Duration</div><div class="info-value">${item.duration > 0 ? item.duration + 's' : 'Infinite'}</div></div>
         </div>
         <button class="btn-secondary" onclick="editItem(${item.id})">Edit</button>
         <button class="btn-danger" onclick="deleteItem(${item.id})">Delete</button>

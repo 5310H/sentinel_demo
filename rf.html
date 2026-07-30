@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tuya Config - Sentinel</title>
+    <title>RF Config - Sentinel</title>
     <script>
         if (!sessionStorage.getItem('sentinel_token')) {
             window.location.replace("index.html");
@@ -238,38 +238,33 @@
 
     <div class="panel-container">
         <div class="header">
-            <h1 class="panel-title">Tuya Physical Nodes</h1>
+            <h1 class="panel-title">RF 433MHz Devices</h1>
             <div class="panel-subtitle">Configure hardware connections</div>
         </div>
 
         <div class="section-title">Configured Nodes</div>
         <div id="device-list"><div class="loader"></div></div>
 
-        <div class="section-title" style="margin-top: 40px;">Add New Node</div>
+        <div class="section-title" style="margin-top: 40px;">Add New RF Node</div>
         
         <div class="settings-group">
             <div class="settings-row">
                 <div><div class="settings-label">Device Name</div><div class="settings-label-sub">Internal ID (no spaces)</div></div>
-                <input type="text" id="dev-id" placeholder="living_room_light">
+                <input type="text" id="dev-id" placeholder="rf_remote_1">
             </div>
 
             <div class="settings-row">
-                <div><div class="settings-label">Hostname / IP</div><div class="settings-label-sub">Network address</div></div>
-                <input type="text" id="dev-host" placeholder="192.168.1.100">
+                <div><div class="settings-label">RF Code</div><div class="settings-label-sub">Captured 433MHz hex code</div></div>
+                <input type="text" id="dev-rf-code">
             </div>
 
             <div class="settings-row">
-                <div><div class="settings-label">Tuya Device ID</div><div class="settings-label-sub">From Tuya IoT platform</div></div>
-                <input type="text" id="dev-device-id">
-            </div>
-
-            <div class="settings-row">
-                <div><div class="settings-label">Tuya Local Key</div><div class="settings-label-sub">16-character local key</div></div>
-                <input type="password" id="dev-pass">
+                <div><div class="settings-label">Type</div><div class="settings-label-sub">Sensor or remote type</div></div>
+                <input type="text" id="dev-type" placeholder="remote">
             </div>
         </div>
 
-        <button class="btn" onclick="addDevice()">Add Tuya Node</button>
+        <button class="btn" onclick="addDevice()">Add RF Node</button>
     </div>
 
     <script>
@@ -286,15 +281,15 @@
                 list.innerHTML = '';
                 
                 if (data.devices && data.devices.length > 0) {
-                    const esphomeDevices = data.devices.filter(d => d.protocol === 2);
+                    const rfDevices = data.devices.filter(d => d.protocol === 3);
                     
-                    if (esphomeDevices.length > 0) {
-                        esphomeDevices.forEach(dev => {
+                    if (rfDevices.length > 0) {
+                        rfDevices.forEach(dev => {
                             list.innerHTML += `
                                 <div class="device-card">
                                     <div class="device-info">
                                         <h3>${dev.name || dev.id}</h3>
-                                        <p>${dev.host}:${dev.port}</p>
+                                        <p>RF Code: ${dev.rf_code || 'N/A'}</p>
                                     </div>
                                     <div class="device-actions">
                                         <button class="btn-small" onclick="deleteDevice('${dev.id}')">Remove</button>
@@ -303,10 +298,10 @@
                             `;
                         });
                     } else {
-                        list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No Tuya nodes configured.</p>';
+                        list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No RF nodes configured.</p>';
                     }
                 } else {
-                    list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No Tuya nodes configured.</p>';
+                    list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No RF nodes configured.</p>';
                 }
             } catch (err) {
                 console.error(err);
@@ -317,14 +312,13 @@
             const payload = {
                 id: document.getElementById('dev-id').value,
                 name: document.getElementById('dev-id').value,
-                protocol: 2,
-                host: document.getElementById('dev-host').value,
-                tuya_device_id: document.getElementById('dev-device-id').value,
-                tuya_local_key: document.getElementById('dev-pass').value
+                protocol: 3,
+                rf_code: document.getElementById('dev-rf-code').value,
+                rf_type: document.getElementById('dev-type').value
             };
 
-            if (!payload.id || !payload.host) {
-                alert('Device ID and Hostname are required.');
+            if (!payload.id || !payload.rf_code) {
+                alert('Device ID and RF Code are required.');
                 return;
             }
 

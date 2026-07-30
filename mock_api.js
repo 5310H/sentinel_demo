@@ -59,13 +59,28 @@
 
         if (url.includes('/api/auth')) {
             let body = (config && config.body) ? JSON.parse(config.body) : {};
+            
+            if (body.step === 'totp' && (body.pin === "1234" || body.pin === "4321")) {
+                let name = body.pin === "1234" ? "Demo Admin" : "Demo User";
+                let admin = body.pin === "1234";
+                return jsonResponse({ status: "ok", token: "demo_token_totp", user: name, admin: admin, authenticated: true, is_admin: admin, name: name });
+            }
+
             if (body.pin === "1234") {
+                // Master user bypasses 2FA in mock just like in old behavior?
+                // Actually we just updated main.c to force it for everyone! Let's force it for Admin too if we want, or just User.
+                // Let's just return authenticated for 1234 to keep it simple, and force 2FA for 4321.
                 return jsonResponse({ status: "ok", token: "demo_token_12345", user: "Demo Admin", admin: true, authenticated: true, is_admin: true, name: "Demo Admin" });
             } else if (body.pin === "4321") {
-                return jsonResponse({ status: "ok", token: "demo_token_43210", user: "Demo User", admin: false, authenticated: true, is_admin: false, name: "Demo User" });
+                // Simulate 2FA setup requirement
+                return jsonResponse({ status: "ok", authenticated: false, error: "2fa_setup_required", name: "Demo User" });
             } else {
                 return jsonResponse({ status: "error", message: "Invalid PIN. Use 1234 or 4321." }, 401);
             }
+        }
+        
+        if (url.includes('/api/users/set-totp') || url.includes('/api/users/send-totp-email')) {
+            return jsonResponse({ status: "ok" });
         }
 
         if (url.includes('/api/arm')) {

@@ -382,39 +382,48 @@
             <input type="text" id="name" name="name" required>
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">Type</div><div class="settings-label-sub">Category</div></div>
+            <div><div class="settings-label">Description</div><div class="settings-label-sub">Notes / Details</div></div>
+            <input type="text" id="description" name="description">
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Sensor Type</div><div class="settings-label-sub">Category</div></div>
             <select id="sensor_type" name="sensor_type">
                 <option value="door">Door</option>
                 <option value="window">Window</option>
                 <option value="motion">Motion</option>
-                <option value="camera">Camera</option>
-                <option value="glass_break">Glass Break</option>
-                <option value="fire">Fire</option>
-                <option value="smoke">Smoke</option>
-                <option value="panic">Panic</option>
-                <option value="medical">Medical</option>
-                <option value="temp">Temperature</option>
-                <option value="water">Water</option>
-                <option value="co">CO Detector</option>
-                <option value="garage_door">Garage Door</option>
-                <option value="gate">Gate</option>
-                <option value="humidity">Humidity</option>
-                <option value="shock">Shock</option>
+                <option value="glass">Glass Break</option>
+                <option value="smoke">Smoke Detector</option>
+                <option value="co">Carbon Monoxide</option>
+                <option value="water">Water / Flood</option>
+                <option value="freeze">Freeze / Temperature</option>
+                <option value="panic">Panic Button</option>
+                <option value="medical">Medical Alert</option>
+                <option value="camera">Camera / NVR</option>
+                <option value="lock">Smart Lock</option>
+                <option value="other">Other / Custom</option>
             </select>
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">Dispatch</div><div class="settings-label-sub">Who to call on alarm</div></div>
+            <div><div class="settings-label">Dispatch Service</div><div class="settings-label-sub">Who to call on alarm</div></div>
             <select id="dispatch_service" name="dispatch_service">
-                <option value="none">None</option>
                 <option value="police">Police</option>
                 <option value="fire">Fire</option>
                 <option value="medical">Medical</option>
                 <option value="other">Other</option>
+                <option value="none">None / Local Only</option>
             </select>
         </div>
         <div class="settings-row">
             <div><div class="settings-label">Location</div><div class="settings-label-sub">Where is it?</div></div>
             <input type="text" id="location" name="location">
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Model</div><div class="settings-label-sub">Sensor Model</div></div>
+            <input type="text" id="model" name="model">
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Manufacturer</div><div class="settings-label-sub">Sensor Brand</div></div>
+            <input type="text" id="manufacturer" name="manufacturer">
         </div>
         <div class="settings-row">
             <div><div class="settings-label">GPIO Pin</div><div class="settings-label-sub">Hardware Pin (virtual = -1)</div></div>
@@ -425,12 +434,20 @@
             <label class="switch"><input type="checkbox" id="is_chime" name="is_chime"><span class="slider"></span></label>
         </div>
         <div class="settings-row">
-            <div><div class="settings-label">Perimeter</div><div class="settings-label-sub">Armed in STAY</div></div>
+            <div><div class="settings-label">Perimeter</div><div class="settings-label-sub">Armed in STAY & NIGHT</div></div>
             <label class="switch"><input type="checkbox" id="is_perimeter" name="is_perimeter"><span class="slider"></span></label>
         </div>
         <div class="settings-row">
             <div><div class="settings-label">Interior</div><div class="settings-label-sub">Armed in AWAY</div></div>
             <label class="switch"><input type="checkbox" id="is_interior" name="is_interior"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Armed-Only Alarm</div><div class="settings-label-sub">Alarm when armed (uncheck for 24-hr always-on)</div></div>
+            <label class="switch"><input type="checkbox" id="is_alarm_on_armed_only" name="is_alarm_on_armed_only"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Panic Button</div><div class="settings-label-sub">Instant emergency trigger</div></div>
+            <label class="switch"><input type="checkbox" id="is_panic" name="is_panic"><span class="slider"></span></label>
         </div>
     </div>
     
@@ -486,12 +503,13 @@
     <div class="device-card">
         <div class="device-header">
             <div class="device-name">${item.name}</div>
-            <div class="badge">${item.sensor_type}</div>
-            <div class="badge" style="background:var(--danger)">${item.dispatch_service || 'none'}</div>
+            <div class="badge">${item.sensor_type || item.type || 'Zone'}</div>
         </div>
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>
+            <div class="info-cell"><div class="info-label">Dispatch</div><div class="info-value">${item.dispatch_service || 'N/A'}</div></div>
             <div class="info-cell"><div class="info-label">ID / GPIO</div><div class="info-value">${item.id} / ${item.gpio !== undefined ? item.gpio : 'N/A'}</div></div>
+            <div class="info-cell"><div class="info-label">Model / Brand</div><div class="info-value">${item.model || 'N/A'} / ${item.manufacturer || 'N/A'}</div></div>
         </div>
         <button class="btn-secondary" onclick="editItem(${item.id})">Edit</button>
         <button class="btn-danger" onclick="deleteItem(${item.id})">Delete</button>

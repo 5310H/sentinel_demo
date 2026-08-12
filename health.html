@@ -8,6 +8,23 @@
         if (!sessionStorage.getItem('sentinel_token')) {
             window.location.replace("index.html");
         }
+
+        let inactivityTimer;
+        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            if (sessionStorage.getItem('sentinel_token')) {
+                inactivityTimer = setTimeout(() => {
+                    sessionStorage.removeItem('sentinel_token');
+                    window.location.replace("index.html");
+                }, INACTIVITY_LIMIT_MS);
+            }
+        }
+        ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, resetInactivityTimer, { passive: true });
+        });
+        resetInactivityTimer();
+
     </script>
     <style>
         :root { 
@@ -298,6 +315,18 @@
                     <div class="vital-label">WAN Connection</div>
                     <div class="vital-value" id="val-net">--</div>
                 </div>
+                <div class="vital-card">
+                    <div class="vital-label">Tamper</div>
+                    <div class="vital-value" id="val-tamper">--</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Check-In Status</div>
+                    <div class="vital-value" id="val-cf-status">WAIT</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Last Check-in</div>
+                    <div class="vital-value" id="val-cf-time">--:--</div>
+                </div>
             </div>
         </div>
 
@@ -347,18 +376,26 @@
                     pwrEl.className = 'vital-value ok';
                 }
 
+                // Network — use network_state (same as dashboard)
                 const netEl = document.getElementById('val-net');
-                if (dApi.config?.wan_monitor_enabled) {
-                    if (dApi.config?.cellular_backup) {
-                        netEl.innerText = 'CELLULAR';
-                        netEl.className = 'vital-value warn';
-                    } else {
-                        netEl.innerText = 'PRIMARY';
-                        netEl.className = 'vital-value ok';
-                    }
+                if (dStat.network_state !== undefined) {
+                    if (dStat.network_state === 3) { netEl.innerText = 'OFFLINE'; netEl.className = 'vital-value err'; }
+                    else if (dStat.network_state === 2) { netEl.innerText = 'LOCAL'; netEl.className = 'vital-value warn'; }
+                    else if (dStat.network_state === 1) { netEl.innerText = 'PRIMARY'; netEl.className = 'vital-value ok'; }
+                    else { netEl.innerText = 'UNKNOWN'; netEl.className = 'vital-value'; }
                 } else {
-                    netEl.innerText = 'OFFLINE';
-                    netEl.className = 'vital-value';
+                    netEl.innerText = 'OK';
+                    netEl.className = 'vital-value ok';
+                }
+
+                // Tamper
+                const tamperEl = document.getElementById('val-tamper');
+                if (dStat.tamper_detected) {
+                    tamperEl.innerText = 'ALERT!';
+                    tamperEl.className = 'vital-value err';
+                } else {
+                    tamperEl.innerText = 'SECURE';
+                    tamperEl.className = 'vital-value ok';
                 }
 
                 // 2. Fetch Analytics (Audit Log)
@@ -463,6 +500,40 @@
         fetchHealthData();
         // Refresh vitals every 10 seconds
         setInterval(fetchHealthData, 10000);
+
+        // --- CLOUDFLARE CHECK-IN STATUS ---
+        async function fetchCfStatus() {
+            try {
+                let res = await fetch('/api/checkin/log');
+                if (!res.ok) {
+                    document.getElementById('val-cf-status').innerText = 'OFFLINE';
+                    document.getElementById('val-cf-status').className = 'vital-value err';
+                    return;
+                }
+                let data = await res.json();
+                if (data && data.length > 0) {
+                    let last = data[data.length - 1];
+                    let statusEl = document.getElementById('val-cf-status');
+                    let timeEl = document.getElementById('val-cf-time');
+                    if (statusEl) {
+                        statusEl.innerText = (last.status === 200) ? 'OK' : 'ERR';
+                        statusEl.className = 'vital-value ' + ((last.status === 200) ? 'ok' : 'err');
+                    }
+                    if (timeEl) {
+                        let d = new Date(last.timestamp * 1000);
+                        timeEl.innerText = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+                } else {
+                    document.getElementById('val-cf-status').innerText = 'NO DATA';
+                    document.getElementById('val-cf-status').className = 'vital-value warn';
+                }
+            } catch (e) {
+                document.getElementById('val-cf-status').innerText = 'OFFLINE';
+                document.getElementById('val-cf-status').className = 'vital-value err';
+            }
+        }
+        fetchCfStatus();
+        setInterval(fetchCfStatus, 5000);
 
     </script>
 </body>

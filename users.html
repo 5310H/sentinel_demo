@@ -9,6 +9,23 @@
         if (!sessionStorage.getItem('sentinel_token')) {
             window.location.replace("index.html");
         }
+
+        let inactivityTimer;
+        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            if (sessionStorage.getItem('sentinel_token')) {
+                inactivityTimer = setTimeout(() => {
+                    sessionStorage.removeItem('sentinel_token');
+                    window.location.replace("index.html");
+                }, INACTIVITY_LIMIT_MS);
+            }
+        }
+        ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, resetInactivityTimer, { passive: true });
+        });
+        resetInactivityTimer();
+
     </script>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -415,9 +432,28 @@
         height: 24px;
         stroke-width: 2.5;
     }
+    .password-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .password-wrapper input {
+        padding-right: 40px !important;
+    }
+    .toggle-pwd-btn {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        color: var(--text-dim);
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px;
+        line-height: 1;
+    }
+    .toggle-pwd-btn:hover { color: var(--accent); }
 </style>
-    <script src="mock_api.js"></script>
-</head>
+<script src="mock_api.js"></script>\n</head>
 <body>
 
 <!-- Standardized FAB Back Button -->
@@ -461,10 +497,22 @@
                         <div class="settings-label-sub">Alert routing preference</div>
                     </div>
                     <select id="notify">
-                        <option value="1">Silent (App Only)</option>
-                        <option value="2">Email & App</option>
-                        <option value="3">Telegram</option>
-                        <option value="4">Professional (Noonlight)</option>
+                        <option value="0">None</option>
+                        <option value="1">Email</option>
+                        <option value="2">Telegram</option>
+                        <option value="3">Noonlight</option>
+                        <option value="4">Central Station (SIA DC-09)</option>
+                    </select>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">Admin Privileges</div>
+                        <div class="settings-label-sub">Can edit system settings</div>
+                    </div>
+                    <select id="is-admin">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
                     </select>
                 </div>
             </div>
@@ -475,15 +523,21 @@
                         <div class="settings-label">PIN Code</div>
                         <div class="settings-label-sub">Standard login code</div>
                     </div>
-                    <input type="password" id="pin" placeholder="••••">
+                    <div class="password-wrapper">
+                        <input type="password" id="pin" placeholder="••••">
+                        <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('pin', this)">👁️</button>
+                    </div>
                 </div>
                 
                 <div class="settings-row">
                     <div>
                         <div class="settings-label">Emergency PIN</div>
-                        <div class="settings-label-sub">Triggers Noonlight dispatch</div>
+                        <div class="settings-label-sub">Triggers Silent Duress & Central Station Dispatch</div>
                     </div>
-                    <input type="password" id="emergency-pin" placeholder="••••">
+                    <div class="password-wrapper">
+                        <input type="password" id="emergency-pin" placeholder="••••">
+                        <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('emergency-pin', this)">👁️</button>
+                    </div>
                 </div>
             </div>
 
@@ -501,7 +555,19 @@
     </div>
 
     <script>
-        const TYPES = ["", "LOCAL", "EMAIL", "TELE", "PRO"];
+        const TYPES = ["NONE", "EMAIL", "TELEGRAM", "NOONLIGHT", "CENTRAL"];
+
+        function toggleSecretVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
 
         function escapeHtml(text) {
             if (!text) return text;
@@ -511,6 +577,26 @@
 
         async function loadUsers() {
             try {
+                // Fetch system config to check if pro monitoring is enabled globally
+                let isProEnabled = false;
+                try {
+                    const cfgRes = await fetch('/api/config');
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        const mode = (cfg.notify !== undefined && cfg.notify !== null) ? cfg.notify : (cfg.monitoring_mode || 0);
+                        isProEnabled = (mode === 3 || mode === 4);
+                    }
+                } catch(e) {}
+
+                const notifySelect = document.getElementById('notify');
+                const optNoonlight = notifySelect.querySelector('option[value="3"]');
+                const optCentral = notifySelect.querySelector('option[value="4"]');
+                if (optNoonlight) optNoonlight.style.display = isProEnabled ? 'block' : 'none';
+                if (optCentral) optCentral.style.display = isProEnabled ? 'block' : 'none';
+                if (!isProEnabled && (notifySelect.value === '3' || notifySelect.value === '4')) {
+                    notifySelect.value = '0';
+                }
+
                 const res = await fetch('/api/users?t=' + Date.now());
                 const users = await res.json();
                 const list = document.getElementById('user-list');
@@ -520,14 +606,15 @@
                         <div class="user-header">
                             <div class="user-name">
                                 ${escapeHtml(u.name)} 
-                                <span class="badge">LVL ${u.notify}</span> 
+                                <span class="badge">${TYPES[u.notify] || 'NONE'}</span> 
                                 ${u.emergency_pin ? '<span class="badge warning">911 ENABLED</span>' : ''}
+                                ${u.is_admin ? '<span class="badge" style="background:#ff2a55">ADMIN</span>' : ''}
                             </div>
                         </div>
                         <div class="user-meta">${escapeHtml(u.email) || 'No Email Configured'}</div>
                         
                         <div class="action-row">
-                            <button class="btn-small" onclick="setEdit('${u.name}','${u.email}',${u.notify},'${u.emergency_pin || ''}')">Edit</button>
+                            <button class="btn-small" onclick="setEdit('${u.name}','${u.email}',${u.notify},'${u.emergency_pin || ''}',${u.is_admin ? 1 : 0})">Edit</button>
                             <button class="btn-small btn-test" onclick="testNotify('${u.name}')">Test Alert</button>
                             <button class="btn-small btn-del" onclick="deleteUser('${u.name}')">Revoke</button>
                         </div>
@@ -538,11 +625,12 @@
             }
         }
 
-        function setEdit(name, email, notify, emergencyPin) {
+        function setEdit(name, email, notify, emergencyPin, isAdmin) {
             document.getElementById('name').value = name;
             document.getElementById('name').disabled = true;
             document.getElementById('email').value = email;
             document.getElementById('notify').value = notify;
+            document.getElementById('is-admin').value = isAdmin || 0;
             document.getElementById('emergency-pin').value = emergencyPin || '';
             document.getElementById('save-btn').innerText = "Update Record";
             document.getElementById('form-label').innerText = "Edit User: " + name;
@@ -556,6 +644,7 @@
             document.getElementById('pin').value = "";
             document.getElementById('emergency-pin').value = "";
             document.getElementById('email').value = "";
+            document.getElementById('is-admin').value = "0";
             document.getElementById('save-btn').innerText = "Execute Add";
             document.getElementById('form-label').innerText = "Create New User";
             document.getElementById('cancel-btn').style.display = "none";
@@ -570,7 +659,8 @@
                 pin: document.getElementById('pin').value,
                 emergency_pin: document.getElementById('emergency-pin').value,
                 email: document.getElementById('email').value,
-                notify: parseInt(document.getElementById('notify').value)
+                notify: parseInt(document.getElementById('notify').value),
+                is_admin: parseInt(document.getElementById('is-admin').value)
             };
 
             await fetch(isUpdate ? '/api/users/update' : '/api/users/add', {

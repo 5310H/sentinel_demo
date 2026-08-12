@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/565/565547.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sentinel Camera Management</title>
@@ -27,7 +30,7 @@
         resetInactivityTimer();
 
     </script>
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { 
@@ -441,6 +444,26 @@
         height: 24px;
         stroke-width: 2.5;
     }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper input {
+            padding-right: 40px !important;
+        }
+        .toggle-pwd-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            line-height: 1;
+        }
+        .toggle-pwd-btn:hover { color: var(--accent); }
 </style>
 <script src="mock_api.js"></script>\n</head>
 <body>
@@ -493,22 +516,72 @@
             </div>
         </div>
 
+        <!-- Frigate Auto-Discovery Card -->
+        <div style="background: rgba(0, 229, 255, 0.04); backdrop-filter: blur(20px); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 20px; padding: 20px 24px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <div style="font-weight: 700; font-size: 16px; color: var(--accent); display: flex; align-items: center; gap: 8px;">
+                    <span>🎥</span> Frigate NVR Auto-Discovery (Optional)
+                </div>
+                <div style="font-size: 12px; color: var(--text-dim); margin-top: 4px;">
+                    1-Click import for all connected cameras, streams, and Google Coral TPU AI detection labels with zero YAML editing.
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="background: var(--accent); color: black; font-weight: 600; padding: 10px 18px; font-size: 13px;" onclick="showFrigateModal()">1-Click Frigate Auto-Discover</button>
+                <button class="btn" style="padding: 10px 18px; font-size: 13px;" onclick="showAddCameraModal()">+ Add Manual Camera</button>
+            </div>
+        </div>
+
         <div class="camera-grid" id="camera-grid"></div>
 
         <div class="empty-state" id="empty-state" style="display:none;">
             <div class="empty-state-icon">📷</div>
             <h2>No Cameras Configured</h2>
-            <p>Add your first ESP32-CAM device to get started</p>
-            <button class="btn" style="margin-top: 20px;" onclick="showAddCameraModal()">Add Camera</button>
+            <p>Add your first Reolink, ESP32-CAM, or IP Camera to get started</p>
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+                <button class="btn" onclick="showAddCameraModal()">Add Camera</button>
+                <button class="btn btn-secondary" onclick="showFrigateModal()">Discover Frigate</button>
+            </div>
         </div>
         
         <a href="index.html" class="back-link">← Return to Control Panel</a>
+    </div>
+
+    <!-- Frigate Auto-Discovery Modal -->
+    <div class="modal" id="frigate-modal">
+        <div class="modal-content">
+            <div class="modal-title">Frigate NVR 1-Click Auto-Discovery</div>
+            <div class="form-group">
+                <label class="form-label">Frigate Server URL</label>
+                <input type="text" class="form-input" id="frigate-url" placeholder="http://192.168.69.7:5069">
+                <span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 6px; line-height: 1.4;">
+                    💡 <b>Home Assistant Add-on Setup:</b> In HA <i>Settings → Add-ons → Frigate → Configuration</i>, set <b>5069</b> (or <b>5000</b> / <b>8971</b>) under Network options to expose Frigate's direct REST API to Sentinel.
+                </span>
+            </div>
+            <div id="frigate-status-container" style="display:flex; align-items:center; gap:10px; margin-top:14px; min-height:30px;">
+                <div id="frigate-spinner" class="loader" style="display:none; width:20px; height:20px; margin:0; border-width:2px;"></div>
+                <div id="frigate-status" style="font-size: 12px; font-family: monospace; color: var(--accent);"></div>
+            </div>
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="btn" id="btn-frigate-discover" onclick="discoverFrigate()">Discover & Auto-Import</button>
+                <button class="btn btn-secondary" id="btn-frigate-cancel" onclick="hideFrigateModal()">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <!-- Add/Edit Camera Modal -->
     <div class="modal" id="camera-modal">
         <div class="modal-content">
             <div class="modal-title" id="modal-title">Add Camera</div>
+            <div class="form-group">
+                <label class="form-label">Camera Type & Brand</label>
+                <select class="form-input" id="input-type">
+                    <option value="2">Reolink IP Camera (Direct API - Recommended)</option>
+                    <option value="0">Generic RTSP / ONVIF IP Camera (Hikvision, Dahua, Amcrest, etc.)</option>
+                    <option value="1">ESPHome / ESP32-CAM</option>
+                    <option value="3">Frigate NVR Server (Optional)</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label class="form-label">Hostname or IP Address</label>
                 <input type="text" class="form-input" id="input-hostname" placeholder="192.168.1.100 or camera.local" inputmode="url">
@@ -522,8 +595,15 @@
                 <input type="text" class="form-input" id="input-name" placeholder="Front Door Camera">
             </div>
             <div class="form-group">
-                <label class="form-label">ESPHome Camera ID</label>
-                <input type="text" class="form-input" id="input-esphome-id" value="camera" placeholder="camera">
+                <label class="form-label">Camera / Stream Path ID</label>
+                <input type="text" class="form-input" id="input-esphome-id" value="camera" placeholder="camera or cgi-bin/api.cgi">
+            </div>
+            <div class="form-group">
+                <label class="form-label">API Password / Auth Token</label>
+                <div class="password-wrapper">
+                    <input type="password" class="form-input" id="input-password" placeholder="Optional Auth Secret">
+                    <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('input-password', this)">👁️</button>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Intruder Deterrence Light</label>
@@ -560,9 +640,34 @@
         let sdAvailable = false;
         let currentGridSize = 1;
         const token = sessionStorage.getItem('sentinel_token') || 'test-token-123';
+        let savedNvrUrl = '';
+
+        function toggleSecretVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
 
         async function loadCameras() {
             try {
+                // Load global config for nvrserver_url
+                try {
+                    const cfgRes = await fetch('/api/config', { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        savedNvrUrl = cfg.nvrserver_url || '';
+                        if (savedNvrUrl) {
+                            document.getElementById('frigate-url').value = savedNvrUrl;
+                        }
+                    }
+                } catch(e) {}
+
                 const res = await fetch('/api/cameras', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -680,7 +785,7 @@
 
         function updateStats() {
             document.getElementById('stat-total').textContent = cameras.length;
-            document.getElementById('stat-online').textContent = cameras.filter(c => c.enabled && c.consecutive_failures <= 2).length;
+            document.getElementById('stat-online').textContent = cameras.filter(c => c.enabled && ((c.consecutive_failures !== undefined ? c.consecutive_failures : (c.failures || 0)) <= 2)).length;
             document.getElementById('stat-snapshots').textContent = stats.total_snapshots || 0;
             document.getElementById('stat-alarm').textContent = stats.alarm_triggered_snapshots || 0;
 
@@ -819,6 +924,172 @@
 
         function hideCameraModal() {
             document.getElementById('camera-modal').classList.remove('visible');
+        }
+
+        function showFrigateModal() {
+            document.getElementById('frigate-status').textContent = '';
+            const modal = document.getElementById('frigate-modal');
+            if (modal) {
+                modal.classList.add('visible');
+                modal.style.display = 'flex';
+            }
+        }
+
+        function hideFrigateModal() {
+            const modal = document.getElementById('frigate-modal');
+            if (modal) {
+                modal.classList.remove('visible');
+                modal.style.display = 'none';
+            }
+        }
+
+        async function discoverFrigate() {
+            let url = document.getElementById('frigate-url').value.trim();
+            const statusDiv = document.getElementById('frigate-status');
+            const spinner = document.getElementById('frigate-spinner');
+            const btnDiscover = document.getElementById('btn-frigate-discover');
+
+            if (!url) {
+                alert('Frigate URL is required');
+                return;
+            }
+
+            // Ensure protocol prefix
+            if (!/^https?:\/\//i.test(url)) {
+                url = 'http://' + url;
+                document.getElementById('frigate-url').value = url;
+            }
+
+            // Show hourglass / spinner loading animation
+            if (spinner) spinner.style.display = 'block';
+            if (btnDiscover) {
+                btnDiscover.disabled = true;
+                btnDiscover.style.opacity = '0.5';
+                btnDiscover.textContent = '⏳ Querying Frigate NVR...';
+            }
+
+            statusDiv.textContent = 'Connecting to NVR & Querying REST API...';
+
+            // Auto-persist NVR URL asynchronously (non-blocking)
+            fetch('/api/config/update', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nvrserver_url: url })
+            }).catch(() => {});
+
+            let discovered = [];
+
+            try {
+                // Attempt 1: Backend proxy endpoint /api/frigate/discover with 12s timeout
+                try {
+                    console.log('[FRIGATE_UI] Sending discover request to /api/frigate/discover for URL:', url);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 12000);
+                    const res = await fetch('/api/frigate/discover', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: url }),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    console.log('[FRIGATE_UI] Backend proxy response status:', res.status);
+                    if (res.ok) {
+                        const rawText = await res.text();
+                        console.log('[FRIGATE_UI] Backend proxy raw response text:', rawText);
+                        try {
+                            const responseData = JSON.parse(rawText);
+                            console.log('[FRIGATE_UI] Backend proxy parsed payload:', responseData);
+                            if (Array.isArray(responseData)) discovered = responseData;
+                            else if (responseData && Array.isArray(responseData.cameras)) discovered = responseData.cameras;
+                            else if (responseData && responseData.data && Array.isArray(responseData.data)) discovered = responseData.data;
+                        } catch (parseErr) {
+                            console.error('[FRIGATE_UI] Failed to parse backend JSON response:', parseErr);
+                        }
+                    }
+                } catch (e) {
+                    console.log('[FRIGATE_UI] Backend proxy discover failed/timed out, trying direct browser fetch...', e);
+                }
+
+                // Attempt 2: Direct browser client-side fetch fallback to Frigate REST API
+                if (discovered.length === 0) {
+                    const endpointsToTry = [
+                        `${url}/api/config`,
+                        `${url.replace(/\/$/, '')}/api/frigate/config`,
+                        `${url.replace(/\/$/, '')}/api/config`
+                    ];
+
+                    for (const endpoint of endpointsToTry) {
+                        if (discovered.length > 0) break;
+                        try {
+                            statusDiv.textContent = `Querying Frigate API (${endpoint})...`;
+                            const controller2 = new AbortController();
+                            const timeoutId2 = setTimeout(() => controller2.abort(), 4000);
+                            const directRes = await fetch(endpoint, { mode: 'cors', signal: controller2.signal });
+                            clearTimeout(timeoutId2);
+
+                            if (directRes.ok) {
+                                const configJson = await directRes.json();
+                                const camsObj = configJson.cameras || (configJson.data && configJson.data.cameras);
+                                if (camsObj) {
+                                    Object.keys(camsObj).forEach(camKey => {
+                                        const camObj = camsObj[camKey];
+                                        let friendly = camKey;
+                                        if (friendly[0] >= 'a' && friendly[0] <= 'z') friendly = friendly.charAt(0).toUpperCase() + friendly.slice(1);
+                                        discovered.push({
+                                            camera_id: camKey,
+                                            friendly_name: friendly,
+                                            type: 3,
+                                            labels: (camObj.objects && camObj.objects.track) ? camObj.objects.track : []
+                                        });
+                                    });
+                                }
+                            }
+                        } catch(err) {
+                            console.error('[FRIGATE_UI] Direct Frigate fetch error:', err);
+                        }
+                    }
+                }
+
+                console.log('[FRIGATE_UI] Discovered cameras count:', discovered.length);
+
+                if (discovered.length > 0) {
+                    statusDiv.textContent = `✅ Discovered ${discovered.length} camera(s)! Auto-importing...`;
+                    const cleanHost = url.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
+                    const portParts = url.split(':');
+                    const cleanPort = (portParts.length >= 3) ? (parseInt(portParts[2]) || 5069) : 5069;
+
+                    for (const cam of discovered) {
+                        console.log('[FRIGATE_UI] Auto-importing camera:', cam);
+                        const addRes = await fetch('/api/camera/add', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                hostname: cam.hostname || cleanHost,
+                                port: cam.port || cleanPort,
+                                friendly_name: cam.friendly_name || cam.name || cam.camera_id || 'Frigate Camera',
+                                type: 3,
+                                camera_id: cam.camera_id || cam.name
+                            })
+                        });
+                        console.log('[FRIGATE_UI] Camera add status:', addRes.status);
+                    }
+                    hideFrigateModal();
+                    await loadCameras();
+                } else {
+                    statusDiv.textContent = '❌ No cameras found or failed to reach Frigate API at ' + url;
+                }
+            } catch (err) {
+                console.error('[FRIGATE_UI] Discovery error:', err);
+                statusDiv.textContent = '❌ Error querying Frigate API: ' + (err.message || 'Network timeout');
+            } finally {
+                // Reset loading indicator & button state guaranteed
+                if (spinner) spinner.style.display = 'none';
+                if (btnDiscover) {
+                    btnDiscover.disabled = false;
+                    btnDiscover.style.opacity = '1';
+                    btnDiscover.textContent = 'Discover & Auto-Import';
+                }
+            }
         }
 
         async function saveCamera() {

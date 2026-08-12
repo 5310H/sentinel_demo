@@ -486,12 +486,18 @@
 
                 if (data.entities && data.entities.length > 0) {
                     data.entities.forEach(ent => {
-                        let isMapped = ent.mapped_zone !== null || ent.mapped_relay !== null;
-                        let mappingText = isMapped ? (ent.mapped_zone ? `Mapped to Zone ${ent.mapped_zone}` : `Mapped to Relay ${ent.mapped_relay}`) : 'Unmapped';
+                        let isMappedZone = ent.mapped_zone !== undefined && ent.mapped_zone !== null && ent.mapped_zone !== -1;
+                        let isMappedRelay = ent.mapped_relay !== undefined && ent.mapped_relay !== null && ent.mapped_relay !== -1;
+                        let isMapped = isMappedZone || isMappedRelay;
+
+                        let mappingText = 'Unmapped';
+                        if (isMappedZone && isMappedRelay) mappingText = `Zone ${ent.mapped_zone} & Relay ${ent.mapped_relay}`;
+                        else if (isMappedZone) mappingText = `Mapped to Zone ${ent.mapped_zone}`;
+                        else if (isMappedRelay) mappingText = `Mapped to Relay ${ent.mapped_relay}`;
                         
-                        let icon = ent.type === 0 ? '🔘' : (ent.type === 1 ? '📊' : '🔌');
-                        let typeName = ent.type === 0 ? 'Binary Sensor' : (ent.type === 1 ? 'Sensor' : 'Switch');
-                        let btnText = ent.type === 2 ? 'Map to Relay' : 'Map to Zone';
+                        const isSwitchOrLight = (ent.type === 3 || ent.type === 4 || ent.type === 'switch' || ent.type === 'light' || (ent.name && ent.name.toLowerCase().includes('switch')));
+                        let icon = isSwitchOrLight ? '🔌' : (ent.type === 2 ? '📊' : '🔘');
+                        let typeName = isSwitchOrLight ? (ent.type === 4 ? 'Light' : 'Switch') : (ent.type === 2 ? 'Sensor' : 'Binary Sensor');
 
                         list.innerHTML += `
                             <div class="entity-card">
@@ -502,8 +508,9 @@
                                         <p>${typeName} &middot; <span style="color: ${isMapped ? 'var(--ready)' : 'var(--text-dim)'}">${mappingText}</span></p>
                                     </div>
                                 </div>
-                                <div class="entity-actions">
-                                    <button class="btn btn-accent" onclick="openMapModal('${ent.key}', ${ent.type})">${btnText}</button>
+                                <div class="entity-actions" style="display:flex; gap:8px;">
+                                    <button class="btn btn-accent" style="padding: 6px 12px; font-size:13px;" onclick="openMapModal('${ent.key}', 'zone')">Map to Zone</button>
+                                    <button class="btn" style="padding: 6px 12px; font-size:13px; background:rgba(0, 229, 255, 0.1); color:var(--accent); border:1px solid rgba(0, 229, 255, 0.3);" onclick="openMapModal('${ent.key}', 'relay')">Map to Relay</button>
                                 </div>
                             </div>
                         `;
@@ -524,18 +531,20 @@
         }
 
         // Modals
-        function openMapModal(key, type) {
+        function openMapModal(key, targetType) {
             document.getElementById('mapping-entity-key').value = key;
             document.getElementById('mapping-device-id').value = currentDeviceId;
-            document.getElementById('mapping-entity-type').value = type;
+            document.getElementById('mapping-entity-type').value = targetType;
 
             const select = document.getElementById('map-select');
             select.innerHTML = '<option value="">-- Select --</option>';
 
-            if (type === 2) {
+            const isRelay = (targetType === 'relay');
+
+            if (isRelay) {
                 // Relays
                 document.getElementById('map-modal-title').innerText = 'Map to Sentinel Relay';
-                document.getElementById('map-modal-desc').innerText = 'Assign this switch output to a physical Relay.';
+                document.getElementById('map-modal-desc').innerText = 'Assign this device output to a physical Relay.';
                 document.getElementById('map-select-label').innerText = 'Select Relay';
                 relays.forEach(r => {
                     select.innerHTML += `<option value="${r.id}">Relay ${r.id}: ${r.name}</option>`;
@@ -543,7 +552,7 @@
             } else {
                 // Zones (Sensors)
                 document.getElementById('map-modal-title').innerText = 'Map to Sentinel Zone';
-                document.getElementById('map-modal-desc').innerText = 'Assign this sensor input to a physical Zone.';
+                document.getElementById('map-modal-desc').innerText = 'Assign this device input to a physical Zone.';
                 document.getElementById('map-select-label').innerText = 'Select Zone';
                 zones.forEach(z => {
                     select.innerHTML += `<option value="${z.id}">Zone ${z.id}: ${z.name}</option>`;
@@ -560,7 +569,7 @@
         async function saveMapping() {
             const key = document.getElementById('mapping-entity-key').value;
             const devId = document.getElementById('mapping-device-id').value;
-            const type = parseInt(document.getElementById('mapping-entity-type').value);
+            const targetType = document.getElementById('mapping-entity-type').value;
             const targetId = document.getElementById('map-select').value;
 
             if (!targetId) {
@@ -568,7 +577,8 @@
                 return;
             }
 
-            const endpoint = type === 2 ? '/api/devices/entity/map_relay' : '/api/devices/entity/map_zone';
+            const isRelay = (targetType === 'relay');
+            const endpoint = isRelay ? '/api/devices/entity/map_relay' : '/api/devices/entity/map_zone';
             const payload = {
                 device_id: devId,
                 entity_key: parseInt(key),

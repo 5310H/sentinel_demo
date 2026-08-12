@@ -1,7 +1,7 @@
 [
   {
     "id": "test_plug_1",
-    "protocol": 0,
+    "protocol": "esphome",
     "host": "192.168.69.187",
     "port": 6053,
     "name": "Smart Plug 28",
@@ -13,8 +13,8 @@
   },
   {
     "id": "zigbee_sensor_1",
-    "protocol": 1,
-    "zigbee_ieee": "00:15:8d:00:01:d8:a4:bd",
+    "protocol": "zigbee",
+    "ieee_address": "00:15:8d:00:01:d8:a4:bd",
     "name": "Motion Sensor Hallway",
     "description": "Kincony Zigbee Motion Sensor",
     "location": "Hallway",
@@ -22,10 +22,10 @@
   },
   {
     "id": "tuya_relay_1",
-    "protocol": 2,
+    "protocol": "tuya",
     "host": "192.168.69.190",
-    "tuya_device_id": "bfd34f23bdf",
-    "tuya_local_key": "abc123xyz890",
+    "device_id": "bfd34f23bdf",
+    "local_key": "abc123xyz890",
     "name": "Tuya Smart Switch",
     "location": "Garage",
     "enabled": true

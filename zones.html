@@ -391,15 +391,18 @@
                 <option value="door">Door</option>
                 <option value="window">Window</option>
                 <option value="motion">Motion</option>
-                <option value="glass">Glass Break</option>
+                <option value="glass_break">Glass Break</option>
+                <option value="shock">Shock Sensor</option>
                 <option value="smoke">Smoke Detector</option>
+                <option value="fire">Fire Detector</option>
                 <option value="co">Carbon Monoxide</option>
                 <option value="water">Water / Flood</option>
-                <option value="freeze">Freeze / Temperature</option>
+                <option value="temp">Freeze / Temperature</option>
                 <option value="panic">Panic Button</option>
                 <option value="medical">Medical Alert</option>
+                <option value="garage_door">Garage Door</option>
+                <option value="gate">Gate</option>
                 <option value="camera">Camera / NVR</option>
-                <option value="lock">Smart Lock</option>
                 <option value="other">Other / Custom</option>
             </select>
         </div>
@@ -448,6 +451,23 @@
         <div class="settings-row">
             <div><div class="settings-label">Panic Button</div><div class="settings-label-sub">Instant emergency trigger</div></div>
             <label class="switch"><input type="checkbox" id="is_panic" name="is_panic"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Security Partition</div><div class="settings-label-sub">Assigned Building / Area</div></div>
+            <select id="partition_id" name="partition_id">
+                <option value="0">Partition 0: Main Floor</option>
+                <option value="1">Partition 1: Upstairs</option>
+                <option value="2">Partition 2: Basement</option>
+                <option value="3">Partition 3: Detached Garage / Workshop</option>
+            </select>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Cross-Zone Verification</div><div class="settings-label-sub">Require 2 trips within 45s</div></div>
+            <label class="switch"><input type="checkbox" id="is_cross_zone" name="is_cross_zone"><span class="slider"></span></label>
+        </div>
+        <div class="settings-row">
+            <div><div class="settings-label">Cross-Zone Group ID</div><div class="settings-label-sub">Group Index (0-15)</div></div>
+            <input type="number" id="cross_zone_group" name="cross_zone_group" min="0" max="15" value="0">
         </div>
     </div>
     

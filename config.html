@@ -9,6 +9,23 @@
         if (!sessionStorage.getItem('sentinel_token')) {
             window.location.replace("index.html");
         }
+
+        let inactivityTimer;
+        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            if (sessionStorage.getItem('sentinel_token')) {
+                inactivityTimer = setTimeout(() => {
+                    sessionStorage.removeItem('sentinel_token');
+                    window.location.replace("index.html");
+                }, INACTIVITY_LIMIT_MS);
+            }
+        }
+        ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, resetInactivityTimer, { passive: true });
+        });
+        resetInactivityTimer();
+
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -188,8 +205,7 @@
         stroke-width: 2.5;
     }
 </style>
-    <script src="mock_api.js"></script>
-</head>
+<script src="mock_api.js"></script>\n</head>
 <body>
 
 <!-- Standardized FAB Back Button -->
@@ -222,6 +238,7 @@
                     { id: "email", label: "Email Address", type: "text" },
                     { id: "phone", label: "Phone Number", type: "text" },
                     { id: "pin", label: "Master PIN", type: "password" },
+                    { id: "duress_pin", label: "Silent Duress PIN", type: "password" },
                     { id: "instructions", label: "Emergency Instructions", type: "text" }
                 ]
             },
@@ -249,32 +266,23 @@
                 ]
             },
             {
-                name: "Monitoring",
-                fields: [
-                    { id: "monitor_service_id", label: "Service ID", type: "text" },
-                    { id: "monitor_service_key", label: "Service Key", type: "password" },
-                    { id: "monitoring_url", label: "Monitoring URL", type: "text" },
-                    { id: "notify", label: "Notify Level", type: "number" },
-                    { id: "is_monitor_fire", label: "Monitor Fire", type: "checkbox" },
-                    { id: "is_monitor_police", label: "Monitor Police", type: "checkbox" },
-                    { id: "is_monitor_medical", label: "Monitor Medical", type: "checkbox" },
-                    { id: "is_monitor_other", label: "Monitor Other", type: "checkbox" }
-                ]
-            },
-            {
                 name: "Integrations & APIs",
                 fields: [
-                    { id: "smtp_server", label: "SMTP Server", type: "text" },
-                    { id: "smtp_port", label: "SMTP Port", type: "number" },
-                    { id: "smtp_user", label: "SMTP User", type: "text" },
-                    { id: "smtp_pass", label: "SMTP Password", type: "password" },
-                    { id: "mqtt_server", label: "MQTT Server", type: "text" },
-                    { id: "mqtt_port", label: "MQTT Port", type: "number" },
-                    { id: "mqtt_user", label: "MQTT User", type: "text" },
-                    { id: "mqtt_pass", label: "MQTT Password", type: "password" },
-                    { id: "telegram_id", label: "Telegram ID", type: "text" },
-                    { id: "telegram_token", label: "Telegram Token", type: "password" },
-                    { id: "is_telegram_enabled", label: "Enable Telegram", type: "checkbox" },
+                    { 
+                        id: "mqtt_mode", 
+                        label: "MQTT Broker Mode", 
+                        type: "select",
+                        options: [
+                            { value: 0, label: "Disabled / None (No MQTT)" },
+                            { value: 1, label: "Internal Sentinel Broker (Port 1883)" },
+                            { value: 2, label: "External MQTT Broker (Mosquitto / HA)" }
+                        ]
+                    },
+                    { id: "mqtt_server", label: "External MQTT Server IP", type: "text" },
+                    { id: "mqtt_port", label: "External MQTT Port", type: "number" },
+                    { id: "mqtt_user", label: "External MQTT User", type: "text" },
+                    { id: "mqtt_pass", label: "External MQTT Password", type: "password" },
+                    { id: "embedded_mqtt_port", label: "Internal Broker Port (Default 1883)", type: "number" },
                     { id: "opnsense_ip", label: "OPNsense IP", type: "text" },
                     { id: "opnsense_key", label: "OPNsense Key", type: "password" },
                     { id: "opnsense_secret", label: "OPNsense Secret", type: "password" },
@@ -325,13 +333,29 @@
                 group.fields.forEach(field => {
                     const fieldGroup = document.createElement('div');
                     fieldGroup.className = 'form-group';
+                    if (field.id === 'is_sia_enabled') {
+                        fieldGroup.id = 'sia-section';
+                    }
                     
                     const label = document.createElement('label');
                     label.textContent = field.label;
                     label.htmlFor = field.id;
                     
                     let input;
-                    if (field.type === 'checkbox') {
+                    if (field.type === 'select') {
+                        input = document.createElement('select');
+                        input.id = field.id;
+                        input.style.cssText = "width:100%; padding:10px; border-radius:8px; background:rgba(0,0,0,0.5); border:1px solid var(--glass-border); color:var(--text-main); font-size:13px;";
+                        (field.options || []).forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.label;
+                            if (currentConfig[field.id] == opt.value) option.selected = true;
+                            input.appendChild(option);
+                        });
+                        fieldGroup.appendChild(label);
+                        fieldGroup.appendChild(input);
+                    } else if (field.type === 'checkbox') {
                         input = document.createElement('input');
                         input.type = 'checkbox';
                         input.id = field.id;

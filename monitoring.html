@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring & Notifications - Sentinel Security System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #090d16;
+            --panel: #111827;
+            --text-main: #f3f4f6;
+            --text-dim: #9ca3af;
+            --accent: #00e5ff;
+            --ready: #10b981;
+            --alarm: #ef4444;
+            --glass-bg: rgba(17, 24, 39, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 30px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;
+        }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 26px; color: var(--accent); }
+        .card {
+            background: var(--glass-bg); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 24px; margin-bottom: 24px;
+        }
+        .card-title {
+            font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 700;
+            color: var(--text-main); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text-dim); margin-bottom: 6px; }
+        .form-input {
+            width: 100%; padding: 12px 14px; border-radius: 8px;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid var(--glass-border);
+            color: var(--text-main); font-size: 14px; outline: none; transition: border 0.2s;
+        }
+        .form-input:focus { border-color: var(--accent); }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-main); }
+        .btn {
+            padding: 12px 20px; border: none; border-radius: 8px;
+            background: var(--accent); color: #000; font-weight: 600; font-size: 14px;
+            cursor: pointer; transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: var(--text-main); }
+        .btn-test { background: var(--ready); color: #000; font-size: 12px; padding: 8px 16px; margin-top: 8px; }
+        .status-box { margin-top: 10px; font-size: 12px; font-family: monospace; }
+        .back-link { display: inline-block; margin-top: 20px; color: var(--text-dim); text-decoration: none; font-size: 14px; }
+        .back-link:hover { color: var(--accent); }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper .form-input {
+            padding-right: 40px;
+        }
+        .toggle-pwd-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            line-height: 1;
+        }
+        .toggle-pwd-btn:hover { color: var(--accent); }
+    </style>
+<script src="mock_api.js"></script>\n</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📡 Monitoring & Notifications Hub</h1>
+                <p style="font-size:13px; color:var(--text-dim); margin-top:4px;">Manage emergency dispatch, central station, email, and Telegram alert gateways</p>
+            </div>
+            <button class="btn" onclick="saveAllMonitoring()">Save All Settings</button>
+        </div>
+
+        <!-- Master Monitoring Mode Card -->
+        <div class="card" style="border-color: rgba(0, 229, 255, 0.3);">
+            <div class="card-title">⚙️ Master System Monitoring Mode</div>
+            
+            <div class="form-group checkbox-group" style="margin-bottom:20px; padding:12px; background:rgba(0, 229, 255, 0.05); border-radius:10px; border:1px solid rgba(0, 229, 255, 0.2);">
+                <input type="checkbox" id="is_pro_monitoring_enabled" onchange="toggleProMonitoringSwitch()">
+                <label for="is_pro_monitoring_enabled" style="font-weight:600; color:var(--accent);">Enable 24/7 Professional Emergency Monitoring Service</label>
+            </div>
+
+            <div id="pro-monitoring-provider-group" style="display:none; margin-bottom:20px;">
+                <label class="form-label">Professional Monitoring Provider</label>
+                <select class="form-input" id="pro_monitoring_provider" onchange="onProProviderChange()">
+                    <option value="3">Noonlight 24/7 Professional Dispatch API</option>
+                    <option value="4">SIA DC-09 Central Station Receiver (UL Listed)</option>
+                </select>
+                <span style="font-size:12px; color:var(--text-dim); display:block; margin-top:6px;">Selected professional monitoring provider will receive emergency dispatch calls on active alarms.</span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Active Global Alarm Dispatch Channel</label>
+                <select class="form-input" id="monitoring_mode" onchange="toggleModeSections()">
+                    <option value="0">None (Disabled / Local Siren Only)</option>
+                    <option value="1">SMTP Email Alerts Only</option>
+                    <option value="2">Telegram Bot Alerts Only</option>
+                    <option value="3">Noonlight 24/7 Professional Dispatch API</option>
+                    <option value="4">SIA DC-09 Central Station Receiver (UL Listed)</option>
+                </select>
+                <span style="font-size:12px; color:var(--text-dim); display:block; margin-top:6px;">Select the primary external dispatch mechanism executed automatically upon alarm trip.</span>
+            </div>
+        </div>
+
+        <!-- SMTP Email Notification Card -->
+        <div class="card" id="card-smtp">
+            <div class="card-title">✉️ SMTP Email Gateway & Daily Reports</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">SMTP Server Host</label>
+                    <input type="text" class="form-input" id="smtp_server" placeholder="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SMTP Port</label>
+                    <input type="number" class="form-input" id="smtp_port" value="465">
+                    <span style="font-size:11px; color:var(--text-dim); display:block; margin-top:4px;">465 = Implicit TLS (Gmail, Outlook). 587 = STARTTLS (Linux only).</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SMTP Username / Sender Email</label>
+                    <input type="text" class="form-input" id="smtp_user" placeholder="sentinel@domain.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">SMTP Password / App Secret</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-input" id="smtp_pass" placeholder="••••••••">
+                        <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('smtp_pass', this)">👁️</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Primary Notification Target Email</label>
+                <input type="email" class="form-input" id="email" placeholder="owner@domain.com">
+            </div>
+            <div class="grid-2">
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="is_daily_report_enabled">
+                    <label for="is_daily_report_enabled">Enable Daily Status Email Report</label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Daily Report Cron Schedule</label>
+                    <input type="text" class="form-input" id="daily_report_cron" value="0 8 * * *">
+                </div>
+            </div>
+            <button class="btn btn-test" onclick="testSMTP()">⚡ Test SMTP Email Transmission</button>
+            <div id="smtp-status" class="status-box"></div>
+        </div>
+
+        <!-- Telegram Bot Alert Card -->
+        <div class="card" id="card-telegram">
+            <div class="card-title">✈️ Telegram Bot Instant Alerting</div>
+            <div class="form-group checkbox-group" style="margin-bottom:16px;">
+                <input type="checkbox" id="is_telegram_enabled">
+                <label for="is_telegram_enabled">Enable Telegram Bot Dispatch</label>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Telegram Chat / Channel ID</label>
+                    <input type="text" class="form-input" id="telegram_id" placeholder="-100123456789">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telegram Bot API Token</label>
+                    <div class="password-wrapper">
+                        <input type="password" class="form-input" id="telegram_token" placeholder="123456789:ABCdefGHI...">
+                        <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('telegram_token', this)">👁️</button>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-test" onclick="testTelegram()">⚡ Test Telegram Bot Message</button>
+            <div id="telegram-status" class="status-box"></div>
+        </div>
+
+        <!-- Noonlight 24/7 Professional Dispatch Card -->
+        <div class="card" id="card-noonlight">
+            <div class="card-title">🚑 Noonlight 24/7 Professional Emergency Dispatch</div>
+            <div class="form-group">
+                <label class="form-label">Noonlight API Service Key</label>
+                <div class="password-wrapper">
+                    <input type="password" class="form-input" id="monitor_service_key" placeholder="nl_key_live_...">
+                    <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('monitor_service_key', this)">👁️</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Noonlight API Endpoint URL</label>
+                <input type="text" class="form-input" id="monitoring_url" value="https://api.noonlight.com/v1/alarms">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Silent Duress PIN</label>
+                <div class="password-wrapper">
+                    <input type="password" class="form-input" id="duress_pin" placeholder="9999" maxlength="16">
+                    <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('duress_pin', this)">👁️</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Premises Instructions for First Responders</label>
+                <input type="text" class="form-input" id="instructions" placeholder="Gate Code: 1234, Guard Dog on Site">
+            </div>
+            <div style="font-size:13px; font-weight:600; color:var(--text-dim); margin: 12px 0 8px 0;">Emergency Services to Dispatch:</div>
+            <div class="grid-2" style="margin-bottom:16px;">
+                <div class="checkbox-group"><input type="checkbox" id="is_monitor_fire"><label for="is_monitor_fire">Fire Department</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="is_monitor_police"><label for="is_monitor_police">Police / Sheriff</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="is_monitor_medical"><label for="is_monitor_medical">Medical / EMS</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="is_monitor_other"><label for="is_monitor_other">Other Emergency</label></div>
+            </div>
+            <button class="btn btn-test" onclick="testNoonlight()">⚡ Test Noonlight API Dispatch</button>
+            <div id="noonlight-status" class="status-box"></div>
+        </div>
+
+        <!-- SIA DC-09 Central Station Receiver Card -->
+        <div class="card" id="card-sia">
+            <div class="card-title">🏢 SIA DC-09 Central Station IP Receiver (COPS / AvantGuard / CMS)</div>
+            <div class="form-group checkbox-group" style="margin-bottom:16px;">
+                <input type="checkbox" id="is_sia_enabled">
+                <label for="is_sia_enabled">Enable SIA DC-09 IP Transmission</label>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Central Station Receiver IP / Host</label>
+                    <input type="text" class="form-input" id="sia_receiver_ip" placeholder="192.168.1.50 or dc09.cops.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Receiver Port (Default 2020)</label>
+                    <input type="number" class="form-input" id="sia_receiver_port" value="2020">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subscriber Account ID</label>
+                    <input type="text" class="form-input" id="sia_account_id" placeholder="#5310HA">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Group Prefix (Default 00)</label>
+                    <input type="text" class="form-input" id="sia_prefix" value="00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Transport Protocol</label>
+                    <select class="form-input" id="sia_transport">
+                        <option value="0">TCP (Verified 1s ACK Response)</option>
+                        <option value="1">UDP (Datagram)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Heartbeat Ping Interval (Secs)</label>
+                    <input type="number" class="form-input" id="sia_ping_interval_sec" value="86400">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">AES-128 Encryption Key (Hex 32-char)</label>
+                <div class="password-wrapper">
+                    <input type="password" class="form-input" id="sia_encryption_key" placeholder="00112233445566778899AABBCCDDEEFF">
+                    <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('sia_encryption_key', this)">👁️</button>
+                </div>
+            </div>
+            <button class="btn btn-test" onclick="testSIA()">⚡ Test SIA DC-09 Transmission</button>
+            <div id="sia-status" class="status-box"></div>
+        </div>
+
+        <a href="index.html" class="back-link">← Return to Control Panel</a>
+    </div>
+
+    <script>
+        const token = sessionStorage.getItem('sentinel_token');
+
+        function toggleSecretVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
+
+        function toggleProMonitoringSwitch() {
+            const isEnabled = document.getElementById('is_pro_monitoring_enabled').checked;
+            const providerGroup = document.getElementById('pro-monitoring-provider-group');
+            providerGroup.style.display = isEnabled ? 'block' : 'none';
+
+            const cardNoonlight = document.getElementById('card-noonlight');
+            const cardSia = document.getElementById('card-sia');
+            
+            const modeSelect = document.getElementById('monitoring_mode');
+            const optNoonlight = modeSelect.querySelector('option[value="3"]');
+            const optCentral = modeSelect.querySelector('option[value="4"]');
+            if (optNoonlight) optNoonlight.style.display = isEnabled ? 'block' : 'none';
+            if (optCentral) optCentral.style.display = isEnabled ? 'block' : 'none';
+
+            if (isEnabled) {
+                const prov = document.getElementById('pro_monitoring_provider').value;
+                document.getElementById('monitoring_mode').value = prov;
+                if (cardNoonlight) cardNoonlight.style.display = (prov === '3') ? 'block' : 'none';
+                if (cardSia) cardSia.style.display = (prov === '4') ? 'block' : 'none';
+            } else {
+                document.getElementById('monitoring_mode').value = 0;
+                if (cardNoonlight) cardNoonlight.style.display = 'none';
+                if (cardSia) cardSia.style.display = 'none';
+            }
+        }
+
+        function onProProviderChange() {
+            if (document.getElementById('is_pro_monitoring_enabled').checked) {
+                const prov = document.getElementById('pro_monitoring_provider').value;
+                document.getElementById('monitoring_mode').value = prov;
+
+                const cardNoonlight = document.getElementById('card-noonlight');
+                const cardSia = document.getElementById('card-sia');
+                if (cardNoonlight) cardNoonlight.style.display = (prov === '3') ? 'block' : 'none';
+                if (cardSia) cardSia.style.display = (prov === '4') ? 'block' : 'none';
+            }
+        }
+
+        async function loadMonitoringConfig() {
+            try {
+                const res = await fetch('/api/config', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const cfg = await res.json();
+                    const modeVal = (cfg.notify !== undefined && cfg.notify !== null) ? cfg.notify : (cfg.monitoring_mode || 0);
+                    document.getElementById('monitoring_mode').value = modeVal;
+                    
+                    const isPro = (modeVal === 3 || modeVal === 4);
+                    document.getElementById('is_pro_monitoring_enabled').checked = isPro;
+                    document.getElementById('pro-monitoring-provider-group').style.display = isPro ? 'block' : 'none';
+                    if (modeVal === 3 || modeVal === 4) {
+                        document.getElementById('pro_monitoring_provider').value = modeVal;
+                    }
+
+                    const cardNoonlight = document.getElementById('card-noonlight');
+                    const cardSia = document.getElementById('card-sia');
+                    const modeSelect = document.getElementById('monitoring_mode');
+                    const optNoonlight = modeSelect.querySelector('option[value="3"]');
+                    const optCentral = modeSelect.querySelector('option[value="4"]');
+                    if (optNoonlight) optNoonlight.style.display = isPro ? 'block' : 'none';
+                    if (optCentral) optCentral.style.display = isPro ? 'block' : 'none';
+
+                    if (cardNoonlight) cardNoonlight.style.display = (isPro && modeVal == 3) ? 'block' : 'none';
+                    if (cardSia) cardSia.style.display = (isPro && modeVal == 4) ? 'block' : 'none';
+
+                    document.getElementById('smtp_server').value = cfg.smtp_server || '';
+                    document.getElementById('smtp_port').value = cfg.smtp_port || 465;
+                    document.getElementById('smtp_user').value = cfg.smtp_user || '';
+                    document.getElementById('email').value = cfg.email || '';
+                    document.getElementById('is_daily_report_enabled').checked = cfg.is_daily_report_enabled === true;
+                    document.getElementById('daily_report_cron').value = cfg.daily_report_cron || '0 8 * * *';
+
+                    document.getElementById('is_telegram_enabled').checked = cfg.is_telegram_enabled === true;
+                    document.getElementById('telegram_id').value = cfg.telegram_id || '';
+
+                    document.getElementById('monitoring_url').value = cfg.monitoring_url || 'https://api.noonlight.com/v1/alarms';
+                    document.getElementById('duress_pin').value = cfg.duress_pin || '';
+                    document.getElementById('instructions').value = cfg.instructions || '';
+                    document.getElementById('is_monitor_fire').checked = cfg.is_monitor_fire === true;
+                    document.getElementById('is_monitor_police').checked = cfg.is_monitor_police === true;
+                    document.getElementById('is_monitor_medical').checked = cfg.is_monitor_medical === true;
+                    document.getElementById('is_monitor_other').checked = cfg.is_monitor_other === true;
+
+                    document.getElementById('is_sia_enabled').checked = cfg.is_sia_enabled === true;
+                    document.getElementById('sia_receiver_ip').value = cfg.sia_receiver_ip || '';
+                    document.getElementById('sia_receiver_port').value = cfg.sia_receiver_port || 2020;
+                    document.getElementById('sia_account_id').value = cfg.sia_account_id || '';
+                    document.getElementById('sia_prefix').value = cfg.sia_prefix || '00';
+                    document.getElementById('sia_transport').value = cfg.sia_transport || 0;
+                    document.getElementById('sia_ping_interval_sec').value = cfg.sia_ping_interval_sec || 86400;
+                }
+            } catch (e) {
+                console.error('Failed to load monitoring config', e);
+            }
+        }
+
+        async function saveAllMonitoring() {
+            let selectedMode = parseInt(document.getElementById('monitoring_mode').value) || 0;
+            const isPro = document.getElementById('is_pro_monitoring_enabled').checked;
+            if (isPro) {
+                selectedMode = parseInt(document.getElementById('pro_monitoring_provider').value) || 3;
+            }
+
+            const payload = {
+                monitoring_mode: selectedMode,
+                notify: selectedMode,
+                smtp_server: document.getElementById('smtp_server').value.trim(),
+                smtp_port: parseInt(document.getElementById('smtp_port').value) || 465,
+                smtp_user: document.getElementById('smtp_user').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                is_daily_report_enabled: document.getElementById('is_daily_report_enabled').checked,
+                daily_report_cron: document.getElementById('daily_report_cron').value.trim(),
+
+                is_telegram_enabled: document.getElementById('is_telegram_enabled').checked,
+                telegram_id: document.getElementById('telegram_id').value.trim(),
+
+                monitoring_url: document.getElementById('monitoring_url').value.trim(),
+                duress_pin: document.getElementById('duress_pin').value.trim(),
+                instructions: document.getElementById('instructions').value.trim(),
+                is_monitor_fire: document.getElementById('is_monitor_fire').checked,
+                is_monitor_police: document.getElementById('is_monitor_police').checked,
+                is_monitor_medical: document.getElementById('is_monitor_medical').checked,
+                is_monitor_other: document.getElementById('is_monitor_other').checked,
+
+                is_sia_enabled: isPro && selectedMode === 4,
+                sia_receiver_ip: document.getElementById('sia_receiver_ip').value.trim(),
+                sia_receiver_port: parseInt(document.getElementById('sia_receiver_port').value) || 2020,
+                sia_account_id: document.getElementById('sia_account_id').value.trim(),
+                sia_prefix: document.getElementById('sia_prefix').value.trim(),
+                sia_transport: parseInt(document.getElementById('sia_transport').value) || 0,
+                sia_ping_interval_sec: parseInt(document.getElementById('sia_ping_interval_sec').value) || 86400
+            };
+
+            const smtp_pass = document.getElementById('smtp_pass').value.trim();
+            if (smtp_pass && smtp_pass !== '********') payload.smtp_pass = smtp_pass;
+
+            const telegram_token = document.getElementById('telegram_token').value.trim();
+            if (telegram_token && telegram_token !== '********') payload.telegram_token = telegram_token;
+
+            const monitor_service_key = document.getElementById('monitor_service_key').value.trim();
+            if (monitor_service_key && monitor_service_key !== '********') payload.monitor_service_key = monitor_service_key;
+
+            const sia_encryption_key = document.getElementById('sia_encryption_key').value.trim();
+            if (sia_encryption_key && sia_encryption_key !== '********') payload.sia_encryption_key = sia_encryption_key;
+
+            try {
+                const res = await fetch('/api/config/update', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) alert('✅ Monitoring & Notification Settings Saved Successfully!');
+                else alert('❌ Failed to save monitoring settings');
+            } catch (e) {
+                alert('❌ Error saving settings: ' + e.message);
+            }
+        }
+
+        async function testSMTP() {
+            const st = document.getElementById('smtp-status');
+            st.textContent = 'Transmitting test email...';
+            st.style.color = 'var(--accent)';
+            try {
+                const res = await fetch('/api/test/smtp', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const d = await res.json();
+                st.textContent = res.ok ? '✅ ' + d.message : '❌ ' + (d.error || 'Failed');
+                st.style.color = res.ok ? 'var(--ready)' : 'var(--alarm)';
+            } catch (e) { st.textContent = '❌ Error: ' + e.message; st.style.color = 'var(--alarm)'; }
+        }
+
+        async function testTelegram() {
+            const st = document.getElementById('telegram-status');
+            st.textContent = 'Transmitting Telegram test message...';
+            st.style.color = 'var(--accent)';
+            try {
+                const res = await fetch('/api/test/telegram', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const d = await res.json();
+                st.textContent = res.ok ? '✅ ' + d.message : '❌ ' + (d.error || 'Failed');
+                st.style.color = res.ok ? 'var(--ready)' : 'var(--alarm)';
+            } catch (e) { st.textContent = '❌ Error: ' + e.message; st.style.color = 'var(--alarm)'; }
+        }
+
+        async function testNoonlight() {
+            const st = document.getElementById('noonlight-status');
+            st.textContent = 'Testing Noonlight API Dispatch...';
+            st.style.color = 'var(--accent)';
+            try {
+                const res = await fetch('/api/test/noonlight', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const d = await res.json();
+                st.textContent = res.ok ? '✅ ' + d.message : '❌ ' + (d.error || 'Failed');
+                st.style.color = res.ok ? 'var(--ready)' : 'var(--alarm)';
+            } catch (e) { st.textContent = '❌ Error: ' + e.message; st.style.color = 'var(--alarm)'; }
+        }
+
+        async function testSIA() {
+            const st = document.getElementById('sia-status');
+            st.textContent = 'Transmitting SIA DC-09 Frame...';
+            st.style.color = 'var(--accent)';
+            try {
+                const res = await fetch('/api/test_sia', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const d = await res.json();
+                st.textContent = res.ok ? '✅ ACK RECEIVED: ' + d.message : '❌ ' + (d.message || 'Failed');
+                st.style.color = res.ok ? 'var(--ready)' : 'var(--alarm)';
+            } catch (e) { st.textContent = '❌ Error: ' + e.message; st.style.color = 'var(--alarm)'; }
+        }
+
+        window.onload = loadMonitoringConfig;
+    </script>
+</body>
+</html>

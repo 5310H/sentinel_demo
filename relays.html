@@ -411,7 +411,7 @@
         </div>
         <div class="settings-row">
             <div><div class="settings-label">Connection Type</div><div class="settings-label-sub">Driver Target</div></div>
-            <select id="connection_type" name="connection_type">
+            <select id="connection_type" name="connection_type" onchange="onRelayConnectionTypeChange()">
                 <option value="0">Local GPIO Hardware</option>
                 <option value="1">Home Assistant Entity</option>
                 <option value="2">ESPHome Native</option>
@@ -419,13 +419,18 @@
                 <option value="4">Zigbee</option>
             </select>
         </div>
-        <div class="settings-row">
+        <div class="settings-row" id="row-gpio">
             <div><div class="settings-label">GPIO Pin</div><div class="settings-label-sub">Hardware Pin (virtual = -1)</div></div>
-            <input type="number" id="gpio" name="gpio">
+            <input type="number" id="gpio" name="gpio" value="-1">
         </div>
-        <div class="settings-row">
-            <div><div class="settings-label">Mapped Entity ID</div><div class="settings-label-sub">HA Entity or Topic string</div></div>
-            <input type="text" id="mapped_entity_id" name="mapped_entity_id">
+        <div class="settings-row" id="row-mapped-entity">
+            <div><div class="settings-label">Mapped Entity / Topic</div><div class="settings-label-sub">Entity Key, HA Entity or Topic</div></div>
+            <div style="display:flex; flex-direction:column; gap:6px; width:50%;">
+                <input type="text" id="mapped_entity_id" name="mapped_entity_id" placeholder="e.g. esph_sp28_1 or light.livingroom" style="width:100%;">
+                <select id="entity_picker" onchange="if(this.value){document.getElementById('mapped_entity_id').value=this.value;}" style="width:100%; display:none;">
+                    <option value="">-- Select Discovered Entity --</option>
+                </select>
+            </div>
         </div>
     </div>
     
@@ -523,7 +528,64 @@
                 document.getElementById('is_update').value = "true";
             }
             
+            onRelayConnectionTypeChange();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function onRelayConnectionTypeChange() {
+            const connType = parseInt(document.getElementById('connection_type').value);
+            const picker = document.getElementById('entity_picker');
+            picker.style.display = 'none';
+            picker.innerHTML = '<option value="">-- Select Discovered Entity --</option>';
+
+            if (connType === 0) {
+                // Local GPIO
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/devices', {
+                    headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token') }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const devs = (data.devices || []).filter(d => {
+                    if (connType === 2) return d.protocol === 0; // ESPHome
+                    if (connType === 3) return d.protocol === 1; // Tuya
+                    if (connType === 4) return d.protocol === 3; // Zigbee
+                    return true;
+                });
+
+                if (devs.length === 0) return;
+
+                let hasEntries = false;
+                for (const dev of devs) {
+                    try {
+                        const entRes = await fetch('/api/devices/entities', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token')
+                            },
+                            body: JSON.stringify({ id: dev.id })
+                        });
+                        if (entRes.ok) {
+                            const entData = await entRes.json();
+                            (entData.entities || []).forEach(e => {
+                                const mapId = `esph_${dev.id}_${e.key}`;
+                                picker.innerHTML += `<option value="${mapId}">${dev.name || dev.id} &rarr; ${e.name} (${mapId})</option>`;
+                                hasEntries = true;
+                            });
+                        }
+                    } catch(e){}
+                }
+
+                if (hasEntries) {
+                    picker.style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Failed to load device entities for picker', err);
+            }
         }
 
         function cancelEdit() {

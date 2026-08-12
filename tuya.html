@@ -225,6 +225,26 @@
             margin: 40px auto;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper input {
+            padding-right: 40px !important;
+        }
+        .toggle-pwd-btn {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            line-height: 1;
+        }
+        .toggle-pwd-btn:hover { color: var(--accent); }
     </style>
 <script src="mock_api.js"></script>\n</head>
 <body>
@@ -245,11 +265,11 @@
         <div class="section-title">Configured Nodes</div>
         <div id="device-list"><div class="loader"></div></div>
 
-        <div class="section-title" style="margin-top: 40px;">Add New Node</div>
+        <div class="section-title" id="form-section-title" style="margin-top: 40px;">Add New Node</div>
         
         <div class="settings-group">
             <div class="settings-row">
-                <div><div class="settings-label">Device Name</div><div class="settings-label-sub">Internal ID (no spaces)</div></div>
+                <div><div class="settings-label">Device Name / ID</div><div class="settings-label-sub">Internal ID (no spaces)</div></div>
                 <input type="text" id="dev-id" placeholder="living_room_light">
             </div>
 
@@ -265,15 +285,34 @@
 
             <div class="settings-row">
                 <div><div class="settings-label">Tuya Local Key</div><div class="settings-label-sub">16-character local key</div></div>
-                <input type="password" id="dev-pass">
+                <div class="password-wrapper" style="width:50%;">
+                    <input type="password" id="dev-pass" style="width:100%;">
+                    <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('dev-pass', this)">👁️</button>
+                </div>
             </div>
         </div>
 
-        <button class="btn" onclick="addDevice()">Add Tuya Node</button>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" id="btn-save" onclick="saveDevice()">Add Tuya Node</button>
+            <button class="btn" id="btn-cancel" onclick="resetForm()" style="display:none; background:rgba(255,255,255,0.1); color:var(--text-main);">Cancel</button>
+        </div>
     </div>
 
     <script>
         const token = sessionStorage.getItem('sentinel_token');
+        let rawDevices = [];
+
+        function toggleSecretVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        }
 
         async function loadDevices() {
             try {
@@ -281,30 +320,29 @@
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
+                rawDevices = data.devices || [];
                 
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
                 
-                if (data.devices && data.devices.length > 0) {
-                    const esphomeDevices = data.devices.filter(d => d.protocol === 2);
-                    
-                    if (esphomeDevices.length > 0) {
-                        esphomeDevices.forEach(dev => {
-                            list.innerHTML += `
-                                <div class="device-card">
-                                    <div class="device-info">
-                                        <h3>${dev.name || dev.id}</h3>
-                                        <p>${dev.host}:${dev.port}</p>
-                                    </div>
-                                    <div class="device-actions">
-                                        <button class="btn-small" onclick="deleteDevice('${dev.id}')">Remove</button>
-                                    </div>
+                const tuyaDevices = rawDevices.filter(d => d.protocol === 1 || d.protocol === 2);
+                
+                if (tuyaDevices.length > 0) {
+                    tuyaDevices.forEach(dev => {
+                        const safeId = (dev.id || '').replace(/'/g, "\\'");
+                        list.innerHTML += `
+                            <div class="device-card">
+                                <div class="device-info">
+                                    <h3>${dev.name || dev.id}</h3>
+                                    <p>${dev.host}:${dev.port || 6668}</p>
                                 </div>
-                            `;
-                        });
-                    } else {
-                        list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No Tuya nodes configured.</p>';
-                    }
+                                <div class="device-actions">
+                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeId}')">Edit</button>
+                                    <button class="btn-small" onclick="deleteDevice('${safeId}')">Remove</button>
+                                </div>
+                            </div>
+                        `;
+                    });
                 } else {
                     list.innerHTML = '<p style="text-align:center; color:var(--text-dim);">No Tuya nodes configured.</p>';
                 }
@@ -313,14 +351,43 @@
             }
         }
 
-        async function addDevice() {
+        function editDevice(id) {
+            const dev = rawDevices.find(d => d.id === id);
+            if (!dev) return;
+
+            document.getElementById('dev-id').value = dev.id || '';
+            document.getElementById('dev-id').disabled = true;
+            document.getElementById('dev-host').value = dev.host || '';
+            document.getElementById('dev-device-id').value = dev.tuya_device_id || '';
+            document.getElementById('dev-pass').value = dev.tuya_local_key || dev.password || '';
+
+            document.getElementById('form-section-title').innerText = 'Edit Node: ' + (dev.name || dev.id);
+            document.getElementById('btn-save').innerText = 'Update Tuya Node';
+            document.getElementById('btn-cancel').style.display = 'block';
+            window.scrollTo({ top: document.getElementById('form-section-title').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('dev-id').value = '';
+            document.getElementById('dev-id').disabled = false;
+            document.getElementById('dev-host').value = '';
+            document.getElementById('dev-device-id').value = '';
+            document.getElementById('dev-pass').value = '';
+
+            document.getElementById('form-section-title').innerText = 'Add New Node';
+            document.getElementById('btn-save').innerText = 'Add Tuya Node';
+            document.getElementById('btn-cancel').style.display = 'none';
+        }
+
+        async function saveDevice() {
+            const isEdit = document.getElementById('dev-id').disabled;
             const payload = {
-                id: document.getElementById('dev-id').value,
-                name: document.getElementById('dev-id').value,
-                protocol: 2,
-                host: document.getElementById('dev-host').value,
-                tuya_device_id: document.getElementById('dev-device-id').value,
-                tuya_local_key: document.getElementById('dev-pass').value
+                id: document.getElementById('dev-id').value.trim(),
+                name: document.getElementById('dev-id').value.trim(),
+                protocol: 1,
+                host: document.getElementById('dev-host').value.trim(),
+                tuya_device_id: document.getElementById('dev-device-id').value.trim(),
+                tuya_local_key: document.getElementById('dev-pass').value.trim()
             };
 
             if (!payload.id || !payload.host) {
@@ -329,7 +396,8 @@
             }
 
             try {
-                const res = await fetch('/api/devices/add', {
+                const endpoint = isEdit ? '/api/devices/update' : '/api/devices/add';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -339,15 +407,14 @@
                 });
 
                 if (res.ok) {
+                    resetForm();
                     loadDevices();
-                    document.getElementById('dev-id').value = '';
-                    document.getElementById('dev-host').value = '';
                 } else {
-                    alert('Failed to add device.');
+                    alert(isEdit ? 'Failed to update device.' : 'Failed to add device.');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error adding device.');
+                alert('Error saving device.');
             }
         }
 
@@ -363,6 +430,7 @@
                     body: JSON.stringify({ id: id })
                 });
                 if (res.ok) {
+                    resetForm();
                     loadDevices();
                 }
             } catch (err) {

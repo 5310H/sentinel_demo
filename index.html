@@ -91,7 +91,7 @@
             .header-module { flex-direction: column; align-items: center; text-align: center; }
             .header-module > div { margin-bottom: 15px; width: 100%; display: flex; flex-direction: column; align-items: center; }
             .header-module > div:last-child { margin-bottom: 0; }
-            .time-display { font-size: 26px; text-align: center; width: 100%; display: block; margin: 0 auto; }
+            .time-display { font-size: min(8vw, 28px) !important; font-weight: 700; text-align: center; width: 100%; display: block; margin: 0 auto; }
             .brand { justify-content: center; width: 100%; }
             .weather-temp { font-size: 36px; }
             .action-buttons { grid-template-columns: 1fr; }
@@ -564,17 +564,19 @@
         }
         .admin-links.open { display: grid; }
         .admin-link {
-            background: rgba(255,255,255,0.05);
+            background: rgba(0, 229, 255, 0.08);
+            border: 1px solid rgba(0, 229, 255, 0.2);
             border-radius: 8px;
             padding: 10px;
             text-align: center;
-            color: var(--text-dim);
+            color: var(--accent);
             text-decoration: none;
             font-size: 11px;
+            font-weight: 500;
             transition: all 0.2s;
         }
 @media (hover: hover) {
-            .admin-link:hover { color: var(--text-main); background: rgba(255,255,255,0.1); }
+            .admin-link:hover { color: #fff; background: rgba(0, 229, 255, 0.25); border-color: var(--accent); box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
 }
         
         /* 2FA Input Classes reused */
@@ -760,7 +762,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-07-30 16:28 EDT</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-08-11 21:26 EDT</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -799,21 +801,22 @@
                     onclick="document.getElementById('admin-links-grid').classList.toggle('open')">MAINTENANCE &
                     SETTINGS ⚙️</button>
                 <div class="admin-links" id="admin-links-grid">
-                    <a href="users.html" class="admin-link">Users</a>
-                    <a href="config.html" class="admin-link">Settings</a>
-                    <a href="zones.html" class="admin-link">Zones</a>
-                    <a href="relays.html" class="admin-link">Relays</a>
-                    <a href="presence.html" class="admin-link">Presence</a>
+                    <a href="audit.html" class="admin-link">Audit</a>
+                    <a href="cameras.html" class="admin-link">Cameras</a>
+                    <a href="diagnostics.html" class="admin-link">Diagnostics</a>
                     <a href="entities.html" class="admin-link">Entities</a>
                     <a href="esphome.html" class="admin-link">ESPHome</a>
-                    <a href="cameras.html" class="admin-link">Cameras</a>
+                    <a href="monitoring.html" class="admin-link">Monitoring</a>
+                    <a href="presence.html" class="admin-link">Presence</a>
+                    <a href="relays.html" class="admin-link">Relays</a>
                     <a href="scheduler.html" class="admin-link">Schedule</a>
-                    <a href="tuya.html" class="admin-link">Tuya</a>
-                    <a href="zigbee.html" class="admin-link">Zigbee</a>
-                    <a href="tester.html" class="admin-link" style="color:var(--not)">Sys-Tester</a>
-                    <a href="audit.html" class="admin-link">Audit</a>
+                    <a href="config.html" class="admin-link">Settings</a>
                     <a href="health.html" class="admin-link">System Health</a>
-                    <a href="diagnostics.html" class="admin-link" style="color:var(--alarm)">Diagnostics</a>
+                    <a href="tester.html" class="admin-link">Sys-Tester</a>
+                    <a href="tuya.html" class="admin-link">Tuya</a>
+                    <a href="users.html" class="admin-link">Users</a>
+                    <a href="zigbee.html" class="admin-link">Zigbee</a>
+                    <a href="zones.html" class="admin-link">Zones</a>
                 </div>
             </div>
         </div>
@@ -902,6 +905,14 @@
                 <div class="indicator-card">
                     <span class="ind-label">Last Check-in</span>
                     <span class="ind-value" id="cf-time">--:--</span>
+                </div>
+                <div class="indicator-card">
+                    <span class="ind-label">SIA DC-09 IP</span>
+                    <span class="ind-value" id="sia-status">WAIT</span>
+                </div>
+                <div class="indicator-card">
+                    <span class="ind-label">SIA Receiver</span>
+                    <span class="ind-value" id="sia-receiver">--</span>
                 </div>
             </div>
         </div>
@@ -1961,6 +1972,21 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                         else if (d2.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
                         else if (d2.network_state === 1) { netVal.innerText = 'PRIMARY'; netVal.className = 'ind-value ok'; }
                         else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
+                    }
+                    
+                    // SIA DC-09 Status
+                    const siaVal = document.getElementById('sia-status');
+                    const siaRec = document.getElementById('sia-receiver');
+                    if (siaVal && siaRec) {
+                        if (d2.is_sia_enabled) {
+                            siaVal.innerText = 'ACTIVE (SIA IP)';
+                            siaVal.className = 'ind-value ok';
+                            siaRec.innerText = (d2.sia_receiver_ip || '127.0.0.1') + ':' + (d2.sia_receiver_port || 2020);
+                        } else {
+                            siaVal.innerText = 'DISABLED';
+                            siaVal.className = 'ind-value';
+                            siaRec.innerText = '--';
+                        }
                     }
                 } else {
                     // Health endpoint unreachable — show error state

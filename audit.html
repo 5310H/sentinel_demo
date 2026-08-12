@@ -9,6 +9,23 @@
         if (!sessionStorage.getItem('sentinel_token')) {
             window.location.replace("index.html");
         }
+
+        let inactivityTimer;
+        const INACTIVITY_LIMIT_MS = 5 * 60 * 1000;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            if (sessionStorage.getItem('sentinel_token')) {
+                inactivityTimer = setTimeout(() => {
+                    sessionStorage.removeItem('sentinel_token');
+                    window.location.replace("index.html");
+                }, INACTIVITY_LIMIT_MS);
+            }
+        }
+        ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, resetInactivityTimer, { passive: true });
+        });
+        resetInactivityTimer();
+
     </script>
     <style>
         :root {

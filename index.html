@@ -762,7 +762,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-08-11 21:50 EDT</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026-08-12 19:58 EDT</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -838,8 +838,8 @@
             </div>
         </div>
 
-        <!-- Weather Module -->
-        <div class="module col-span-1">
+        <!-- Weather Module (Shown when Online, Hidden when Local/Offline) -->
+        <div class="module col-span-1" id="weather-card">
             <div class="module-title">Local Weather</div>
             <div class="weather-info">
                 <div>
@@ -850,8 +850,8 @@
             </div>
         </div>
 
-        <!-- Local Sports -->
-        <div class="module col-span-1">
+        <!-- Local Sports (Shown when Online, Hidden when Local/Offline) -->
+        <div class="module col-span-1" id="sports-card">
             <div class="module-title">Local Sports</div>
             <div class="sports-grid">
                 <div class="sport-card">
@@ -873,6 +873,48 @@
                     <div class="sport-team" style="color: #ce0f3d;">OSU</div>
                     <div class="sport-score" id="score-ncaa">--</div>
                     <div class="sport-status" id="status-ncaa">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health Module (Shown when Local/Offline, Hidden when Online) -->
+        <div class="module col-span-1" id="system-health-card" style="display: none;">
+            <div class="module-title">System Health</div>
+            <div class="health-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-top: 5px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">POWER INPUT</div>
+                    <div id="sys-power-status" style="font-weight: bold; color: #10b981;">⚡ Mains AC</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">NETWORK LINK</div>
+                    <div id="sys-net-status" style="font-weight: bold; color: #3b82f6;">Ethernet</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">BOARD TEMP</div>
+                    <div id="sys-temp-status" style="font-weight: bold; color: #f59e0b;">--°C</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">TAMPER LOOP</div>
+                    <div id="sys-tamper-status" style="font-weight: bold; color: #10b981;">Secure</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Overview Module (Shown when Local/Offline, Hidden when Online) -->
+        <div class="module col-span-1" id="security-overview-card" style="display: none;">
+            <div class="module-title">Security Overview</div>
+            <div class="security-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-top: 5px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">FAULTED ZONES</div>
+                    <div id="sec-fault-count" style="font-weight: bold; font-size: 18px; color: #ef4444;">0</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">BYPASSED ZONES</div>
+                    <div id="sec-bypass-count" style="font-weight: bold; font-size: 18px; color: #f59e0b;">0</div>
+                </div>
+                <div style="grid-column: span 2; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;">
+                    <div style="color: #aaa; font-size: 11px;">LAST SYSTEM ACTIVITY</div>
+                    <div id="sec-last-activity" style="font-weight: 500; font-size: 12px; color: #ddd;">System initialized</div>
                 </div>
             </div>
         </div>
@@ -1153,71 +1195,149 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             }
         });
 
-        
-        // --- WEATHER FETCH (Open-Meteo via Backend Config fallback to IP) ---
-        async function fetchWeather() {
-            try {
-                // Get configured location from backend
-                const statusResp = await fetch('/api/status');
-                const statusData = await statusResp.json();
-                
-                let lat = null, lon = null;
-                if(statusData.config) {
-                    lat = statusData.config.location_lat || statusData.config.lat;
-                    lon = statusData.config.location_lon || statusData.config.lon;
+        // --- SYSTEM HEALTH & SECURITY OVERVIEW UPDATE ---
+        window.updateLocalSystemHealth = function(data) {
+            if (!data) return;
+            
+            // Power Input Status
+            const pwrEl = document.getElementById('sys-power-status');
+            const onBackup = (data.on_backup_power || (data.system && data.system.on_backup_power));
+            if (pwrEl) {
+                if (onBackup) {
+                    pwrEl.innerText = '🔋 UPS Battery';
+                    pwrEl.style.color = '#ef4444';
+                } else {
+                    pwrEl.innerText = '⚡ Mains AC';
+                    pwrEl.style.color = '#10b981';
                 }
-                
-                // Fallback to IP API if backend doesn't have it (or fails)
-                if(!lat || !lon || (lat === 0 && lon === 0)) {
-                    try {
-                        const locResp = await fetch('https://get.geojs.io/v1/ip/geo.json');
-                        const loc = await locResp.json();
-                        lat = loc.latitude;
-                        lon = loc.longitude;
-                    } catch (e) {
-                        console.warn("Geolocation API failed", e);
+            }
+
+            // Network Link & Watchdog Status
+            const netWatchdog = data.network_watchdog || (data.system && data.system.network_watchdog) || (data.network_state === 2 ? 'LOCAL_ONLY' : data.network_state === 3 ? 'OFFLINE' : (data.network_state === 1 ? 'ONLINE' : null));
+            const netEl = document.getElementById('sys-net-status');
+            if (netEl) {
+                if (netWatchdog === 'LOCAL_ONLY') {
+                    netEl.innerText = 'Local (LAN)';
+                    netEl.style.color = '#f59e0b';
+                } else if (netWatchdog === 'OFFLINE') {
+                    netEl.innerText = 'Offline';
+                    netEl.style.color = '#ef4444';
+                } else {
+                    netEl.innerText = 'Ethernet';
+                    netEl.style.color = '#3b82f6';
+                }
+            }
+
+            // Board Temp
+            const tempVal = data.temperature_c !== undefined ? data.temperature_c : (data.system && data.system.temperature_c);
+            const tempEl = document.getElementById('sys-temp-status');
+            if (tempEl && tempVal !== undefined) {
+                tempEl.innerText = `${tempVal}°C`;
+            }
+
+            // Tamper Loop
+            const tamperVal = data.tamper_detected !== undefined ? data.tamper_detected : (data.system && data.system.tamper_detected);
+            const tamperEl = document.getElementById('sys-tamper-status');
+            if (tamperEl) {
+                if (tamperVal) {
+                    tamperEl.innerText = '⚠️ TAMPERED';
+                    tamperEl.style.color = '#ef4444';
+                } else {
+                    tamperEl.innerText = 'Secure';
+                    tamperEl.style.color = '#10b981';
+                }
+            }
+
+            // Security Overview Counts
+            if (data.zones) {
+                let faultedCount = 0;
+                let bypassedCount = 0;
+                data.zones.forEach(z => {
+                    if (z.bypassed) bypassedCount++;
+                    else if (z.state === 1 || z.state === 'TRIPPED') faultedCount++;
+                });
+
+                const fEl = document.getElementById('sec-fault-count');
+                if (fEl) fEl.innerText = faultedCount;
+
+                const bEl = document.getElementById('sec-bypass-count');
+                if (bEl) bEl.innerText = bypassedCount;
+            }
+
+            // Dynamic Module Visibility based on Network Watchdog state
+            const isLocalOrOffline = (netWatchdog === 'LOCAL_ONLY' || netWatchdog === 'OFFLINE');
+            const wCard = document.getElementById('weather-card');
+            const sCard = document.getElementById('sports-card');
+            const shCard = document.getElementById('system-health-card');
+            const soCard = document.getElementById('security-overview-card');
+
+            if (isLocalOrOffline) {
+                if (wCard) wCard.style.display = 'none';
+                if (sCard) sCard.style.display = 'none';
+                if (shCard) shCard.style.display = 'block';
+                if (soCard) soCard.style.display = 'block';
+            } else {
+                if (wCard) wCard.style.display = 'block';
+                if (sCard) sCard.style.display = 'block';
+                if (shCard) shCard.style.display = 'none';
+                if (soCard) soCard.style.display = 'none';
+            }
+        };
+
+        // --- WEATHER FETCH (Open-Meteo) ---
+        async function fetchWeather() {
+            if (!document.getElementById('weather-card')) return;
+            try {
+                let lat = null, lon = null;
+                try {
+                    const statusResp = await fetch('/api/status', { signal: AbortSignal.timeout(2000) });
+                    const statusData = await statusResp.json();
+                    if(statusData.config) {
+                        lat = statusData.config.location_lat || statusData.config.lat;
+                        lon = statusData.config.location_lon || statusData.config.lon;
                     }
+                } catch(e) {}
+
+                if (!lat || !lon) {
+                    lat = 41.4993; // Default Cleveland, OH
+                    lon = -81.6944;
                 }
 
-                if(lat && lon) {
-                    const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`);
-                    const w = await wResp.json();
-                    if(w && w.current_weather) {
-                        const curr = w.current_weather;
-                        document.getElementById('weather-temp').innerText = Math.round(curr.temperature) + '°F';
-                        
-                        let condition = "Unknown";
-                        let icon = '☁️';
-                        const code = curr.weathercode;
-                        if(code === 0) { condition = "Clear"; icon = '☀️'; }
-                        else if(code <= 3) { condition = "Cloudy"; icon = '⛅'; }
-                        else if(code <= 48) { condition = "Fog"; icon = '🌫️'; }
-                        else if(code <= 55) { condition = "Drizzle"; icon = '🌧️'; }
-                        else if(code <= 65) { condition = "Rain"; icon = '🌧️'; }
-                        else if(code <= 77) { condition = "Snow"; icon = '❄️'; }
-                        else if(code >= 95) { condition = "Storm"; icon = '⛈️'; }
-                        
-                        document.getElementById('weather-icon').innerText = icon;
-                        document.getElementById('weather-desc').innerText = condition;
-                    } else {
-                        document.getElementById('weather-temp').innerText = "N/A";
-                        document.getElementById('weather-desc').innerText = "API Error";
-                    }
-                } else {
-                    document.getElementById('weather-temp').innerText = "N/A";
-                    document.getElementById('weather-desc').innerText = "Loc Error";
+                const wResp = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&temperature_unit=fahrenheit`, { signal: AbortSignal.timeout(3000) });
+                const w = await wResp.json();
+                if(w && w.current_weather) {
+                    const curr = w.current_weather;
+                    const wTempEl = document.getElementById('weather-temp');
+                    if (wTempEl) wTempEl.innerText = Math.round(curr.temperature) + '°F';
+                    
+                    let condition = "Clear";
+                    let icon = '☀️';
+                    const code = curr.weathercode;
+                    if(code === 0) { condition = "Clear"; icon = '☀️'; }
+                    else if(code <= 3) { condition = "Cloudy"; icon = '⛅'; }
+                    else if(code <= 48) { condition = "Fog"; icon = '🌫️'; }
+                    else if(code <= 55) { condition = "Drizzle"; icon = '🌧️'; }
+                    else if(code <= 65) { condition = "Rain"; icon = '🌧️'; }
+                    else if(code <= 77) { condition = "Snow"; icon = '❄️'; }
+                    else if(code >= 95) { condition = "Storm"; icon = '⛈️'; }
+                    
+                    const wIconEl = document.getElementById('weather-icon');
+                    if (wIconEl) wIconEl.innerText = icon;
+                    const wDescEl = document.getElementById('weather-desc');
+                    if (wDescEl) wDescEl.innerText = condition;
                 }
-            } catch (e) {
-                console.log("Weather fetch failed", e);
-                document.getElementById('weather-temp').innerText = "Error";
-                document.getElementById('weather-desc').innerText = "Unavailable";
+            } catch(e) {
+                console.log("Weather fetch error/timeout", e);
             }
         }
-        fetchWeather();
-        setInterval(fetchWeather, 15 * 60 * 1000); // 15 mins
+        if (document.getElementById('weather-card')) {
+            fetchWeather();
+            setInterval(fetchWeather, 15 * 60 * 1000);
+        }
 
-        // --- SPORTS FETCH ---
+        // --- SPORTS FETCH (ESPN API) ---
         async function fetchSportsScores() {
+            if (!document.getElementById('sports-card')) return;
             const teams = [
                 { id: 'nfl', url: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/cle' },
                 { id: 'nba', url: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/cle' },
@@ -1227,87 +1347,39 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
 
             for (const t of teams) {
                 try {
-                    const res = await fetch(t.url);
-                    const data = await res.json();
+                    const r = await fetch(t.url, { signal: AbortSignal.timeout(3000) });
+                    const d = await r.json();
+                    const team = d.team;
+                    const nextEvent = team && team.nextEvent ? team.nextEvent[0] : null;
+
                     let scoreTxt = "--";
-                    let statusTxt = "Off-Season";
-                    
-                    // Note: ESPN API structure often puts nextEvent at data.team.nextEvent
-                    let handled = false;
-                    if (data.team && data.team.nextEvent && data.team.nextEvent.length > 0) {
-                        const evt = data.team.nextEvent[0];
-                        const comp = evt.competitions[0];
-                        const statusState = comp.status.type.state; // 'pre', 'in', 'post'
-                        const isOldGame = (statusState === 'post' && (new Date() - new Date(evt.date)) > 2 * 24 * 60 * 60 * 1000);
-                        
-                        if (!isOldGame) {
-                            handled = true;
-                            if (statusState === 'in' || statusState === 'post') {
-                                const myCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() === 'cle' || c.team.abbreviation.toLowerCase() === 'osu');
-                                const otherCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
-                                
-                                if (myCompetitor && otherCompetitor) {
-                                    let myScore = myCompetitor.score?.displayValue ?? myCompetitor.score?.value ?? myCompetitor.score;
-                                    let otherScore = otherCompetitor.score?.displayValue ?? otherCompetitor.score?.value ?? otherCompetitor.score;
-                                    
-                                    if (myScore === undefined) {
-                                        const parts = t.url.split('/teams/');
-                                        if (parts.length > 1) {
-                                            try {
-                                                const sRes = await fetch(parts[0] + '/summary?event=' + evt.id);
-                                                const sData = await sRes.json();
-                                                const hComp = sData.header.competitions[0];
-                                                const sMyComp = hComp.competitors.find(c => c.team.abbreviation.toLowerCase() === 'cle' || c.team.abbreviation.toLowerCase() === 'osu');
-                                                const sOtherComp = hComp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
-                                                myScore = sMyComp?.score;
-                                                otherScore = sOtherComp?.score;
-                                            } catch(e) {}
-                                        }
-                                    }
-                                    myScore = myScore ?? 0;
-                                    otherScore = otherScore ?? 0;
-                                    scoreTxt = `${myScore} - ${otherScore}`;
-                                    statusTxt = comp.status.type.shortDetail;
-                                }
-                            } else if (statusState === 'pre') {
-                                const otherCompetitor = comp.competitors.find(c => c.team.abbreviation.toLowerCase() !== 'cle' && c.team.abbreviation.toLowerCase() !== 'osu');
-                                if (otherCompetitor) {
-                                    scoreTxt = `vs ${otherCompetitor.team.abbreviation}`;
-                                }
-                                const d = new Date(evt.date);
-                                statusTxt = d.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            }
-                        }
-                    } 
-                    
-                    if (!handled && data.team && data.team.record) {
-                        let recArray = Array.isArray(data.team.record) ? data.team.record : data.team.record.items;
-                        if (recArray && recArray.length > 0) {
-                            const rec = recArray.find(r => r.type === 'total') || recArray[0];
-                            if (rec) {
-                                scoreTxt = rec.summary || rec.displayValue || "--";
-                                statusTxt = "Record";
+                    let statusTxt = "No Game";
+
+                    if (nextEvent) {
+                        statusTxt = nextEvent.status?.type?.shortDetail || "Scheduled";
+                        const comp = nextEvent.competitions?.[0];
+                        if (comp && comp.competitors) {
+                            const home = comp.competitors.find(c => c.homeAway === 'home');
+                            const away = comp.competitors.find(c => c.homeAway === 'away');
+                            if (home && away && home.score && away.score) {
+                                scoreTxt = `${home.score.value || 0} - ${away.score.value || 0}`;
                             }
                         }
                     }
 
                     const scoreEl = document.getElementById('score-' + t.id);
-                    if (scoreEl) {
-                        scoreEl.innerText = scoreTxt;
-                        document.getElementById('status-' + t.id).innerText = statusTxt;
-                    }
+                    if (scoreEl) scoreEl.innerText = scoreTxt;
+                    const statusEl = document.getElementById('status-' + t.id);
+                    if (statusEl) statusEl.innerText = statusTxt;
                 } catch (e) {
-                    console.log(`Sports fetch failed for ${t.id}`, e);
-                    const scoreEl = document.getElementById('score-' + t.id);
-                    if (scoreEl) {
-                        scoreEl.innerText = "Err";
-                        document.getElementById('status-' + t.id).innerText = "Unavailable";
-                    }
+                    console.log(`Sports fetch failed/timed out for ${t.id}`, e);
                 }
             }
         }
-        fetchSportsScores();
-        setInterval(fetchSportsScores, 5 * 60 * 1000); // 5 mins
+        if (document.getElementById('sports-card')) {
+            fetchSportsScores();
+            setInterval(fetchSportsScores, 10 * 60 * 1000);
+        }
 
         // --- ACTIVITY LOG FETCH ---
         // Maps numeric event_type from /events endpoint to human-readable labels
@@ -1453,14 +1525,15 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             });
         }
         fetchAuditLog();
-        setInterval(fetchAuditLog, 10000);
+        setInterval(fetchAuditLog, 20000);
 
         // --- ZONES FETCH ---
         async function fetchZones() {
             try {
-                const r = await fetch('/api/zones');
+                const r = await fetch('/api/zones', { signal: AbortSignal.timeout(2000) });
                 const zones = await r.json();
                 const grid = document.getElementById('zone-grid');
+                if (!grid) return;
                 grid.innerHTML = '';
                 
                 if(!zones || zones.length === 0) {
@@ -1483,7 +1556,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             } catch(e) {}
         }
         fetchZones();
-        setInterval(fetchZones, 3000);
+        setInterval(fetchZones, 10000);
 
         // --- PANIC SLIDER LOGIC ---
         const panicThumb = document.getElementById('panic-thumb');
@@ -1943,12 +2016,14 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 const r = await fetch('/api/status');
                 const d = await r.json();
                 if(d.config) updateUI(d.config);
+                if (window.updateLocalSystemHealth) window.updateLocalSystemHealth(d);
             } catch(e) { console.error('Status fetch failed:', e); }
             
             try {
                 const r2 = await fetch('/status');
                 if(r2.ok) {
                     const d2 = await r2.json();
+                    if (window.updateLocalSystemHealth) window.updateLocalSystemHealth(d2);
                     
                     // Temp
                     if(d2.temperature_f !== undefined) {
@@ -2045,19 +2120,19 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         const svgPlaceholder = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23111'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%23666'%3EOffline%3C/text%3E%3C/svg%3E`;
 
         async function loadDashboardCameras() {
+            const grid = document.getElementById('dashboard-camera-grid');
+            if (!grid) return;
             try {
-                const res = await fetch('/api/cameras');
+                const res = await fetch('/api/cameras', { signal: AbortSignal.timeout(2000) });
                 if (!res.ok) throw new Error("Failed to load cameras");
                 const data = await res.json();
-                // Depending on the backend schema:
-                // if it's an array directly: dashboardCameras = data;
-                // if it's an object with cameras array: dashboardCameras = data.cameras;
                 dashboardCameras = Array.isArray(data) ? data : (data.cameras || []);
                 renderDashboardCameraGrid();
                 startDashboardCameraRefresh();
             } catch (e) {
-                console.error(e);
-                document.getElementById('dashboard-camera-grid').innerHTML = '<div style="color:var(--alarm);">Error loading cameras.</div>';
+                console.log("Cameras endpoint unavailable/offline", e);
+                dashboardCameras = [];
+                renderDashboardCameraGrid();
             }
         }
 
@@ -2231,12 +2306,12 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             }
         }
         
-        // Start camera load
-        setTimeout(loadDashboardCameras, 1000);
-
-        setInterval(check, 4000);
-
+        // Initial load on page startup
         check();
+        loadDashboardCameras();
+
+        // Background polling loop (every 6 seconds)
+        setInterval(check, 6000);
 
         // --- THEME TOGGLE LOGIC ---
         function toggleTheme() {
@@ -2261,8 +2336,9 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
 
 // --- CLOUDFLARE CHECK-IN STATUS ---
 setInterval(async () => {
+    if (!document.body.classList.contains('unlocked')) return;
     try {
-        let res = await fetch('/api/checkin/log');
+        let res = await fetch('/api/checkin/log', { signal: AbortSignal.timeout(2000) });
         if (!res.ok) return;
         let data = await res.json();
         if(data && data.length > 0) {
@@ -2279,7 +2355,7 @@ setInterval(async () => {
             }
         }
     } catch(e) {}
-}, 5000);
+}, 30000);
 
 // --- AUTO-LOGOFF TIMER ---
 let inactivityTimer;

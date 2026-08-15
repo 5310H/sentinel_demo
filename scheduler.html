@@ -333,8 +333,7 @@
             border-top: 1px solid var(--glass-border);
         }
     </style>
-    <script src="mock_api.js"></script>
-</head>
+<script src="mock_api.js"></script>\n</head>
 <body>
     <div class="container">
         <div class="header">
@@ -590,8 +589,9 @@
                             <div class="info-cell"><div class="info-label">Last Run</div><div class="info-value">${task.last_run > 0 ? formatTimestamp(task.last_run) : 'Never'}</div></div>
                             <div class="info-cell"><div class="info-label">Next Run</div><div class="info-value">${task.next_run > 0 ? formatTimestamp(task.next_run) : 'N/A'}</div></div>
                         </div>
-                        <div style="display:flex; gap:10px; margin-top: 5px;">
+                        <div style="display:flex; gap:10px; margin-top: 5px; flex-wrap: wrap;">
                             <button class="${task.enabled ? 'btn-secondary' : 'btn-primary'}" onclick="toggleTask(${task.id}, ${!task.enabled})">${task.enabled ? 'Disable' : 'Enable'}</button>
+                            <button class="btn-primary" onclick="editTask(${task.id})">Edit</button>
                             <button class="btn-primary" onclick="triggerTask(${task.id})">Run Now</button>
                             <button class="btn-danger" onclick="deleteTask(${task.id})">Delete</button>
                         </div>
@@ -613,7 +613,59 @@
             });
         }
 
+        let editingTaskId = null;
+
         function showCreateModal() {
+            editingTaskId = null;
+            document.querySelector('#createModal .title').textContent = 'Create Task';
+            document.getElementById('taskName').value = '';
+            document.getElementById('taskType').value = '0';
+            document.getElementById('interval').value = '60';
+            document.getElementById('cron').value = '';
+            document.getElementById('priority').value = '1';
+            document.getElementById('actionType').value = '0';
+            updateScheduleFields();
+            updateActionFields();
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            editingTaskId = id;
+            document.querySelector('#createModal .title').textContent = 'Edit Task (ID: ' + id + ')';
+            document.getElementById('taskName').value = task.name || '';
+            document.getElementById('taskType').value = task.type !== undefined ? task.type : 0;
+            if (task.type === 0) document.getElementById('interval').value = task.interval || 60;
+            if (task.type === 1) document.getElementById('cron').value = task.cron || '';
+            if (task.type === 2) document.getElementById('runTime').value = task.run_time || '';
+            document.getElementById('priority').value = task.priority !== undefined ? task.priority : 1;
+
+            if (task.action && task.action.type) {
+                document.getElementById('actionType').value = task.action.type;
+                if (task.action.type === 1 && task.action.scene_id !== undefined) document.getElementById('sceneId').value = task.action.scene_id;
+                if (task.action.type === 2) {
+                    if (task.action.group_id !== undefined) document.getElementById('groupId').value = task.action.group_id;
+                    if (task.action.on !== undefined) document.getElementById('groupOn').value = task.action.on ? 'true' : 'false';
+                    if (task.action.level !== undefined) document.getElementById('groupLevel').value = task.action.level;
+                }
+                if (task.action.type === 3) {
+                    if (task.action.relay_id !== undefined) document.getElementById('relayId').value = task.action.relay_id;
+                    if (task.action.on !== undefined) document.getElementById('relayOn').value = task.action.on ? 'true' : 'false';
+                }
+                if (task.action.type === 4) {
+                    if (task.action.topic) document.getElementById('mqttTopic').value = task.action.topic;
+                    if (task.action.payload) document.getElementById('mqttPayload').value = task.action.payload;
+                }
+                if (task.action.type === 5) {
+                    if (task.action.url) document.getElementById('httpUrl').value = task.action.url;
+                    if (task.action.method) document.getElementById('httpMethod').value = task.action.method;
+                }
+            } else {
+                document.getElementById('actionType').value = '0';
+            }
+            updateScheduleFields();
+            updateActionFields();
             document.getElementById('createModal').style.display = 'flex';
         }
 
@@ -684,19 +736,29 @@
                 }
             }
 
-            fetch('/api/scheduler/tasks', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
+            const savePromise = (editingTaskId !== null) 
+                ? fetch(`/api/scheduler/tasks/${editingTaskId}`, { method: 'DELETE' }).then(() => {
+                    return fetch('/api/scheduler/tasks', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                  })
+                : fetch('/api/scheduler/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  });
+
+            savePromise
             .then(res => {
-                if (!res.ok) throw new Error('Failed to create task');
+                if (!res.ok) throw new Error('Failed to save task');
                 closeModal();
                 refreshTasks();
             })
             .catch(err => {
                 console.error(err);
-                alert('Error creating task');
+                alert('Error saving task');
             });
         }
 

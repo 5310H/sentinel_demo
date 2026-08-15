@@ -265,10 +265,18 @@
         
         <div class="form-group">
             <div class="form-info">
-                <label class="form-label">Device Name / ID</label>
-                <div class="form-desc">Internal ID (no spaces)</div>
+                <label class="form-label">Device ID</label>
+                <div class="form-desc">Unique identifier (no spaces)</div>
             </div>
-            <input type="text" class="form-input" id="dev-id" placeholder="living_room_light">
+            <input type="text" class="form-input" id="dev-id" placeholder="living_room_node">
+        </div>
+
+        <div class="form-group">
+            <div class="form-info">
+                <label class="form-label">Friendly Name</label>
+                <div class="form-desc">Display title in Sentinel UI</div>
+            </div>
+            <input type="text" class="form-input" id="dev-name" placeholder="Living Room Node">
         </div>
 
         <div class="form-group">
@@ -319,6 +327,12 @@
         const token = sessionStorage.getItem('sentinel_token');
         let rawDevices = [];
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         function toggleSecretVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
             if (!input) return;
@@ -337,7 +351,7 @@
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
-                rawDevices = data.devices || [];
+                rawDevices = Array.isArray(data) ? data : (data.devices || []);
                 
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
@@ -345,21 +359,15 @@
                 const esphomeDevices = rawDevices.filter(d => d.protocol === 0);
                 if (esphomeDevices.length > 0) {
                     esphomeDevices.forEach(dev => {
-                        const safeHost = (dev.host || '').replace(/'/g, "\\'");
-                        const safeId = (dev.id || '').replace(/'/g, "\\'");
-                        const safeName = (dev.name || dev.id || '').replace(/'/g, "\\'");
-                        const safeKey = (dev.encryption_key || '').replace(/'/g, "\\'");
-                        const safePass = (dev.password || '').replace(/'/g, "\\'");
-
                         list.innerHTML += `
                             <div class="device-card">
                                 <div class="device-info">
-                                    <h3>${dev.name || dev.id}</h3>
-                                    <p>${dev.host}:${dev.port} ${dev.encryption_key ? '🔒 Encrypted' : ''}</p>
+                                    <h3>${escapeHtml(dev.name || dev.id)}</h3>
+                                    <p>${escapeHtml(dev.host)}:${dev.port} ${dev.encryption_key ? '🔒 Encrypted' : ''}</p>
                                 </div>
                                 <div class="device-actions">
-                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeId}')">Edit</button>
-                                    <button class="btn-small" onclick="deleteDevice('${safeId}')">Remove</button>
+                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${escapeHtml(dev.id)}')">Edit</button>
+                                    <button class="btn-small" onclick="deleteDevice('${escapeHtml(dev.id)}')">Remove</button>
                                 </div>
                             </div>
                         `;
@@ -378,6 +386,7 @@
 
             document.getElementById('dev-id').value = dev.id || '';
             document.getElementById('dev-id').disabled = true;
+            document.getElementById('dev-name').value = dev.name || '';
             document.getElementById('dev-host').value = dev.host || '';
             document.getElementById('dev-port').value = dev.port || 6053;
             document.getElementById('dev-pass').value = dev.password || '';
@@ -392,6 +401,7 @@
         function resetForm() {
             document.getElementById('dev-id').value = '';
             document.getElementById('dev-id').disabled = false;
+            document.getElementById('dev-name').value = '';
             document.getElementById('dev-host').value = '';
             document.getElementById('dev-port').value = 6053;
             document.getElementById('dev-pass').value = '';
@@ -406,7 +416,7 @@
             const isEdit = document.getElementById('dev-id').disabled;
             const payload = {
                 id: document.getElementById('dev-id').value.trim(),
-                name: document.getElementById('dev-id').value.trim(),
+                name: document.getElementById('dev-name').value.trim(),
                 protocol: 0,
                 host: document.getElementById('dev-host').value.trim(),
                 port: parseInt(document.getElementById('dev-port').value) || 6053,

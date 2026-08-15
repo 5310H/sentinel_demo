@@ -266,7 +266,7 @@
                 ]
             },
             {
-                name: "Integrations & APIs",
+                name: "Integrations & Services",
                 fields: [
                     { 
                         id: "mqtt_mode", 
@@ -278,25 +278,67 @@
                             { value: 2, label: "External MQTT Broker (Mosquitto / HA)" }
                         ]
                     },
+                    { id: "is_mqtt_enabled", label: "Enable MQTT", type: "checkbox" },
                     { id: "mqtt_server", label: "External MQTT Server IP", type: "text" },
                     { id: "mqtt_port", label: "External MQTT Port", type: "number" },
                     { id: "mqtt_user", label: "External MQTT User", type: "text" },
                     { id: "mqtt_pass", label: "External MQTT Password", type: "password" },
                     { id: "embedded_mqtt_port", label: "Internal Broker Port (Default 1883)", type: "number" },
-                    { id: "opnsense_ip", label: "OPNsense IP", type: "text" },
-                    { id: "opnsense_key", label: "OPNsense Key", type: "password" },
-                    { id: "opnsense_secret", label: "OPNsense Secret", type: "password" },
-                    { id: "nvrserver_url", label: "NVR Server URL", type: "text" },
+                    { id: "is_presence_enabled", label: "Enable Presence Tracker (WiFi Probe / ARP)", type: "checkbox" },
+                    { id: "is_telegram_enabled", label: "Enable Telegram Bot Alerts", type: "checkbox" },
+                    { id: "telegram_id", label: "Telegram Chat ID", type: "text" },
+                    { id: "telegram_token", label: "Telegram Bot Token", type: "password" },
+                    { id: "opnsense_ip", label: "OPNsense Gateway IP", type: "text" },
+                    { id: "opnsense_key", label: "OPNsense API Key", type: "password" },
+                    { id: "opnsense_secret", label: "OPNsense API Secret", type: "password" },
+                    { id: "nvrserver_url", label: "NVR Server URL (Frigate)", type: "text" },
                     { id: "haintegration_url", label: "Home Assistant URL", type: "text" }
                 ]
             },
             {
-                name: "Watchdogs & Network",
+                name: "SMTP Email Setup",
                 fields: [
+                    { id: "smtp_server", label: "SMTP Server Host / IP", type: "text" },
+                    { id: "smtp_port", label: "SMTP Port (Default 587 or 465)", type: "number" },
+                    { id: "smtp_user", label: "SMTP Username / Email", type: "text" },
+                    { id: "smtp_pass", label: "SMTP Password / App Password", type: "password" }
+                ]
+            },
+            {
+                name: "Noonlight & Professional Dispatch",
+                fields: [
+                    { id: "is_noonlight_enabled", label: "Enable Noonlight Professional Dispatch", type: "checkbox" },
+                    { id: "monitor_service_key", label: "Noonlight API Secret Key", type: "password" },
+                    { id: "monitoring_url", label: "Noonlight API Endpoint URL", type: "text" },
+                    { id: "is_monitor_police", label: "Dispatch Police on Burglary / Intrusion", type: "checkbox" },
+                    { id: "is_monitor_fire", label: "Dispatch Fire Department on Smoke / Heat", type: "checkbox" },
+                    { id: "is_monitor_medical", label: "Dispatch EMS on Medical Alert", type: "checkbox" },
+                    { id: "is_monitor_other", label: "Dispatch Other Auxiliary Emergencies", type: "checkbox" },
+                    { id: "edge_proxy_url", label: "Sentinel Edge Proxy Checkin URL", type: "text" }
+                ]
+            },
+            {
+                name: "SIA DC-09 Central Station Receiver",
+                fields: [
+                    { id: "is_sia_enabled", label: "Enable SIA DC-09 Central Station Receiver", type: "checkbox" },
+                    { id: "sia_receiver_ip", label: "SIA Receiver IP / Hostname", type: "text" },
+                    { id: "sia_receiver_port", label: "SIA Receiver Port (Default 2020)", type: "number" },
+                    { id: "sia_account_id", label: "SIA Account ID (Hex/Alphanumeric)", type: "text" },
+                    { id: "sia_prefix", label: "SIA Prefix (Default: SIA-DCS)", type: "text" },
+                    { id: "sia_encryption_key", label: "SIA AES-128 Encryption Key (Hex)", type: "password" },
+                    { id: "sia_ping_interval_sec", label: "SIA Ping / Heartbeat Interval (sec)", type: "number" }
+                ]
+            },
+            {
+                name: "Watchdogs, Reports & Features",
+                fields: [
+                    { id: "is_siren_enabled", label: "Enable Siren / Sounder Outputs", type: "checkbox" },
+                    { id: "is_daily_report_enabled", label: "Enable Daily Audit & Health Report", type: "checkbox" },
+                    { id: "daily_report_cron", label: "Daily Report Cron (e.g. 0 8 * * *)", type: "text" },
                     { id: "watchdog_esphome_sec", label: "ESPHome Watchdog (sec)", type: "number" },
                     { id: "watchdog_camera_fails", label: "Camera Fails Watchdog", type: "number" },
                     { id: "watchdog_network_sec", label: "Network Watchdog (sec)", type: "number" },
-                    { id: "wan_monitor_enabled", label: "Enable WAN Monitor", type: "checkbox" }
+                    { id: "wan_monitor_enabled", label: "Enable WAN Ping Monitor", type: "checkbox" }
                 ]
             }
         ];

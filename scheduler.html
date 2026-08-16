@@ -737,12 +737,14 @@
             }
 
             const savePromise = (editingTaskId !== null) 
-                ? fetch(`/api/scheduler/tasks/${editingTaskId}`, { method: 'DELETE' }).then(() => {
-                    return fetch('/api/scheduler/tasks', {
+                ? fetch('/api/scheduler/tasks', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
-                    });
+                    }).then(res => {
+                    if (!res.ok) throw new Error('Failed to save task');
+                    // Only remove the old task after its replacement exists.
+                    return fetch(`/api/scheduler/tasks/${editingTaskId}`, { method: 'DELETE' });
                   })
                 : fetch('/api/scheduler/tasks', {
                     method: 'POST',

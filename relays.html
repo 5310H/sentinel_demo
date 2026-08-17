@@ -377,6 +377,10 @@
             
     <div class="settings-group">
         <input type="hidden" id="id" name="id" value="-1">
+        <div class="settings-row" style="background: rgba(0, 229, 255, 0.05);">
+            <div><div class="settings-label" style="color: var(--accent);">Relay Active / Enabled</div><div class="settings-label-sub">Disable/deactivate to ignore unused relay output</div></div>
+            <label class="switch"><input type="checkbox" id="enabled" name="enabled" checked><span class="slider"></span></label>
+        </div>
         <div class="settings-row">
             <div><div class="settings-label">Name</div><div class="settings-label-sub">Relay / Output Name</div></div>
             <input type="text" id="name" name="name" required>
@@ -481,23 +485,55 @@
                 return;
             }
             listElement.innerHTML = items.map(item => {
+                const isActive = item.enabled !== false;
+                const activeColor = isActive ? 'var(--ready)' : 'var(--text-dim)';
+                const activeBg = isActive ? 'rgba(0, 240, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)';
+                const activeBorder = isActive ? 'rgba(0, 240, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)';
                 
     return `
-    <div class="device-card">
+    <div class="device-card" style="${!isActive ? 'opacity: 0.65; border-color: rgba(255,255,255,0.05);' : ''}">
         <div class="device-header">
             <div class="device-name">${item.name}</div>
-            <div class="badge">${item.type}</div>
+            <div style="display:flex; gap:6px;">
+                <div class="badge" style="background:${activeBg}; color:${activeColor}; border:1px solid ${activeBorder};">${isActive ? 'ACTIVE' : 'INACTIVE'}</div>
+                <div class="badge">${item.type}</div>
+            </div>
         </div>
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>
             <div class="info-cell"><div class="info-label">GPIO / Entity</div><div class="info-value">${item.gpio !== undefined ? item.gpio : 'N/A'} / ${item.mapped_entity_id || 'Local'}</div></div>
+            <div class="info-cell"><div class="info-label">Status</div><div class="info-value" style="color:${activeColor}">${isActive ? 'Operational' : 'Unused / Disabled'}</div></div>
             <div class="info-cell"><div class="info-label">Duration</div><div class="info-value">${item.duration > 0 ? item.duration + 's' : 'Infinite'}</div></div>
         </div>
-        <button class="btn-secondary" onclick="editItem(${item.id})">Edit</button>
-        <button class="btn-danger" onclick="deleteItem(${item.id})">Delete</button>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn-secondary" onclick="editItem(${item.id})">Edit</button>
+            <button class="btn-secondary" style="color:${isActive ? '#ffaa00' : 'var(--ready)'};" onclick="toggleRelayActive(${item.id})">${isActive ? 'Deactivate' : 'Activate'}</button>
+            <button class="btn-danger" onclick="deleteItem(${item.id})">Delete</button>
+        </div>
     </div>`;
     
             }).join('');
+        }
+
+        async function toggleRelayActive(id) {
+            const item = allItems.find(i => i.id === id);
+            if (!item) return;
+            const updated = Object.assign({}, item, { enabled: !(item.enabled !== false) });
+            try {
+                const response = await fetch('/api/config/relays', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('sentinel_token')
+                    },
+                    body: JSON.stringify(updated)
+                });
+                if (!response.ok) throw new Error('Failed to toggle status');
+                showMessage(`Relay ${updated.enabled ? 'activated' : 'deactivated'} successfully`);
+                loadItems();
+            } catch (err) {
+                showMessage(err.message, true);
+            }
         }
 
         function editItem(idOrAddr) {

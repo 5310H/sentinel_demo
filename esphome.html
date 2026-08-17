@@ -356,18 +356,20 @@
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
                 
-                const esphomeDevices = rawDevices.filter(d => d.protocol === 0);
+                const esphomeDevices = rawDevices.filter(d => d.protocol === 0 || d.protocol === undefined || d.protocol === 'esphome' || !d.protocol);
                 if (esphomeDevices.length > 0) {
-                    esphomeDevices.forEach(dev => {
+                    esphomeDevices.forEach((dev, idx) => {
+                        const devKey = dev.id || dev.name || dev.host || ('node_' + idx);
+                        const safeKey = escapeHtml(devKey).replace(/'/g, "\\'");
                         list.innerHTML += `
                             <div class="device-card">
                                 <div class="device-info">
-                                    <h3>${escapeHtml(dev.name || dev.id)}</h3>
-                                    <p>${escapeHtml(dev.host)}:${dev.port} ${dev.encryption_key ? '🔒 Encrypted' : ''}</p>
+                                    <h3>${escapeHtml(dev.name || dev.id || dev.host || 'ESPHome Node')}</h3>
+                                    <p>${escapeHtml(dev.host || 'No Host')}:${dev.port || 6053} ${dev.encryption_key ? '🔒 Encrypted' : ''}</p>
                                 </div>
                                 <div class="device-actions">
-                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${escapeHtml(dev.id)}')">Edit</button>
-                                    <button class="btn-small" onclick="deleteDevice('${escapeHtml(dev.id)}')">Remove</button>
+                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeKey}')">Edit</button>
+                                    <button class="btn-small" onclick="deleteDevice('${safeKey}')">Remove</button>
                                 </div>
                             </div>
                         `;
@@ -380,11 +382,11 @@
             }
         }
 
-        function editDevice(id) {
-            const dev = rawDevices.find(d => d.id === id);
+        function editDevice(key) {
+            const dev = rawDevices.find(d => (d.id && d.id === key) || (d.name && d.name === key) || (d.host && d.host === key));
             if (!dev) return;
 
-            editingDeviceId = dev.id || id;
+            editingDeviceId = dev.id || dev.name || dev.host || key;
             document.getElementById('dev-id').value = dev.id || '';
             document.getElementById('dev-id').disabled = false;
             document.getElementById('dev-name').value = dev.name || '';
@@ -393,7 +395,7 @@
             document.getElementById('dev-pass').value = dev.password || '';
             document.getElementById('dev-enc-key').value = dev.encryption_key || '';
 
-            document.getElementById('form-section-title').innerText = 'Edit Node: ' + (dev.name || dev.id);
+            document.getElementById('form-section-title').innerText = 'Edit Node: ' + (dev.name || dev.id || dev.host);
             document.getElementById('btn-save').innerText = 'Update ESPHome Device';
             document.getElementById('btn-cancel').style.display = 'block';
             window.scrollTo({ top: document.getElementById('form-section-title').offsetTop - 20, behavior: 'smooth' });
@@ -415,22 +417,30 @@
         }
 
         async function saveDevice() {
-            const isEdit = (editingDeviceId !== null);
+            const isEdit = (editingDeviceId !== null && editingDeviceId !== '');
+            let idVal = document.getElementById('dev-id').value.trim();
+            const nameVal = document.getElementById('dev-name').value.trim();
+            const hostVal = document.getElementById('dev-host').value.trim();
+
+            if (!hostVal) {
+                alert('Hostname / IP address is required.');
+                return;
+            }
+
+            if (!idVal) {
+                idVal = nameVal ? nameVal.replace(/\s+/g, '_') : hostVal.replace(/[^a-zA-Z0-9_-]/g, '_');
+            }
+
             const payload = {
-                original_id: editingDeviceId || '',
-                id: document.getElementById('dev-id').value.trim(),
-                name: document.getElementById('dev-name').value.trim(),
+                original_id: editingDeviceId || idVal,
+                id: idVal,
+                name: nameVal || idVal,
                 protocol: 0,
-                host: document.getElementById('dev-host').value.trim(),
+                host: hostVal,
                 port: parseInt(document.getElementById('dev-port').value) || 6053,
                 password: document.getElementById('dev-pass').value.trim(),
                 encryption_key: document.getElementById('dev-enc-key').value.trim()
             };
-
-            if (!payload.id || !payload.host) {
-                alert('Device ID and Hostname are required.');
-                return;
-            }
 
             try {
                 const endpoint = isEdit ? '/api/devices/update' : '/api/devices/add';
@@ -457,8 +467,13 @@
             }
         }
 
-        async function deleteDevice(id) {
+        async function deleteDevice(key) {
             if (!confirm('Remove this physical device? Entities mapped to it will break.')) return;
+            const dev = rawDevices.find(d => (d.id && d.id === key) || (d.name && d.name === key) || (d.host && d.host === key));
+            const idToSend = (dev && dev.id) ? dev.id : key;
+            const nameToSend = (dev && dev.name) ? dev.name : '';
+            const hostToSend = (dev && dev.host) ? dev.host : '';
+
             try {
                 const res = await fetch('/api/devices/delete', {
                     method: 'POST',
@@ -466,17 +481,23 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ id })
+                    body: JSON.stringify({
+                        id: idToSend,
+                        name: nameToSend,
+                        host: hostToSend
+                    })
                 });
 
                 if (res.ok) {
                     loadDevices();
                 } else {
-                    alert('Failed to delete device.');
+                    const result = await res.json().catch(() => ({}));
+                    const detail = result.message || result.error || ('HTTP ' + res.status);
+                    alert('Failed to delete device: ' + detail);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error deleting device.');
+                alert('Error deleting device: ' + (err.message || err));
             }
         }
 

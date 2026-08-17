@@ -320,25 +320,26 @@
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
-                rawDevices = data.devices || [];
+                rawDevices = Array.isArray(data) ? data : (data.devices || []);
                 
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
                 
-                const tuyaDevices = rawDevices.filter(d => d.protocol === 1 || d.protocol === 2);
+                const tuyaDevices = rawDevices.filter(d => d.protocol === 1 || d.protocol === 2 || d.protocol === 'tuya');
                 
                 if (tuyaDevices.length > 0) {
-                    tuyaDevices.forEach(dev => {
-                        const safeId = (dev.id || '').replace(/'/g, "\\'");
+                    tuyaDevices.forEach((dev, idx) => {
+                        const devKey = dev.id || dev.name || dev.host || ('tuya_' + idx);
+                        const safeKey = escapeHtml(devKey).replace(/'/g, "\\'");
                         list.innerHTML += `
                             <div class="device-card">
                                 <div class="device-info">
-                                    <h3>${dev.name || dev.id}</h3>
-                                    <p>${dev.host}:${dev.port || 6668}</p>
+                                    <h3>${escapeHtml(dev.name || dev.id || dev.host || 'Tuya Device')}</h3>
+                                    <p>${escapeHtml(dev.host || 'No Host')}:${dev.port || 6668}</p>
                                 </div>
                                 <div class="device-actions">
-                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeId}')">Edit</button>
-                                    <button class="btn-small" onclick="deleteDevice('${safeId}')">Remove</button>
+                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeKey}')">Edit</button>
+                                    <button class="btn-small" onclick="deleteDevice('${safeKey}')">Remove</button>
                                 </div>
                             </div>
                         `;
@@ -423,8 +424,13 @@
             }
         }
 
-        async function deleteDevice(id) {
+        async function deleteDevice(key) {
             if (!confirm('Remove this physical device? Entities mapped to it will break.')) return;
+            const dev = rawDevices.find(d => (d.id && d.id === key) || (d.name && d.name === key) || (d.host && d.host === key));
+            const idToSend = (dev && dev.id) ? dev.id : key;
+            const nameToSend = (dev && dev.name) ? dev.name : '';
+            const hostToSend = (dev && dev.host) ? dev.host : '';
+
             try {
                 const res = await fetch('/api/devices/delete', {
                     method: 'POST',
@@ -432,14 +438,23 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ id: id })
+                    body: JSON.stringify({
+                        id: idToSend,
+                        name: nameToSend,
+                        host: hostToSend
+                    })
                 });
                 if (res.ok) {
                     resetForm();
                     loadDevices();
+                } else {
+                    const result = await res.json().catch(() => ({}));
+                    const detail = result.message || result.error || ('HTTP ' + res.status);
+                    alert('Failed to delete device: ' + detail);
                 }
             } catch (err) {
                 console.error(err);
+                alert('Error deleting device: ' + (err.message || err));
             }
         }
 

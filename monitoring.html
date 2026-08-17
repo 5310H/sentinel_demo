@@ -163,7 +163,10 @@
                     <input type="text" class="form-input" id="daily_report_cron" value="0 8 * * *">
                 </div>
             </div>
-            <button class="btn btn-test" onclick="testSMTP()">⚡ Test SMTP Email Transmission</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-test" onclick="testSMTP()">⚡ Test SMTP Email</button>
+                <button class="btn btn-test" style="background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.3); color:var(--accent);" onclick="testDailyReport()">📊 Test Send Daily Report</button>
+            </div>
             <div id="smtp-status" class="status-box"></div>
         </div>
 
@@ -457,6 +460,18 @@
             st.style.color = 'var(--accent)';
             try {
                 const res = await fetch('/api/test/smtp', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                const d = await res.json();
+                st.textContent = res.ok ? '✅ ' + d.message : '❌ ' + (d.error || 'Failed');
+                st.style.color = res.ok ? 'var(--ready)' : 'var(--alarm)';
+            } catch (e) { st.textContent = '❌ Error: ' + e.message; st.style.color = 'var(--alarm)'; }
+        }
+
+        async function testDailyReport() {
+            const st = document.getElementById('smtp-status');
+            st.textContent = 'Generating and dispatching daily health report...';
+            st.style.color = 'var(--accent)';
+            try {
+                const res = await fetch('/api/test/daily_report', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
                 const d = await res.json();
                 st.textContent = res.ok ? '✅ ' + d.message : '❌ ' + (d.error || 'Failed');
                 st.style.color = res.ok ? 'var(--ready)' : 'var(--alarm)';

@@ -315,25 +315,26 @@
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
-                rawDevices = data.devices || [];
+                rawDevices = Array.isArray(data) ? data : (data.devices || []);
                 
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
                 
-                const zigbeeDevices = rawDevices.filter(d => d.protocol === 3);
+                const zigbeeDevices = rawDevices.filter(d => d.protocol === 3 || d.protocol === 2 || d.protocol === 'zigbee');
                 
                 if (zigbeeDevices.length > 0) {
-                    zigbeeDevices.forEach(dev => {
-                        const safeId = (dev.id || '').replace(/'/g, "\\'");
+                    zigbeeDevices.forEach((dev, idx) => {
+                        const devKey = dev.id || dev.name || dev.host || ('zigbee_' + idx);
+                        const safeKey = escapeHtml(devKey).replace(/'/g, "\\'");
                         list.innerHTML += `
                             <div class="device-card">
                                 <div class="device-info">
-                                    <h3>${dev.name || dev.id}</h3>
-                                    <p>${dev.host}:${dev.port || 8443}</p>
+                                    <h3>${escapeHtml(dev.name || dev.id || dev.host || 'Zigbee Device')}</h3>
+                                    <p>${escapeHtml(dev.host || dev.zigbee_ieee || 'No Host')}:${dev.port || 8443}</p>
                                 </div>
                                 <div class="device-actions">
-                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeId}')">Edit</button>
-                                    <button class="btn-small" onclick="deleteDevice('${safeId}')">Remove</button>
+                                    <button class="btn-small" style="background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2);" onclick="editDevice('${safeKey}')">Edit</button>
+                                    <button class="btn-small" onclick="deleteDevice('${safeKey}')">Remove</button>
                                 </div>
                             </div>
                         `;
@@ -348,18 +349,19 @@
 
         let editingDeviceId = null;
 
-        function editDevice(id) {
-            const dev = rawDevices.find(d => d.id === id);
+        function editDevice(key) {
+            const dev = rawDevices.find(d => (d.id && d.id === key) || (d.name && d.name === key) || (d.host && d.host === key));
             if (!dev) return;
 
-            editingDeviceId = dev.id || id;
+            editingDeviceId = dev.id || dev.name || dev.host || key;
             document.getElementById('dev-id').value = dev.id || '';
-            document.getElementById('dev-id').disabled = false;
+            document.getElementById('dev-name').value = dev.name || '';
             document.getElementById('dev-host').value = dev.host || '';
-            document.getElementById('dev-pass').value = dev.zigbee_ieee || dev.password || '';
+            document.getElementById('dev-port').value = dev.port || 8443;
+            document.getElementById('dev-token').value = dev.password || '';
 
-            document.getElementById('form-section-title').innerText = 'Edit Node: ' + (dev.name || dev.id);
-            document.getElementById('btn-save').innerText = 'Update Zigbee Node';
+            document.getElementById('form-section-title').innerText = 'Edit Hub: ' + (dev.name || dev.id || dev.host);
+            document.getElementById('btn-save').innerText = 'Update Zigbee Hub';
             document.getElementById('btn-cancel').style.display = 'block';
             window.scrollTo({ top: document.getElementById('form-section-title').offsetTop - 20, behavior: 'smooth' });
         }
@@ -367,30 +369,41 @@
         function resetForm() {
             editingDeviceId = null;
             document.getElementById('dev-id').value = '';
-            document.getElementById('dev-id').disabled = false;
+            document.getElementById('dev-name').value = '';
             document.getElementById('dev-host').value = '';
-            document.getElementById('dev-pass').value = '';
+            document.getElementById('dev-port').value = 8443;
+            document.getElementById('dev-token').value = '';
 
-            document.getElementById('form-section-title').innerText = 'Add New Node';
-            document.getElementById('btn-save').innerText = 'Add Zigbee Node';
+            document.getElementById('form-section-title').innerText = 'Add Zigbee Hub';
+            document.getElementById('btn-save').innerText = 'Add Zigbee Hub';
             document.getElementById('btn-cancel').style.display = 'none';
         }
 
         async function saveDevice() {
-            const isEdit = (editingDeviceId !== null);
-            const payload = {
-                original_id: editingDeviceId || '',
-                id: document.getElementById('dev-id').value.trim(),
-                name: document.getElementById('dev-id').value.trim(),
-                protocol: 3,
-                host: document.getElementById('dev-host').value.trim(),
-                zigbee_ieee: document.getElementById('dev-pass').value.trim()
-            };
+            const isEdit = (editingDeviceId !== null && editingDeviceId !== '');
+            let idVal = document.getElementById('dev-id').value.trim();
+            const nameVal = document.getElementById('dev-name').value.trim();
+            const hostVal = document.getElementById('dev-host').value.trim();
 
-            if (!payload.id || !payload.host) {
-                alert('Device ID and Hostname are required.');
+            if (!hostVal) {
+                alert('Hostname / IP is required.');
                 return;
             }
+
+            if (!idVal) {
+                idVal = nameVal ? nameVal.replace(/\s+/g, '_') : hostVal.replace(/[^a-zA-Z0-9_-]/g, '_');
+            }
+
+            const payload = {
+                original_id: editingDeviceId || idVal,
+                id: idVal,
+                name: nameVal || idVal,
+                protocol: 3,
+                host: hostVal,
+                port: parseInt(document.getElementById('dev-port').value) || 8443,
+                password: document.getElementById('dev-token').value.trim(),
+                enabled: true
+            };
 
             try {
                 const endpoint = isEdit ? '/api/devices/update' : '/api/devices/add';
@@ -407,16 +420,23 @@
                     resetForm();
                     loadDevices();
                 } else {
-                    alert(isEdit ? 'Failed to update device.' : 'Failed to add device.');
+                    const result = await res.json().catch(() => ({}));
+                    const detail = result.message || result.error || ('HTTP ' + res.status);
+                    alert((isEdit ? 'Failed to update device: ' : 'Failed to add device: ') + detail);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error saving device.');
+                alert('Error saving device: ' + (err.message || err));
             }
         }
 
-        async function deleteDevice(id) {
+        async function deleteDevice(key) {
             if (!confirm('Remove this physical device? Entities mapped to it will break.')) return;
+            const dev = rawDevices.find(d => (d.id && d.id === key) || (d.name && d.name === key) || (d.host && d.host === key));
+            const idToSend = (dev && dev.id) ? dev.id : key;
+            const nameToSend = (dev && dev.name) ? dev.name : '';
+            const hostToSend = (dev && dev.host) ? dev.host : '';
+
             try {
                 const res = await fetch('/api/devices/delete', {
                     method: 'POST',
@@ -424,14 +444,23 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ id: id })
+                    body: JSON.stringify({
+                        id: idToSend,
+                        name: nameToSend,
+                        host: hostToSend
+                    })
                 });
                 if (res.ok) {
                     resetForm();
                     loadDevices();
+                } else {
+                    const result = await res.json().catch(() => ({}));
+                    const detail = result.message || result.error || ('HTTP ' + res.status);
+                    alert('Failed to delete device: ' + detail);
                 }
             } catch (err) {
                 console.error(err);
+                alert('Error deleting device: ' + (err.message || err));
             }
         }
 

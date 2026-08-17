@@ -762,7 +762,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026.07.09 (2026-08-16 22:28 EDT)</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026.07.09 (2026-08-17 13:07 EDT)</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -1542,12 +1542,16 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 }
                 
                 zones.forEach(z => {
+                    const isDisabled = (z.enabled === false);
                     const card = document.createElement('div');
-                    card.className = 'zone-card' + (z.open ? ' open' : '');
+                    card.className = 'zone-card' + (isDisabled ? ' disabled' : (z.open ? ' open' : ''));
+                    if (isDisabled) {
+                        card.style.opacity = '0.5';
+                    }
                     
-                    const stateText = z.open ? 'OPEN' : 'CLOSED';
-                    let html = `<span class="zone-name" title="${z.name}">${z.name}</span> <span class="zone-state">${stateText}</span>`;
-                    if (z.raw_adc_voltage !== undefined) {
+                    const stateText = isDisabled ? 'DISABLED' : (z.open ? 'OPEN' : 'CLOSED');
+                    let html = `<span class="zone-name" title="${z.name}">${z.name}</span> <span class="zone-state" style="${isDisabled ? 'color:#8892b0; font-size:10px;' : ''}">${stateText}</span>`;
+                    if (z.raw_adc_voltage !== undefined && !isDisabled) {
                         html += `<div style="font-size: 10px; color: #8892b0; margin-top: 5px; width: 100%;">ADC: ${z.raw_adc_voltage}V</div>`;
                     }
                     card.innerHTML = html;

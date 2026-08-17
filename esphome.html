@@ -24,7 +24,6 @@
             document.addEventListener(evt, resetInactivityTimer, { passive: true });
         });
         resetInactivityTimer();
-
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -301,7 +300,7 @@
                 <div class="form-desc">Optional legacy authentication password</div>
             </div>
             <div class="password-wrapper">
-                <input type="password" class="form-input" id="dev-pass" placeholder="Optional">
+                <input type="text" class="form-input" id="dev-pass" placeholder="Optional">
                 <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('dev-pass', this)">👁️</button>
             </div>
         </div>
@@ -312,7 +311,7 @@
                 <div class="form-desc">Base64 Noise PSK for encrypted API connections</div>
             </div>
             <div class="password-wrapper">
-                <input type="password" class="form-input" id="dev-enc-key" placeholder="Base64 Key (Optional)">
+                <input type="text" class="form-input" id="dev-enc-key" placeholder="Base64 Key (Optional)">
                 <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('dev-enc-key', this)">👁️</button>
             </div>
         </div>
@@ -326,6 +325,7 @@
     <script>
         const token = sessionStorage.getItem('sentinel_token');
         let rawDevices = [];
+        let editingDeviceId = null;
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -384,8 +384,9 @@
             const dev = rawDevices.find(d => d.id === id);
             if (!dev) return;
 
+            editingDeviceId = dev.id || id;
             document.getElementById('dev-id').value = dev.id || '';
-            document.getElementById('dev-id').disabled = true;
+            document.getElementById('dev-id').disabled = false;
             document.getElementById('dev-name').value = dev.name || '';
             document.getElementById('dev-host').value = dev.host || '';
             document.getElementById('dev-port').value = dev.port || 6053;
@@ -399,6 +400,7 @@
         }
 
         function resetForm() {
+            editingDeviceId = null;
             document.getElementById('dev-id').value = '';
             document.getElementById('dev-id').disabled = false;
             document.getElementById('dev-name').value = '';
@@ -413,8 +415,9 @@
         }
 
         async function saveDevice() {
-            const isEdit = document.getElementById('dev-id').disabled;
+            const isEdit = (editingDeviceId !== null);
             const payload = {
+                original_id: editingDeviceId || '',
                 id: document.getElementById('dev-id').value.trim(),
                 name: document.getElementById('dev-name').value.trim(),
                 protocol: 0,
@@ -444,11 +447,13 @@
                     resetForm();
                     loadDevices();
                 } else {
-                    alert(isEdit ? 'Failed to update device.' : 'Failed to add device.');
+                    const result = await res.json().catch(() => ({}));
+                    const detail = result.message || result.error || ('HTTP ' + res.status);
+                    alert((isEdit ? 'Failed to update device: ' : 'Failed to add device: ') + detail);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error saving device.');
+                alert('Error saving device: ' + (err.message || err));
             }
         }
 
@@ -461,14 +466,17 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({ id: id })
+                    body: JSON.stringify({ id })
                 });
+
                 if (res.ok) {
-                    resetForm();
                     loadDevices();
+                } else {
+                    alert('Failed to delete device.');
                 }
             } catch (err) {
                 console.error(err);
+                alert('Error deleting device.');
             }
         }
 

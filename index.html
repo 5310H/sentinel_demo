@@ -762,7 +762,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026.07.09 (2026-08-15 16:40 EDT)</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026.07.09 (2026-08-16 22:28 EDT)</div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -1637,6 +1637,8 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             }
         });
 
+        let pendingAction = null;
+
         async function openKeypad() {
             // First interaction generally allows audio context to start
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -1661,6 +1663,9 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 }
                 document.getElementById('btn-unlock-text').innerText = 'UNLOCK SYSTEM';
                 keypadMode = "pin";
+                clr();
+                const errEl = document.getElementById('pin-error-msg');
+                if (errEl) errEl.innerText = '';
                 document.getElementById('keypad-title').innerText = "ENTER PIN";
                 document.getElementById('keypad-title').style.color = "white";
                 document.getElementById('remember-device-container').style.display = "none";
@@ -1668,19 +1673,43 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             }
         }
         function closeKeypad() {
+            pendingAction = null;
             document.getElementById('keypad-modal').classList.remove('visible');
             document.getElementById('remember-device-container').style.display = "none";
             document.getElementById('remember-device-cb').checked = false;
             clr();
+            const errEl = document.getElementById('pin-error-msg');
+            if (errEl) errEl.innerText = '';
         }
         
+        function setPinError(msg) {
+            const errEl = document.getElementById('pin-error-msg');
+            if (errEl) {
+                errEl.innerText = msg;
+                errEl.style.color = '#ef4444';
+                setTimeout(() => {
+                    if (errEl && errEl.innerText === msg) {
+                        errEl.innerText = '';
+                    }
+                }, 3500);
+            }
+        }
+
         function press(n) { 
+            const errEl = document.getElementById('pin-error-msg');
+            if (errEl) errEl.innerText = '';
             if(currentPin.length < 6) { 
                 currentPin += n; 
                 document.getElementById('pin-display').innerText = (keypadMode === 'pin') ? "*".repeat(currentPin.length) : currentPin; 
             } 
         }
-        function clr() { currentPin = ""; document.getElementById('pin-display').innerText = ""; }
+        function clr() { 
+            currentPin = ""; 
+            const disp = document.getElementById('pin-display');
+            if (disp) disp.innerText = "";
+            const errEl = document.getElementById('pin-error-msg');
+            if (errEl) errEl.innerText = '';
+        }
         
         // Setup TOTP code logic copied from original
         function generateSecret() {
@@ -1743,8 +1772,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 
                 if (keypadMode === 'totp') {
                     if (currentPin.length !== 6) {
-                        document.getElementById('pin-error-msg').innerText = 'INVALID LENGTH';
-                        document.getElementById('pin-error-msg').style.color = '#ef4444';
+                        setPinError('INVALID LENGTH');
                         clr();
                         isSubmitting = false;
                         return;
@@ -1766,8 +1794,7 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                         }
                         grantAccess(d2);
                     } else { 
-                        document.getElementById('pin-error-msg').innerText = 'INVALID 2FA CODE';
-                        document.getElementById('pin-error-msg').style.color = '#ef4444';
+                        setPinError('INVALID 2FA CODE');
                         clr();
                     }
                     isSubmitting = false;
@@ -1775,11 +1802,17 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 }
 
                 // PIN Mode
+                const pinTrimmed = currentPin.trim();
+                if (pinTrimmed.length < 4) {
+                    setPinError('ENTER 4-6 DIGIT PIN');
+                    isSubmitting = false;
+                    return;
+                }
                 const deviceToken = localStorage.getItem('sentinel_device_token') || "";
                 const r = await fetch('/api/auth', { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({pin: currentPin, step: 'pin', device_token: deviceToken}) 
+                    body: JSON.stringify({pin: pinTrimmed, step: 'pin', device_token: deviceToken}) 
                 });
                 const d = await r.json();
                 
@@ -1789,20 +1822,18 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                     showTOTPSetup(d.name);
                 } else if(d.error === 'totp_required') {
                     // Switch keypad to TOTP mode
-                    savedPin = currentPin;
+                    savedPin = pinTrimmed;
                     keypadMode = 'totp';
                     document.getElementById('keypad-title').innerText = "ENTER 2FA CODE";
                     document.getElementById('keypad-title').style.color = "var(--accent)";
                     document.getElementById('remember-device-container').style.display = "flex";
                     clr();
                 } else { 
-                    document.getElementById('pin-error-msg').innerText = 'INVALID PIN';
-                    document.getElementById('pin-error-msg').style.color = '#ef4444';
+                    setPinError('INVALID PIN');
                     clr(); 
                 }
             } catch(e) { 
-                document.getElementById('pin-error-msg').innerText = 'ERROR - TRY AGAIN';
-                document.getElementById('pin-error-msg').style.color = '#ef4444';
+                setPinError('ERROR - TRY AGAIN');
                 clr();
             } finally {
                 isSubmitting = false;
@@ -1811,11 +1842,15 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         
         function grantAccess(authData) {
             document.body.classList.add('unlocked');
-            sessionStorage.setItem('sentinel_token', currentPin || "auth_token");
+            const savedToken = currentPin || (authData.name ? authData.name : "auth_token");
+            sessionStorage.setItem('sentinel_token', savedToken);
             sessionStorage.setItem('sentinel_is_admin', authData.is_admin ? "true" : "false");
             isAuthenticated = true;
             isAdmin = authData.is_admin;
             currentUser = authData.user || authData.name;
+            
+            const act = pendingAction;
+            pendingAction = null;
             closeKeypad();
             
             document.getElementById('btn-unlock-text').innerText = "LOCK CONSOLE";
@@ -1835,6 +1870,10 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
             
             check(); // immediate refresh for full status
             fetchAuditLog();
+
+            if (act) {
+                doAction(act.url, act.body);
+            }
         }
 
         // Apply access rules on load if token exists
@@ -2011,79 +2050,86 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         document.addEventListener('click', unlockTTS);
         document.addEventListener('touchstart', unlockTTS);
 
+        let lastStateVersion = null;
+        let lastFullSyncTime = 0;
+
         async function check() {
             try {
-                const r = await fetch('/api/status');
+                const now = Date.now();
+                const isHeartbeat = (now - lastFullSyncTime >= 300000); // 5-minute heartbeat
+                const url = (lastStateVersion !== null && !isHeartbeat) 
+                    ? `/api/status?v=${lastStateVersion}` 
+                    : '/api/status';
+
+                const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
+                if (!r.ok) return;
                 const d = await r.json();
-                if(d.config) updateUI(d.config);
+
+                // If nothing has changed, skip DOM re-renders completely!
+                if (d.changed === false) {
+                    return;
+                }
+
+                if (d.v !== undefined) {
+                    lastStateVersion = d.v;
+                }
+                lastFullSyncTime = now;
+
+                if (d.config) updateUI(d.config);
                 if (window.updateLocalSystemHealth) window.updateLocalSystemHealth(d);
-            } catch(e) { console.error('Status fetch failed:', e); }
-            
-            try {
-                const r2 = await fetch('/status');
-                if(r2.ok) {
-                    const d2 = await r2.json();
-                    if (window.updateLocalSystemHealth) window.updateLocalSystemHealth(d2);
-                    
-                    // Temp
-                    if(d2.temperature_f !== undefined) {
-                        document.getElementById('temp-value').innerText = Math.round(d2.temperature_f) + '°F';
-                    }
-                    
-                    // Power
-                    const pwrVal = document.getElementById('power-value');
-                    if(d2.on_backup_power) { pwrVal.innerText = 'BATTERY'; pwrVal.className = 'ind-value warn'; } 
+
+                // Temperature
+                if (d.temperature_f !== undefined) {
+                    const tempEl = document.getElementById('temp-value');
+                    if (tempEl) tempEl.innerText = Math.round(d.temperature_f) + '°F';
+                }
+
+                // Power
+                const pwrVal = document.getElementById('power-value');
+                if (pwrVal) {
+                    if (d.on_backup_power) { pwrVal.innerText = 'BATTERY'; pwrVal.className = 'ind-value warn'; } 
                     else { pwrVal.innerText = 'AC MAIN'; pwrVal.className = 'ind-value ok'; }
-                    
-                    // Tamper
-                    const tmpVal = document.getElementById('tamper-value');
-                    if(d2.tamper_detected) { tmpVal.innerText = 'ALERT!'; tmpVal.className = 'ind-value alert'; } 
+                }
+
+                // Tamper
+                const tmpVal = document.getElementById('tamper-value');
+                if (tmpVal) {
+                    if (d.tamper_detected) { tmpVal.innerText = 'ALERT!'; tmpVal.className = 'ind-value alert'; } 
                     else { tmpVal.innerText = 'SECURE'; tmpVal.className = 'ind-value ok'; }
-                    
-                    // Network
-                    const netVal = document.getElementById('net-value');
-                    if(d2.network_state !== undefined) {
-                        if (d2.network_state === 3) { netVal.innerText = 'OFFLINE'; netVal.className = 'ind-value alert'; }
-                        else if (d2.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
-                        else if (d2.network_state === 1) { netVal.innerText = 'PRIMARY'; netVal.className = 'ind-value ok'; }
-                        else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
+                }
+
+                // Network
+                const netVal = document.getElementById('net-value');
+                if (netVal && d.network_state !== undefined) {
+                    if (d.network_state === 3) { netVal.innerText = 'OFFLINE'; netVal.className = 'ind-value alert'; }
+                    else if (d.network_state === 2) { netVal.innerText = 'LOCAL'; netVal.className = 'ind-value warn'; }
+                    else if (d.network_state === 1) { netVal.innerText = 'PRIMARY'; netVal.className = 'ind-value ok'; }
+                    else { netVal.innerText = 'UNKNOWN'; netVal.className = 'ind-value'; }
+                }
+
+                // SIA DC-09 Status
+                const siaVal = document.getElementById('sia-status');
+                const siaRec = document.getElementById('sia-receiver');
+                if (siaVal && siaRec) {
+                    if (d.is_sia_enabled) {
+                        siaVal.innerText = 'ACTIVE (SIA IP)';
+                        siaVal.className = 'ind-value ok';
+                        siaRec.innerText = (d.sia_receiver_ip || '127.0.0.1') + ':' + (d.sia_receiver_port || 2020);
+                    } else {
+                        siaVal.innerText = 'DISABLED';
+                        siaVal.className = 'ind-value';
+                        siaRec.innerText = '--';
                     }
-                    
-                    // SIA DC-09 Status
-                    const siaVal = document.getElementById('sia-status');
-                    const siaRec = document.getElementById('sia-receiver');
-                    if (siaVal && siaRec) {
-                        if (d2.is_sia_enabled) {
-                            siaVal.innerText = 'ACTIVE (SIA IP)';
-                            siaVal.className = 'ind-value ok';
-                            siaRec.innerText = (d2.sia_receiver_ip || '127.0.0.1') + ':' + (d2.sia_receiver_port || 2020);
-                        } else {
-                            siaVal.innerText = 'DISABLED';
-                            siaVal.className = 'ind-value';
-                            siaRec.innerText = '--';
-                        }
-                    }
-                } else {
-                    // Health endpoint unreachable — show error state
-                    document.getElementById('temp-value').innerText = 'ERROR';
-                    document.getElementById('temp-value').style.color = 'var(--alarm)';
-                    const netVal = document.getElementById('net-value');
-                    netVal.innerText = 'NO DATA';
-                    netVal.className = 'ind-value alert';
                 }
             } catch(e) {
-                console.error('Health fetch failed:', e);
-                document.getElementById('temp-value').innerText = 'ERROR';
-                document.getElementById('temp-value').style.color = 'var(--alarm)';
-                const netVal = document.getElementById('net-value');
-                netVal.innerText = 'NO DATA';
-                netVal.className = 'ind-value alert';
+                // Ignore transient network aborts during background transitions
             }
         }
 
         async function doAction(url, body) {
-            let pinToSend = currentPin || sessionStorage.getItem('sentinel_token') || "auth_token";
-            if(!isAuthenticated && !pinToSend) {
+            let pinToSend = currentPin || (isAuthenticated ? sessionStorage.getItem('sentinel_token') : "");
+            if (!isAuthenticated || !pinToSend || pinToSend === "auth_token") {
+                pendingAction = { url, body };
                 openKeypad();
                 return;
             }
@@ -2092,19 +2138,30 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 const res = await fetch(url, { 
                     method: 'POST', 
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(body) 
+                    body: JSON.stringify(body),
+                    signal: AbortSignal.timeout(6000)
                 });
-                const data = await res.json();
+                let data = {};
+                try {
+                    data = await res.json();
+                } catch(parseErr) {
+                    data = { status: res.ok ? 'ok' : 'error' };
+                }
+
                 if (!res.ok || data.status === 'error') {
                     alert('Action failed: ' + (data.message || 'Unknown error'));
                     if (data.message === 'Unauthorized' || res.status === 401) {
                         currentPin = ""; // Reset pin on auth failure
                     }
                 } else {
-                    setTimeout(() => { location.reload(); }, 500);
+                    // Instantly sync latest status smoothly without a disruptive full page reload
+                    lastStateVersion = null;
+                    check();
                 }
             } catch(e) {
-                alert('Request failed: ' + e.message);
+                // If a socket closed before HTTP response body drained, sync status immediately
+                lastStateVersion = null;
+                setTimeout(check, 300);
             }
         }
 
@@ -2310,8 +2367,23 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
         check();
         loadDashboardCameras();
 
-        // Background polling loop (every 6 seconds)
-        setInterval(check, 6000);
+        // Adaptive Background Polling Loop (Throttles when tab is in background/screen locked)
+        let pollTimer = null;
+        function resetPolling(intervalMs) {
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(check, intervalMs);
+        }
+
+        // 4s when active, 30s when minimized/screen locked
+        resetPolling(4000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                resetPolling(30000); // 30s background poll
+            } else {
+                check(); // Instant refresh on resume
+                resetPolling(4000); // 4s active poll
+            }
+        });
 
         // --- THEME TOGGLE LOGIC ---
         function toggleTheme() {

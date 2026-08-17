@@ -524,7 +524,7 @@
                         <div class="settings-label-sub">Standard login code</div>
                     </div>
                     <div class="password-wrapper">
-                        <input type="password" id="pin" placeholder="••••">
+                        <input type="text" id="pin" placeholder="1234">
                         <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('pin', this)">👁️</button>
                     </div>
                 </div>
@@ -535,7 +535,7 @@
                         <div class="settings-label-sub">Triggers Silent Duress & Central Station Dispatch</div>
                     </div>
                     <div class="password-wrapper">
-                        <input type="password" id="emergency-pin" placeholder="••••">
+                        <input type="text" id="emergency-pin" placeholder="1234">
                         <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('emergency-pin', this)">👁️</button>
                     </div>
                 </div>
@@ -599,6 +599,7 @@
 
                 const res = await fetch('/api/users?t=' + Date.now(), { signal: AbortSignal.timeout(2500) });
                 const users = await res.json();
+                window.currentUsersList = users;
                 const list = document.getElementById('user-list');
                 
                 list.innerHTML = users.map(u => `
@@ -614,9 +615,9 @@
                         <div class="user-meta">${escapeHtml(u.email) || 'No Email Configured'}</div>
                         
                         <div class="action-row">
-                            <button class="btn-small" onclick="setEdit('${u.name}','${u.email}',${u.notify},'${u.emergency_pin || ''}',${u.is_admin ? 1 : 0})">Edit</button>
-                            <button class="btn-small btn-test" onclick="testNotify('${u.name}')">Test Alert</button>
-                            <button class="btn-small btn-del" onclick="deleteUser('${u.name}')">Revoke</button>
+                            <button class="btn-small" onclick="setEditByName('${escapeHtml(u.name)}')">Edit</button>
+                            <button class="btn-small btn-test" onclick="testNotify('${escapeHtml(u.name)}')">Test Alert</button>
+                            <button class="btn-small btn-del" onclick="deleteUser('${escapeHtml(u.name)}')">Revoke</button>
                         </div>
                     </div>
                 `).join('');
@@ -629,15 +630,18 @@
             }
         }
 
-        function setEdit(name, email, notify, emergencyPin, isAdmin) {
-            document.getElementById('name').value = name;
+        function setEditByName(name) {
+            const u = (window.currentUsersList || []).find(x => x.name === name);
+            if (!u) return;
+            document.getElementById('name').value = u.name;
             document.getElementById('name').disabled = true;
-            document.getElementById('email').value = email;
-            document.getElementById('notify').value = notify;
-            document.getElementById('is-admin').value = isAdmin || 0;
-            document.getElementById('emergency-pin').value = emergencyPin || '';
+            document.getElementById('pin').value = u.pin || '';
+            document.getElementById('emergency-pin').value = u.emergency_pin || '';
+            document.getElementById('email').value = u.email || '';
+            document.getElementById('notify').value = u.notify !== undefined ? u.notify : 0;
+            document.getElementById('is-admin').value = u.is_admin ? 1 : 0;
             document.getElementById('save-btn').innerText = "Update Record";
-            document.getElementById('form-label').innerText = "Edit User: " + name;
+            document.getElementById('form-label').innerText = "Edit User: " + u.name;
             document.getElementById('cancel-btn').style.display = "block";
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -664,11 +668,12 @@
                 emergency_pin: document.getElementById('emergency-pin').value,
                 email: document.getElementById('email').value,
                 notify: parseInt(document.getElementById('notify').value),
-                is_admin: parseInt(document.getElementById('is-admin').value)
+                is_admin: parseInt(document.getElementById('is-admin').value) === 1
             };
 
-            await fetch(isUpdate ? '/api/users/update' : '/api/users/add', {
+            await fetch('/api/users', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             resetForm();

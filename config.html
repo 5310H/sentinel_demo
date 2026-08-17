@@ -237,8 +237,8 @@
                     { id: "name", label: "Owner Name", type: "text" },
                     { id: "email", label: "Email Address", type: "text" },
                     { id: "phone", label: "Phone Number", type: "text" },
-                    { id: "pin", label: "Master PIN", type: "password" },
-                    { id: "duress_pin", label: "Silent Duress PIN", type: "password" },
+                    { id: "pin", label: "Master PIN", type: "text" },
+                    { id: "duress_pin", label: "Silent Duress PIN", type: "text" },
                     { id: "instructions", label: "Emergency Instructions", type: "text" }
                 ]
             },
@@ -282,15 +282,15 @@
                     { id: "mqtt_server", label: "External MQTT Server IP", type: "text" },
                     { id: "mqtt_port", label: "External MQTT Port", type: "number" },
                     { id: "mqtt_user", label: "External MQTT User", type: "text" },
-                    { id: "mqtt_pass", label: "External MQTT Password", type: "password" },
+                    { id: "mqtt_pass", label: "External MQTT Password", type: "text" },
                     { id: "embedded_mqtt_port", label: "Internal Broker Port (Default 8883)", type: "number" },
                     { id: "is_presence_enabled", label: "Enable Presence Tracker (WiFi Probe / ARP)", type: "checkbox" },
                     { id: "is_telegram_enabled", label: "Enable Telegram Bot Alerts", type: "checkbox" },
                     { id: "telegram_id", label: "Telegram Chat ID", type: "text" },
-                    { id: "telegram_token", label: "Telegram Bot Token", type: "password" },
+                    { id: "telegram_token", label: "Telegram Bot Token", type: "text" },
                     { id: "opnsense_ip", label: "OPNsense Gateway IP", type: "text" },
-                    { id: "opnsense_key", label: "OPNsense API Key", type: "password" },
-                    { id: "opnsense_secret", label: "OPNsense API Secret", type: "password" },
+                    { id: "opnsense_key", label: "OPNsense API Key", type: "text" },
+                    { id: "opnsense_secret", label: "OPNsense API Secret", type: "text" },
                     { id: "nvrserver_url", label: "NVR Server URL (Frigate)", type: "text" },
                     { id: "haintegration_url", label: "Home Assistant URL", type: "text" }
                 ]
@@ -301,14 +301,14 @@
                     { id: "smtp_server", label: "SMTP Server Host / IP", type: "text" },
                     { id: "smtp_port", label: "SMTP Port (Default 587 or 465)", type: "number" },
                     { id: "smtp_user", label: "SMTP Username / Email", type: "text" },
-                    { id: "smtp_pass", label: "SMTP Password / App Password", type: "password" }
+                    { id: "smtp_pass", label: "SMTP Password / App Password", type: "text" }
                 ]
             },
             {
                 name: "Noonlight & Professional Dispatch",
                 fields: [
                     { id: "is_noonlight_enabled", label: "Enable Noonlight Professional Dispatch", type: "checkbox" },
-                    { id: "monitor_service_key", label: "Noonlight API Secret Key", type: "password" },
+                    { id: "monitor_service_key", label: "Noonlight API Secret Key", type: "text" },
                     { id: "monitoring_url", label: "Noonlight API Endpoint URL", type: "text" },
                     { id: "is_monitor_police", label: "Dispatch Police on Burglary / Intrusion", type: "checkbox" },
                     { id: "is_monitor_fire", label: "Dispatch Fire Department on Smoke / Heat", type: "checkbox" },
@@ -325,7 +325,7 @@
                     { id: "sia_receiver_port", label: "SIA Receiver Port (Default 2020)", type: "number" },
                     { id: "sia_account_id", label: "SIA Account ID (Hex/Alphanumeric)", type: "text" },
                     { id: "sia_prefix", label: "SIA Prefix (Default: SIA-DCS)", type: "text" },
-                    { id: "sia_encryption_key", label: "SIA AES-128 Encryption Key (Hex)", type: "password" },
+                    { id: "sia_encryption_key", label: "SIA AES-128 Encryption Key (Hex)", type: "text" },
                     { id: "sia_ping_interval_sec", label: "SIA Ping / Heartbeat Interval (sec)", type: "number" }
                 ]
             },

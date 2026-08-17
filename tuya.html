@@ -351,12 +351,15 @@
             }
         }
 
+        let editingDeviceId = null;
+
         function editDevice(id) {
             const dev = rawDevices.find(d => d.id === id);
             if (!dev) return;
 
+            editingDeviceId = dev.id || id;
             document.getElementById('dev-id').value = dev.id || '';
-            document.getElementById('dev-id').disabled = true;
+            document.getElementById('dev-id').disabled = false;
             document.getElementById('dev-host').value = dev.host || '';
             document.getElementById('dev-device-id').value = dev.tuya_device_id || '';
             document.getElementById('dev-pass').value = dev.tuya_local_key || dev.password || '';
@@ -368,6 +371,7 @@
         }
 
         function resetForm() {
+            editingDeviceId = null;
             document.getElementById('dev-id').value = '';
             document.getElementById('dev-id').disabled = false;
             document.getElementById('dev-host').value = '';
@@ -380,8 +384,9 @@
         }
 
         async function saveDevice() {
-            const isEdit = document.getElementById('dev-id').disabled;
+            const isEdit = (editingDeviceId !== null);
             const payload = {
+                original_id: editingDeviceId || '',
                 id: document.getElementById('dev-id').value.trim(),
                 name: document.getElementById('dev-id').value.trim(),
                 protocol: 1,

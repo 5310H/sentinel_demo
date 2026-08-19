@@ -320,7 +320,7 @@
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
                 
-                const zigbeeDevices = rawDevices.filter(d => d.protocol === 3 || d.protocol === 2 || d.protocol === 'zigbee');
+                const zigbeeDevices = rawDevices.filter(d => d.protocol === 3 || d.protocol === 'zigbee');
                 
                 if (zigbeeDevices.length > 0) {
                     zigbeeDevices.forEach((dev, idx) => {

@@ -762,7 +762,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: 2026.07.09 (2026-08-17 16:31 EDT)</div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: <span id="build-version">2026-08-19 15:50 EDT</span></div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -1536,13 +1536,16 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 if (!grid) return;
                 grid.innerHTML = '';
                 
-                if(!zones || zones.length === 0) {
+                // Inactive zones remain configurable in Zone Maintenance, but
+                // do not belong on the operational dashboard.
+                const activeZones = (zones || []).filter(z => z.enabled !== false);
+                if(activeZones.length === 0) {
                     grid.innerHTML = '<div style="color:#666; font-size:12px;">No zones configured</div>';
                     return;
                 }
                 
-                zones.forEach(z => {
-                    const isDisabled = (z.enabled === false);
+                activeZones.forEach(z => {
+                    const isDisabled = false;
                     const card = document.createElement('div');
                     card.className = 'zone-card' + (isDisabled ? ' disabled' : (z.open ? ' open' : ''));
                     if (isDisabled) {
@@ -2078,6 +2081,14 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                     lastStateVersion = d.v;
                 }
                 lastFullSyncTime = now;
+
+                // This comes from the running firmware, not SPIFFS.  It lets
+                // the dashboard confirm a normal firmware flash even when the
+                // filesystem is intentionally left untouched to preserve config.
+                if (d.build_timestamp) {
+                    const buildEl = document.getElementById('build-version');
+                    if (buildEl) buildEl.textContent = d.build_timestamp;
+                }
 
                 if (d.config) updateUI(d.config);
                 if (window.updateLocalSystemHealth) window.updateLocalSystemHealth(d);

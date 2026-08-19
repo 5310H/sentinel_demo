@@ -419,15 +419,20 @@
         async function loadDevices() {
             try {
                 const res = await fetch('/api/devices', {
+                    cache: 'no-store',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                if (!res.ok) throw new Error('Device registry returned HTTP ' + res.status);
                 const data = await res.json();
+                // The unified device API returns an array. Keep support for
+                // the older { devices: [...] } response during migration.
+                const devices = Array.isArray(data) ? data : (data.devices || []);
                 
                 const list = document.getElementById('devices-list');
                 list.innerHTML = '';
                 
-                if (data.devices && data.devices.length > 0) {
-                    data.devices.forEach(dev => {
+                if (devices.length > 0) {
+                    devices.forEach(dev => {
                         list.innerHTML += `
                             <div class="device-card" onclick="showEntitiesView('${dev.id}', '${dev.name}')">
                                 <div class="device-info">

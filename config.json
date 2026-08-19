@@ -45,6 +45,7 @@
   "is_daily_report_enabled": true,
   "daily_report_cron": "0 8 * * *",
   "opnsense_ip": "192.168.69.1",
+  "allow_local_self_signed_tls": false,
   "opnsense_key": "YOUR_API_KEY",
   "opnsense_secret": "YOUR_API_SECRET",
   "edge_proxy_url": "https://sentinel-checkin-proxy.trahreg.workers.dev",

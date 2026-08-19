@@ -348,8 +348,10 @@
         async function loadDevices() {
             try {
                 const res = await fetch('/api/devices', {
+                    cache: 'no-store',
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                if (!res.ok) throw new Error('Device registry returned HTTP ' + res.status);
                 const data = await res.json();
                 rawDevices = Array.isArray(data) ? data : (data.devices || []);
                 
@@ -475,7 +477,7 @@
             const hostToSend = (dev && dev.host) ? dev.host : '';
 
             try {
-                const res = await fetch('/api/devices/delete', {
+                let res = await fetch('/api/devices/delete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -487,6 +489,19 @@
                         host: hostToSend
                     })
                 });
+
+                // Older ESP32 firmware used this ESPHome-specific endpoint.
+                // Retry only when the unified endpoint itself is unavailable.
+                if (res.status === 404) {
+                    res = await fetch('/api/esphome/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({ hostname: hostToSend || idToSend })
+                    });
+                }
 
                 if (res.ok) {
                     loadDevices();

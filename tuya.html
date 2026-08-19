@@ -325,7 +325,7 @@
                 const list = document.getElementById('device-list');
                 list.innerHTML = '';
                 
-                const tuyaDevices = rawDevices.filter(d => d.protocol === 1 || d.protocol === 2 || d.protocol === 'tuya');
+                const tuyaDevices = rawDevices.filter(d => d.protocol === 1 || d.protocol === 'tuya');
                 
                 if (tuyaDevices.length > 0) {
                     tuyaDevices.forEach((dev, idx) => {

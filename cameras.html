@@ -553,9 +553,9 @@
             <div class="modal-title">Frigate NVR 1-Click Auto-Discovery</div>
             <div class="form-group">
                 <label class="form-label">Frigate Server URL</label>
-                <input type="text" class="form-input" id="frigate-url" placeholder="http://192.168.69.7:5069">
+                <input type="text" class="form-input" id="frigate-url" placeholder="http://192.168.69.7:5000">
                 <span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 6px; line-height: 1.4;">
-                    💡 <b>Home Assistant Add-on Setup:</b> In HA <i>Settings → Add-ons → Frigate → Configuration</i>, set <b>5069</b> (or <b>5000</b> / <b>8971</b>) under Network options to expose Frigate's direct REST API to Sentinel.
+                    💡 Enter Frigate's direct REST API URL. In a browser, <code>&lt;URL&gt;/api/config</code> must return JSON containing <code>cameras</code>. Use local <b>http://</b> unless the ESP trusts the HTTPS certificate; do not use a Home Assistant dashboard or Ingress URL.
                 </span>
             </div>
             <div id="frigate-status-container" style="display:flex; align-items:center; gap:10px; margin-top:14px; min-height:30px;">
@@ -721,10 +721,13 @@
             grid.innerHTML = '';
 
             cameras.forEach((cam, index) => {
+                const hasSnapshot = Number(cam.last_snapshot || 0) > 0;
                 const statusClass = !cam.enabled ? 'status-disabled' :
-                    cam.consecutive_failures > 2 ? 'status-offline' : 'status-online';
+                    cam.consecutive_failures > 2 ? 'status-offline' :
+                    hasSnapshot ? 'status-online' : 'status-disabled';
                 const statusText = !cam.enabled ? 'Disabled' :
-                    cam.consecutive_failures > 2 ? 'Offline' : 'Online';
+                    cam.consecutive_failures > 2 ? 'Offline' :
+                    hasSnapshot ? 'Online' : 'No Snapshot';
 
                 const cardClass = !cam.enabled ? 'disabled' :
                     cam.consecutive_failures > 2 ? 'offline' : '';
@@ -754,6 +757,7 @@
                         <div class="camera-actions">
                             <button class="btn btn-secondary" onclick="refreshSnapshot(${index})">Refresh</button>
                             <button class="btn btn-secondary" onclick="testCamera(${index})">Test</button>
+                            <button class="btn btn-secondary" onclick="showEditCameraModal(${index})">Edit</button>
                             <button class="btn ${cam.enabled ? 'btn-danger' : 'btn'}" onclick="toggleEnabled(${index})">
                                 ${cam.enabled ? 'Disable' : 'Enable'}
                             </button>
@@ -800,11 +804,24 @@
             }
         }
 
-        function refreshSnapshot(id) {
-            const img = document.getElementById(`snapshot-${id}`);
-            if (img) img.src = `/api/camera/${id}/snapshot?t=${Date.now()}`;
-            const ts = document.getElementById(`ts-${id}`);
-            if (ts) ts.textContent = new Date().toLocaleString();
+        async function refreshSnapshot(id, showError = true) {
+            try {
+                const res = await fetch(`/api/camera/${id}/test`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    if (showError) alert('Snapshot failed: ' + (data.message || 'check the camera URL and credentials'));
+                    await loadCameras();
+                    return false;
+                }
+                await loadCameras();
+                return true;
+            } catch (err) {
+                if (showError) alert('Snapshot failed: ' + err.message);
+                return false;
+            }
         }
 
         function showFullscreen(id) {
@@ -821,23 +838,26 @@
             }
         }
 
-        // Live View — cycles through all online cameras in the fullscreen modal
+        // Live view is a browser-friendly sequence of JPEG snapshots, refreshed
+        // every two seconds. RTSP cannot be displayed directly by a browser.
         let liveViewIndex = 0;
         function showLiveView() {
-            const onlineCams = cameras.filter(c => c.enabled && c.consecutive_failures <= 2);
+            const onlineCams = cameras.filter(c => c.enabled &&
+                Number(c.last_snapshot || 0) > 0 && c.consecutive_failures <= 2);
             if (onlineCams.length === 0) {
-                alert('No online cameras available for live view.');
+                alert('No cameras have a successful snapshot yet. Use Test or Refresh to configure one before Live View.');
                 return;
             }
             liveViewIndex = 0;
             const origIndex = cameras.indexOf(onlineCams[0]);
             showFullscreen(origIndex);
 
-            // Auto-refresh the current camera every 2 seconds
+            // Advance through the verified cameras every two seconds.
             if (window.liveViewInterval) clearInterval(window.liveViewInterval);
             window.liveViewInterval = setInterval(() => {
                 const img = document.getElementById('fullscreen-image');
                 if (img && document.getElementById('fullscreen-modal').classList.contains('visible')) {
+                    liveViewIndex = (liveViewIndex + 1) % onlineCams.length;
                     const cam = onlineCams[liveViewIndex];
                     const camIdx = cameras.indexOf(cam);
                     img.src = `/api/camera/${camIdx}/snapshot?t=${Date.now()}`;
@@ -849,19 +869,10 @@
         }
 
         async function testCamera(id) {
-            try {
-                const res = await fetch(`/api/camera/${id}/test`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    alert('Camera test successful!');
-                    refreshSnapshot(id);
-                } else {
-                    alert('Camera test failed - check connection');
-                }
-            } catch (err) {
-                alert('Camera test failed: ' + err.message);
+            if (await refreshSnapshot(id, false)) {
+                alert('Camera test successful!');
+            } else {
+                alert('Camera test failed - check the camera URL, snapshot path, and credentials.');
             }
         }
 
@@ -912,13 +923,34 @@
         }
 
         function showAddCameraModal() {
+            editingCameraId = null;
             document.getElementById('modal-title').textContent = 'Add Camera';
+            document.getElementById('input-type').value = '0';
             document.getElementById('input-hostname').value = '';
             document.getElementById('input-port').value = '80';
             document.getElementById('input-name').value = '';
             document.getElementById('input-esphome-id').value = 'camera';
+            document.getElementById('input-password').value = '';
             document.getElementById('input-deterrence-host').value = '';
             document.getElementById('input-enabled').checked = true;
+            document.getElementById('camera-modal').classList.add('visible');
+        }
+
+        let editingCameraId = null;
+
+        function showEditCameraModal(id) {
+            const cam = cameras[id];
+            if (!cam) return;
+            editingCameraId = id;
+            document.getElementById('modal-title').textContent = `Edit Camera: ${cam.friendly_name}`;
+            document.getElementById('input-type').value = String(cam.type ?? 0);
+            document.getElementById('input-hostname').value = cam.hostname || '';
+            document.getElementById('input-port').value = cam.port || 80;
+            document.getElementById('input-name').value = cam.friendly_name || '';
+            document.getElementById('input-esphome-id').value = cam.esphome_id || 'camera';
+            document.getElementById('input-password').value = '';
+            document.getElementById('input-deterrence-host').value = cam.deterrence_esphome_host || '';
+            document.getElementById('input-enabled').checked = cam.enabled !== false;
             document.getElementById('camera-modal').classList.add('visible');
         }
 
@@ -978,6 +1010,7 @@
             }).catch(() => {});
 
             let discovered = [];
+            let backendError = '';
 
             try {
                 // Attempt 1: Backend proxy endpoint /api/frigate/discover with 12s timeout
@@ -1005,13 +1038,19 @@
                         } catch (parseErr) {
                             console.error('[FRIGATE_UI] Failed to parse backend JSON response:', parseErr);
                         }
+                    } else {
+                        const errorData = await res.json().catch(() => ({}));
+                        backendError = errorData.message || `Sentinel returned HTTP ${res.status}`;
+                        console.warn('[FRIGATE_UI] Backend proxy discovery failed:', backendError);
                     }
                 } catch (e) {
                     console.log('[FRIGATE_UI] Backend proxy discover failed/timed out, trying direct browser fetch...', e);
                 }
 
                 // Attempt 2: Direct browser client-side fetch fallback to Frigate REST API
-                if (discovered.length === 0) {
+                // The ESP must be able to reach Frigate itself. Do not import cameras
+                // merely because the browser can reach an endpoint the ESP cannot.
+                if (discovered.length === 0 && !backendError) {
                     const endpointsToTry = [
                         `${url}/api/config`,
                         `${url.replace(/\/$/, '')}/api/frigate/config`,
@@ -1076,7 +1115,7 @@
                     hideFrigateModal();
                     await loadCameras();
                 } else {
-                    statusDiv.textContent = '❌ No cameras found or failed to reach Frigate API at ' + url;
+                    statusDiv.textContent = '❌ ' + (backendError ? backendError + ' ' : 'No cameras found at ') + url;
                 }
             } catch (err) {
                 console.error('[FRIGATE_UI] Discovery error:', err);
@@ -1097,6 +1136,8 @@
             const port = parseInt(document.getElementById('input-port').value) || 80;
             const name = document.getElementById('input-name').value.trim();
             const esphomeId = document.getElementById('input-esphome-id').value.trim() || 'camera';
+            const type = parseInt(document.getElementById('input-type').value) || 0;
+            const password = document.getElementById('input-password').value;
             const deterrenceHost = document.getElementById('input-deterrence-host').value;
             const enabled = document.getElementById('input-enabled').checked;
 
@@ -1106,15 +1147,16 @@
             }
 
             try {
-                const res = await fetch('/api/camera/add', {
-                    method: 'POST',
+                const isEdit = editingCameraId !== null;
+                const res = await fetch(isEdit ? `/api/camera/${editingCameraId}` : '/api/camera/add', {
+                    method: isEdit ? 'PUT' : 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         hostname, port, friendly_name: name,
-                        esphome_id: esphomeId, enabled,
+                        esphome_id: esphomeId, type, password, enabled,
                         deterrence_esphome_host: deterrenceHost
                     })
                 });
@@ -1124,10 +1166,10 @@
                     loadCameras();
                 } else {
                     const err = await res.json();
-                    alert('Failed to add camera: ' + (err.error || 'Unknown error'));
+                    alert(`Failed to ${isEdit ? 'update' : 'add'} camera: ` + (err.message || err.error || 'Unknown error'));
                 }
             } catch (err) {
-                alert('Failed to add camera: ' + err.message);
+                alert('Failed to save camera: ' + err.message);
             }
         }
 

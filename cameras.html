@@ -313,6 +313,8 @@
             padding: 30px;
             width: 100%;
             max-width: 500px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
             box-shadow: var(--glass-shadow);
         }
         
@@ -599,9 +601,13 @@
                 <input type="text" class="form-input" id="input-esphome-id" value="camera" placeholder="camera or cgi-bin/api.cgi">
             </div>
             <div class="form-group">
-                <label class="form-label">API Password / Auth Token</label>
+                <label class="form-label">Camera Username</label>
+                <input type="text" class="form-input" id="input-username" placeholder="thingino">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Camera Password / Auth Token</label>
                 <div class="password-wrapper">
-                    <input type="password" class="form-input" id="input-password" placeholder="Optional Auth Secret">
+                    <input type="password" class="form-input" id="input-password" placeholder="Camera password">
                     <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('input-password', this)">👁️</button>
                 </div>
             </div>
@@ -620,7 +626,7 @@
             </div>
             <div class="modal-actions">
                 <button class="btn" onclick="saveCamera()">Save Device</button>
-                <button class="btn btn-secondary" onclick="hideCameraModal()">Cancel</button>
+                <button class="btn btn-secondary" onclick="hideCameraModal()">← Back</button>
             </div>
         </div>
     </div>
@@ -930,6 +936,7 @@
             document.getElementById('input-port').value = '80';
             document.getElementById('input-name').value = '';
             document.getElementById('input-esphome-id').value = 'camera';
+            document.getElementById('input-username').value = '';
             document.getElementById('input-password').value = '';
             document.getElementById('input-deterrence-host').value = '';
             document.getElementById('input-enabled').checked = true;
@@ -947,7 +954,8 @@
             document.getElementById('input-hostname').value = cam.hostname || '';
             document.getElementById('input-port').value = cam.port || 80;
             document.getElementById('input-name').value = cam.friendly_name || '';
-            document.getElementById('input-esphome-id').value = cam.esphome_id || 'camera';
+            document.getElementById('input-esphome-id').value = cam.camera_id || cam.esphome_id || 'camera';
+            document.getElementById('input-username').value = cam.username || '';
             document.getElementById('input-password').value = '';
             document.getElementById('input-deterrence-host').value = cam.deterrence_esphome_host || '';
             document.getElementById('input-enabled').checked = cam.enabled !== false;
@@ -1095,7 +1103,7 @@
                     statusDiv.textContent = `✅ Discovered ${discovered.length} camera(s)! Auto-importing...`;
                     const cleanHost = url.replace(/^https?:\/\//, '').split(':')[0].split('/')[0];
                     const portParts = url.split(':');
-                    const cleanPort = (portParts.length >= 3) ? (parseInt(portParts[2]) || 5069) : 5069;
+                    const cleanPort = (portParts.length >= 3) ? (parseInt(portParts[2]) || 5000) : 5000;
 
                     for (const cam of discovered) {
                         console.log('[FRIGATE_UI] Auto-importing camera:', cam);
@@ -1137,6 +1145,7 @@
             const name = document.getElementById('input-name').value.trim();
             const esphomeId = document.getElementById('input-esphome-id').value.trim() || 'camera';
             const type = parseInt(document.getElementById('input-type').value) || 0;
+            const username = document.getElementById('input-username').value.trim();
             const password = document.getElementById('input-password').value;
             const deterrenceHost = document.getElementById('input-deterrence-host').value;
             const enabled = document.getElementById('input-enabled').checked;
@@ -1156,7 +1165,7 @@
                     },
                     body: JSON.stringify({
                         hostname, port, friendly_name: name,
-                        esphome_id: esphomeId, type, password, enabled,
+                        camera_id: esphomeId, type, username, password, enabled,
                         deterrence_esphome_host: deterrenceHost
                     })
                 });

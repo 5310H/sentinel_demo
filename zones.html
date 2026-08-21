@@ -437,6 +437,10 @@
             <input type="number" id="gpio" name="gpio">
         </div>
         <div class="settings-row">
+            <div><div class="settings-label">RF Sensor Code</div><div class="settings-label-sub">433MHz Wireless Hex Code (e.g. ABC120)</div></div>
+            <input type="text" id="rf" name="rf" placeholder="ABC120">
+        </div>
+        <div class="settings-row">
             <div><div class="settings-label">Chime</div><div class="settings-label-sub">Play chime on open</div></div>
             <label class="switch"><input type="checkbox" id="is_chime" name="is_chime"><span class="slider"></span></label>
         </div>
@@ -539,7 +543,7 @@
         <div class="device-info-grid">
             <div class="info-cell"><div class="info-label">Location</div><div class="info-value">${item.location || 'N/A'}</div></div>
             <div class="info-cell"><div class="info-label">Dispatch</div><div class="info-value">${item.dispatch_service || 'N/A'}</div></div>
-            <div class="info-cell"><div class="info-label">ID / GPIO</div><div class="info-value">${item.id} / ${item.gpio !== undefined ? item.gpio : 'N/A'}</div></div>
+            <div class="info-cell"><div class="info-label">ID / GPIO</div><div class="info-value">${item.id} / ${item.gpio !== undefined ? item.gpio : 'N/A'}${item.rf ? ' (RF: ' + item.rf + ')' : ''}</div></div>
             <div class="info-cell"><div class="info-label">Status</div><div class="info-value" style="color:${activeColor}">${isActive ? 'Monitored' : 'Unused / Disabled'}</div></div>
         </div>
         <div style="display:flex; gap:8px; margin-top:12px;">

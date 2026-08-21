@@ -539,6 +539,14 @@
                         <button type="button" class="toggle-pwd-btn" onclick="toggleSecretVisibility('emergency-pin', this)">👁️</button>
                     </div>
                 </div>
+
+                <div class="settings-row">
+                    <div>
+                        <div class="settings-label">RF Keyfob Code</div>
+                        <div class="settings-label-sub">433MHz Remote Hex (e.g. ABC120)</div>
+                    </div>
+                    <input type="text" id="rf-code" placeholder="ABC120">
+                </div>
             </div>
 
             <button type="submit" class="btn-primary" id="save-btn">Execute Add</button>
@@ -610,14 +618,16 @@
                                 <span class="badge">${TYPES[u.notify] || 'NONE'}</span> 
                                 ${u.emergency_pin ? '<span class="badge warning">911 ENABLED</span>' : ''}
                                 ${u.is_admin ? '<span class="badge" style="background:#ff2a55">ADMIN</span>' : ''}
+                                ${u.webauthn_credential_id ? '<span class="badge" style="background:#10b981">🔑 PASSKEY ACTIVE</span>' : ''}
                             </div>
                         </div>
-                        <div class="user-meta">${escapeHtml(u.email) || 'No Email Configured'}</div>
+                        <div class="user-meta">${escapeHtml(u.email) || 'No Email Configured'}${u.rf_code ? ' &bull; RF: ' + escapeHtml(u.rf_code) : ''}${u.webauthn_rp_id ? ' &bull; RP: ' + escapeHtml(u.webauthn_rp_id) : ''}</div>
                         
                         <div class="action-row">
                             <button class="btn-small" onclick="setEditByName('${escapeHtml(u.name)}')">Edit</button>
                             <button class="btn-small btn-test" onclick="testNotify('${escapeHtml(u.name)}')">Test Alert</button>
-                            <button class="btn-small btn-del" onclick="deleteUser('${escapeHtml(u.name)}')">Revoke</button>
+                            ${u.webauthn_credential_id ? `<button class="btn-small" style="background:rgba(234,179,8,0.2);color:#eab308;border-color:rgba(234,179,8,0.4)" onclick="revokeUserPasskey('${escapeHtml(u.name)}')">Revoke Passkey</button>` : ''}
+                            <button class="btn-small btn-del" onclick="deleteUser('${escapeHtml(u.name)}')">Revoke User</button>
                         </div>
                     </div>
                 `).join('');
@@ -630,6 +640,26 @@
             }
         }
 
+        async function revokeUserPasskey(name) {
+            if (!confirm("Revoke Passkey / Biometrics for " + name + "?\\n\\nUser will need to log in with their PIN to register a new passkey.")) return;
+            try {
+                const r = await fetch('/api/webauthn/revoke', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: name })
+                });
+                const d = await r.json();
+                if (d.status === 'ok') {
+                    alert("Passkey successfully revoked for " + name);
+                    loadUsers();
+                } else {
+                    alert("Failed to revoke passkey: " + (d.error || "unknown error"));
+                }
+            } catch(e) {
+                alert("Network error revoking passkey");
+            }
+        }
+
         function setEditByName(name) {
             const u = (window.currentUsersList || []).find(x => x.name === name);
             if (!u) return;
@@ -638,6 +668,7 @@
             document.getElementById('pin').value = u.pin || '';
             document.getElementById('emergency-pin').value = u.emergency_pin || '';
             document.getElementById('email').value = u.email || '';
+            document.getElementById('rf-code').value = u.rf_code || '';
             document.getElementById('notify').value = u.notify !== undefined ? u.notify : 0;
             document.getElementById('is-admin').value = u.is_admin ? 1 : 0;
             document.getElementById('save-btn').innerText = "Update Record";
@@ -652,6 +683,7 @@
             document.getElementById('pin').value = "";
             document.getElementById('emergency-pin').value = "";
             document.getElementById('email').value = "";
+            document.getElementById('rf-code').value = "";
             document.getElementById('is-admin').value = "0";
             document.getElementById('save-btn').innerText = "Execute Add";
             document.getElementById('form-label').innerText = "Create New User";
@@ -667,6 +699,7 @@
                 pin: document.getElementById('pin').value,
                 emergency_pin: document.getElementById('emergency-pin').value,
                 email: document.getElementById('email').value,
+                rf_code: document.getElementById('rf-code').value,
                 notify: parseInt(document.getElementById('notify').value),
                 is_admin: parseInt(document.getElementById('is-admin').value) === 1
             };

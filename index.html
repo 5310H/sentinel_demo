@@ -511,6 +511,45 @@
             .close-modal:hover { opacity: 1; }
 }
 
+        /* Biometric Unlock Button */
+        .btn-biometric {
+            width: 100%;
+            margin-top: 15px;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.12) 0%, rgba(139, 92, 246, 0.12) 100%);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 14px;
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 229, 255, 0.1);
+        }
+@media (hover: hover) {
+        .btn-biometric:hover {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.25) 0%, rgba(139, 92, 246, 0.25) 100%);
+            border-color: var(--accent);
+            box-shadow: 0 6px 25px rgba(0, 229, 255, 0.3);
+            transform: translateY(-2px);
+        }
+}
+        .btn-biometric:active {
+            transform: scale(0.97);
+        }
+        .btn-biometric .bio-icon {
+            font-size: 20px;
+            animation: bioPulse 2s infinite ease-in-out;
+        }
+        @keyframes bioPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(0,229,255,0.4)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(0,229,255,0.8)); }
+        }
+
         /* Dashboard Lock State: Hide secure modules */
         body:not(.unlocked) .secure-module {
             display: none !important;
@@ -762,7 +801,7 @@
                     <span class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">🌙</span>
                 </div>
                 <div class="date-display" id="live-date">---</div>
-                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: <span id="build-version">2026-08-19 16:58 EDT</span></div>
+                <div style="font-size:9px; color:#3a4a5a; letter-spacing:1px; margin-top:4px; font-family:monospace;">BUILD: <span id="build-version">2026-08-20 21:00 EDT</span></div>
                 <div id="wan-badge"
                     style="display: none; background: #d97706; color: white; padding: 4px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-top: 8px; animation: pulse 2s infinite; width: fit-content;">
                     CELLULAR BACKUP</div>
@@ -806,12 +845,13 @@
                     <a href="diagnostics.html" class="admin-link">Diagnostics</a>
                     <a href="entities.html" class="admin-link">Entities</a>
                     <a href="esphome.html" class="admin-link">ESPHome</a>
+                    <a href="health.html" class="admin-link">Health</a>
                     <a href="monitoring.html" class="admin-link">Monitoring</a>
                     <a href="presence.html" class="admin-link">Presence</a>
                     <a href="relays.html" class="admin-link">Relays</a>
+                    <a href="rf.html" class="admin-link">RF 433MHz</a>
                     <a href="scheduler.html" class="admin-link">Schedule</a>
                     <a href="config.html" class="admin-link">Settings</a>
-                    <a href="health.html" class="admin-link">System Health</a>
                     <a href="tester.html" class="admin-link">Sys-Tester</a>
                     <a href="tuya.html" class="admin-link">Tuya</a>
                     <a href="users.html" class="admin-link">Users</a>
@@ -1026,6 +1066,17 @@
                     <div class="key" onclick="press(0)">0</div>
                     <div class="key key-ok" onclick="submit()">OK</div>
                 </div>
+                
+                <button type="button" class="btn-biometric" id="btn-biometric-unlock" onclick="triggerBiometricUnlock()" style="display: none;">
+                    <span class="bio-icon">👆</span>
+                    <span id="bio-btn-label">Touch ID / Fingerprint</span>
+                </button>
+
+                <div id="bio-enroll-container" style="display: none; align-items: center; justify-content: center; margin-top: 12px; color: var(--accent); font-size: 12px;">
+                    <input type="checkbox" id="bio-enroll-cb" style="margin-right: 8px;">
+                    <label for="bio-enroll-cb">Enable Fingerprint / Face ID for this device</label>
+                </div>
+
                 <button class="modal-btn modal-btn-secondary" onclick="closeKeypad()"
                     style="margin-top: 15px;">CANCEL</button>
             </div>
@@ -1646,6 +1697,156 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
 
         let pendingAction = null;
 
+        // Clear legacy unsafe local PIN storage if present
+        try { localStorage.removeItem('sentinel_bio_credential'); } catch(e) {}
+
+        function bufferToBase64Url(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function base64UrlToBuffer(base64url) {
+            let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64.length % 4) base64 += '=';
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function checkBiometricSupport() {
+            if (!window.PublicKeyCredential) return false;
+            try {
+                if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+                    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                }
+            } catch(e) {
+                return false;
+            }
+            return false;
+        }
+
+        function getBiometricLabel() {
+            const ua = navigator.userAgent || '';
+            if (/iPhone|iPad|Macintosh/i.test(ua)) return 'Touch ID / Face ID';
+            if (/Android/i.test(ua)) return 'Fingerprint Unlock';
+            if (/Windows/i.test(ua)) return 'Windows Hello / Fingerprint';
+            return 'Touch ID / Fingerprint';
+        }
+
+        async function triggerBiometricUnlock() {
+            const errEl = document.getElementById('pin-error-msg');
+            if (errEl) {
+                errEl.innerText = 'TOUCH FINGERPRINT SENSOR...';
+                errEl.style.color = 'var(--accent)';
+            }
+
+            try {
+                // 1. Fetch challenge & options from server
+                const optRes = await fetch('/api/webauthn/authenticate/options', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({})
+                });
+                if (!optRes.ok) throw new Error('Failed to get auth options');
+                const options = await optRes.json();
+
+                options.challenge = base64UrlToBuffer(options.challenge);
+                if (options.allowCredentials && Array.isArray(options.allowCredentials)) {
+                    options.allowCredentials = options.allowCredentials.map(c => ({
+                        ...c,
+                        id: base64UrlToBuffer(c.id)
+                    }));
+                }
+
+                // 2. Request assertion from hardware enclave / biometric authenticator
+                const assertion = await navigator.credentials.get({ publicKey: options });
+                if (!assertion) throw new Error('No assertion returned');
+
+                // 3. Send cryptographic assertion to server for verification
+                const verifyPayload = {
+                    id: assertion.id,
+                    rawId: bufferToBase64Url(assertion.rawId),
+                    clientDataJSON: new TextDecoder().decode(assertion.response.clientDataJSON),
+                    authenticatorData: bufferToBase64Url(assertion.response.authenticatorData),
+                    signature: bufferToBase64Url(assertion.response.signature)
+                };
+
+                const verifyRes = await fetch('/api/webauthn/authenticate/verify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(verifyPayload)
+                });
+                const d = await verifyRes.json();
+
+                if (d.authenticated) {
+                    currentPin = "";
+                    grantAccess(d);
+                } else {
+                    setPinError(d.error || 'BIOMETRIC AUTH FAILED');
+                }
+            } catch(err) {
+                console.warn('Biometric unlock error:', err);
+                if (err.name === 'NotAllowedError') {
+                    setPinError('BIOMETRIC CANCELLED');
+                } else {
+                    setPinError('PASSKEY NOT READY');
+                }
+            }
+        }
+
+        async function enrollPasskey(pin, totp, username) {
+            if (!window.PublicKeyCredential) return false;
+            try {
+                // 1. Fetch server registration options (validates PIN/TOTP on server)
+                const optRes = await fetch('/api/webauthn/register/options', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ pin: pin, totp: totp || "" })
+                });
+                if (!optRes.ok) {
+                    const errJson = await optRes.json().catch(() => ({}));
+                    console.warn('Register options error:', errJson);
+                    return false;
+                }
+                const options = await optRes.json();
+
+                options.challenge = base64UrlToBuffer(options.challenge);
+                options.user.id = base64UrlToBuffer(options.user.id);
+
+                // 2. Create Passkey in hardware authenticator
+                const cred = await navigator.credentials.create({ publicKey: options });
+                if (!cred) return false;
+
+                // 3. Send attestation to server for cryptographic validation and enrollment
+                const regPayload = {
+                    name: username,
+                    clientDataJSON: new TextDecoder().decode(cred.response.clientDataJSON),
+                    attestationObject: bufferToBase64Url(cred.response.attestationObject)
+                };
+
+                const verifyRes = await fetch('/api/webauthn/register/verify', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(regPayload)
+                });
+                const vJson = await verifyRes.json();
+                if (vJson.status === 'ok') {
+                    localStorage.setItem('sentinel_has_passkey', 'true');
+                    return true;
+                }
+            } catch(e) {
+                console.warn('Passkey enrollment error:', e);
+            }
+            return false;
+        }
+
         async function openKeypad() {
             // First interaction generally allows audio context to start
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
@@ -1676,7 +1877,29 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 document.getElementById('keypad-title').innerText = "ENTER PIN";
                 document.getElementById('keypad-title').style.color = "white";
                 document.getElementById('remember-device-container').style.display = "none";
+
+                // Setup biometric button & enrollment
+                const bioBtn = document.getElementById('btn-biometric-unlock');
+                const bioEnroll = document.getElementById('bio-enroll-container');
+                const bioLabel = document.getElementById('bio-btn-label');
+                const isBioSupported = await checkBiometricSupport();
+                const hasPasskey = localStorage.getItem('sentinel_has_passkey') === 'true';
+
+                if (bioLabel) bioLabel.innerText = getBiometricLabel();
+
+                if (bioBtn) {
+                    bioBtn.style.display = isBioSupported ? 'flex' : 'none';
+                }
+                if (bioEnroll) {
+                    bioEnroll.style.display = isBioSupported ? 'flex' : 'none';
+                }
+
                 keypadModal.classList.add('visible');
+
+                // If passkey is known to be enrolled, auto-prompt user
+                if (hasPasskey && isBioSupported) {
+                    setTimeout(() => { triggerBiometricUnlock(); }, 250);
+                }
             }
         }
         function closeKeypad() {
@@ -1799,6 +2022,10 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                         if (d2.device_token) {
                             localStorage.setItem('sentinel_device_token', d2.device_token);
                         }
+                        const bioEnrollCb = document.getElementById('bio-enroll-cb');
+                        if (bioEnrollCb && bioEnrollCb.checked) {
+                            enrollPasskey(savedPin, currentPin, d2.name || d2.user || "admin");
+                        }
                         grantAccess(d2);
                     } else { 
                         setPinError('INVALID 2FA CODE');
@@ -1824,6 +2051,10 @@ window.addEventListener('error', function(e) { alert('JS Error: ' + e.message + 
                 const d = await r.json();
                 
                 if(d.authenticated) {
+                    const bioEnrollCb = document.getElementById('bio-enroll-cb');
+                    if (bioEnrollCb && bioEnrollCb.checked) {
+                        enrollPasskey(pinTrimmed, "", d.name || d.user || "admin");
+                    }
                     grantAccess(d);
                 } else if(d.error === '2fa_setup_required') {
                     showTOTPSetup(d.name);
